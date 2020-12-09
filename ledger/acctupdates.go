@@ -179,7 +179,7 @@ type accountUpdates struct {
 	dbRound basics.Round
 
 	// deltas stores updates for every round after dbRound.
-	deltas []map[basics.Address]miniAccountDelta
+	deltas []map[basics.Address]accountDelta
 
 	// accounts stores the most recent account state for every
 	// address that appears in deltas.
@@ -398,77 +398,55 @@ func (au *accountUpdates) close() {
 	<-au.commitSyncerClosed
 }
 
-// FullLookup is like Lookup except that it also looks up application data.
-func (au *accountUpdates) FullLookup(rnd basics.Round, addr basics.Address, withRewards bool) (basics.AccountData, error) {
-	au.accountsMu.RLock()
-	defer au.accountsMu.RUnlock()
-	return au.fullLookup(rnd, addr, withRewards)
-}
+// // FullLookup is like Lookup except that it also looks up application data.
+// func (au *accountUpdates) FullLookup(rnd basics.Round, addr basics.Address, withRewards bool) (basics.AccountData, error) {
+// 	au.accountsMu.RLock()
+// 	defer au.accountsMu.RUnlock()
+// 	return au.fullLookup(rnd, addr, withRewards)
+// }
 
-func (au *accountUpdates) fullLookup(rnd basics.Round, addr basics.Address, withRewards bool) (data basics.AccountData, err error) {
-	offset, err := au.roundOffset(rnd)
-	if err != nil {
-		return
-	}
+// func (au *accountUpdates) fullLookup(rnd basics.Round, addr basics.Address, withRewards bool) (data basics.AccountData, err error) {
+// 	offset, err := au.roundOffset(rnd)
+// 	if err != nil {
+// 		return
+// 	}
 
-	offsetForRewards := offset
+// 	offsetForRewards := offset
 
-	defer func() {
-		if withRewards {
-			totals := au.roundTotals[offsetForRewards]
-			proto := au.protos[offsetForRewards]
-			data = data.WithUpdatedRewards(proto, totals.RewardsLevel)
-		}
-	}()
+// 	defer func() {
+// 		if withRewards {
+// 			totals := au.roundTotals[offsetForRewards]
+// 			proto := au.protos[offsetForRewards]
+// 			data = data.WithUpdatedRewards(proto, totals.RewardsLevel)
+// 		}
+// 	}()
 
-	res, _, err := au.accountsq.lookup(addr)
-	if err != nil {
-		return basics.AccountData{}, fmt.Errorf("fullLookup: could not look up %v: %v", addr, err)
-	}
+// 	res, _, err := au.accountsq.lookup(addr)
+// 	if err != nil {
+// 		return basics.AccountData{}, fmt.Errorf("fullLookup: could not look up %v: %v", addr, err)
+// 	}
 
-	for aidx := range res.AppLocalStates {
-		state := res.AppLocalStates[aidx]
+// 	// as of this point, res contains AccountData as of au.dbRound
 
-		kv, _, err := au.accountsq.lookupStorage(addr, storagePtr{aidx: aidx, global: false})
-		if err != nil {
-			return basics.AccountData{}, fmt.Errorf("fullLookup: lookupStorage for %v on local %v failed: %v", addr, aidx, err)
-		}
+// 	for i := uint64(0); i < offset; i++ {
+// 		deltas, sdeltas := au.deltas[i], au.storageDeltas[i]
+// 		mini, ok := deltas[addr]
+// 		if ok {
+// 			res = applyMiniDelta(res, mini)
+// 		}
+// 		smap, ok := sdeltas[addr]
+// 		if ok {
+// 			for aapp, storeDelta := range smap {
+// 				res, err = applyStorageDelta(res, aapp, storeDelta)
+// 				if err != nil {
+// 					return basics.AccountData{}, fmt.Errorf("fullLookup: failed to apply storage delta for %v under %v at offset %v, dbRound %v: %v", addr, aapp.aidx, offset, au.dbRound, err)
+// 				}
+// 			}
+// 		}
+// 	}
 
-		state.KeyValue = kv
-		res.AppLocalStates[aidx] = state
-	}
-	for aidx := range res.AppParams {
-		params := res.AppParams[aidx]
-
-		kv, _, err := au.accountsq.lookupStorage(addr, storagePtr{aidx: aidx, global: true})
-		if err != nil {
-			return basics.AccountData{}, fmt.Errorf("fullLookup: lookupStorage for %v on global %v failed: %v", addr, aidx, err)
-		}
-
-		params.GlobalState = kv
-		res.AppParams[aidx] = params
-	}
-	// as of this point, res contains AccountData as of au.dbRound
-
-	for i := uint64(0); i < offset; i++ {
-		deltas, sdeltas := au.deltas[i], au.storageDeltas[i]
-		mini, ok := deltas[addr]
-		if ok {
-			res = applyMiniDelta(res, mini)
-		}
-		smap, ok := sdeltas[addr]
-		if ok {
-			for aapp, storeDelta := range smap {
-				res, err = applyStorageDelta(res, aapp, storeDelta)
-				if err != nil {
-					return basics.AccountData{}, fmt.Errorf("fullLookup: failed to apply storage delta for %v under %v at offset %v, dbRound %v: %v", addr, aapp.aidx, offset, au.dbRound, err)
-				}
-			}
-		}
-	}
-
-	return res, nil
-}
+// 	return res, nil
+// }
 
 // IsWritingCatchpointFile returns true when a catchpoint file is being generated. The function is used by the catchup service
 // to avoid memory pressure until the catchpoint file writing is complete.
@@ -491,13 +469,13 @@ func (au *accountUpdates) IsWritingCatchpointFile() bool {
 // even while it does return the AccoutData which represent the "rewarded" account data.
 // The resultant AccountData does not include application states.
 func (au *accountUpdates) LookupWithRewards(rnd basics.Round, addr basics.Address) (data basics.AccountData, err error) {
-	return au.lookupWithRewardsImpl(rnd, addr)
+	return au.lookupWithRewards(rnd, addr)
 }
 
 // LookupWithoutRewards returns the account data for a given address at a given round.
 // The resultant AccountData does not include application states.
 func (au *accountUpdates) LookupWithoutRewards(rnd basics.Round, addr basics.Address) (data basics.AccountData, validThrough basics.Round, err error) {
-	return au.lookupWithoutRewardsImpl(rnd, addr, true /* take lock*/)
+	return au.lookupWithoutRewards(rnd, addr, true /* take lock*/)
 }
 
 // ListAssets lists the assets by their asset index, limiting to the first maxResults
@@ -864,13 +842,13 @@ func (au *accountUpdates) Totals(rnd basics.Round) (totals AccountTotals, err er
 func (au *accountUpdates) CountStorageForRound(rnd basics.Round, addr basics.Address, aidx basics.AppIndex, global bool) (basics.StateSchema, error) {
 	au.accountsMu.RLock()
 	defer au.accountsMu.RUnlock()
-	return au.countStorageForRoundImpl(rnd, addr, aidx, global)
+	return au.countStorageForRound(rnd, addr, aidx, global)
 }
 
 func (au *accountUpdates) GetKeyForRound(rnd basics.Round, addr basics.Address, aidx basics.AppIndex, global bool, key string) (basics.TealValue, bool, error) {
 	au.accountsMu.RLock()
 	defer au.accountsMu.RUnlock()
-	return au.getKeyForRoundImpl(rnd, addr, aidx, global, key)
+	return au.getKeyForRound(rnd, addr, aidx, global, key)
 }
 
 // ReadCloseSizer interface implements the standard io.Reader and io.Closer as well
@@ -1001,7 +979,7 @@ func (aul *accountUpdatesLedgerEvaluator) CheckDup(config.ConsensusParams, basic
 
 // lookupWithoutRewards returns the account balance for a given address at a given round, without the reward
 func (aul *accountUpdatesLedgerEvaluator) LookupWithoutRewards(rnd basics.Round, addr basics.Address) (basics.AccountData, basics.Round, error) {
-	return aul.au.lookupWithoutRewardsImpl(rnd, addr, false /*don't sync*/)
+	return aul.au.lookupWithoutRewards(rnd, addr, false /*don't sync*/)
 }
 
 // GetCreatorForRound returns the asset/app creator for a given asset/app index at a given round
@@ -1010,11 +988,11 @@ func (aul *accountUpdatesLedgerEvaluator) GetCreatorForRound(rnd basics.Round, c
 }
 
 func (aul *accountUpdatesLedgerEvaluator) CountStorageForRound(rnd basics.Round, addr basics.Address, aidx basics.AppIndex, global bool) (basics.StateSchema, error) {
-	return aul.au.countStorageForRoundImpl(rnd, addr, aidx, global)
+	return aul.au.countStorageForRound(rnd, addr, aidx, global)
 }
 
 func (aul *accountUpdatesLedgerEvaluator) GetKeyForRound(rnd basics.Round, addr basics.Address, aidx basics.AppIndex, global bool, key string) (basics.TealValue, bool, error) {
-	return aul.au.getKeyForRoundImpl(rnd, addr, aidx, global, key)
+	return aul.au.getKeyForRound(rnd, addr, aidx, global, key)
 }
 
 // totalsImpl returns the totals for a given round
@@ -1216,12 +1194,6 @@ func (au *accountUpdates) accountsInitialize(ctx context.Context, tx *sql.Tx) (b
 				dbVersion, err = au.upgradeDatabaseSchema3(ctx, tx)
 				if err != nil {
 					au.log.Warnf("accountsInitialize failed to upgrade accounts database (ledger.tracker.sqlite) from schema 3 : %v", err)
-					return 0, err
-				}
-			case 4:
-				dbVersion, err = au.upgradeDatabaseSchema4(ctx, tx)
-				if err != nil {
-					au.log.Warnf("accountsInitialize failed to upgrade accounts database (ledger.tracker.sqlite) from schema 4 : %v", err)
 					return 0, err
 				}
 			default:
@@ -1479,104 +1451,6 @@ func (au *accountUpdates) upgradeDatabaseSchema3(ctx context.Context, tx *sql.Tx
 	return 4, nil
 }
 
-func (au *accountUpdates) upgradeDatabaseSchema4(ctx context.Context, tx *sql.Tx) (updatedDBVersion int32, err error) {
-	// upgrade schema
-	au.log.Infof("upgradeDatabaseSchema4: initializing schema")
-	for _, migrateCmd := range storageMigration {
-		_, err = tx.Exec(migrateCmd)
-		if err != nil {
-			return
-		}
-	}
-	_, err = db.SetUserVersion(ctx, tx, 5)
-	if err != nil {
-		return 0, fmt.Errorf("upgradeDatabaseSchema3: unable to update database schema version from 3 to 4: %v", err)
-	}
-
-	// migrate data
-	insertKeyStmt, err := tx.Prepare("INSERT INTO storage (owner, aidx, global, key, vtype, venc) VALUES (?, ?, ?, ?, ?, ?)")
-	if err != nil {
-		return
-	}
-
-	if err != nil {
-		return
-	}
-	defer insertKeyStmt.Close()
-	insertAcctStmt, err := tx.Prepare("INSERT INTO miniaccountbase (address, data, normalizedonlinebalance) VALUES (?, ?, ?)")
-	if err != nil {
-		return
-	}
-	defer insertAcctStmt.Close()
-
-	au.log.Infof("upgradeDatabaseSchema4: begin data migration")
-	rows, err := tx.Query("SELECT * FROM accountbase")
-	if err != nil {
-		return
-	}
-	count := 0
-	for rows.Next() {
-		count++
-		if count%10000 == 0 {
-			au.log.Infof("upgradeDatabaseSchema4: count=%d", count)
-		}
-
-		var addrBuf, dataBuf []byte
-		var normAcctBalance uint64
-		err = rows.Scan(&addrBuf, &dataBuf, &normAcctBalance)
-		if err != nil {
-			return
-		}
-
-		var addr basics.Address
-		var data basics.AccountData
-		copy(addr[:], addrBuf)
-		err = protocol.Decode(dataBuf, &data)
-		if err != nil {
-			return
-		}
-
-		miniData := withoutAppKV(data)
-		_, err = insertAcctStmt.Exec(addr[:], protocol.Encode(&miniData), normAcctBalance)
-		if err != nil {
-			return
-		}
-
-		global := true
-		for aidx, params := range miniData.AppParams {
-			for key, tv := range params.GlobalState {
-				venc := protocol.Encode(&tv)
-				_, err = insertKeyStmt.Exec(addr[:], aidx, global, key, tv.Type, venc)
-				if err != nil {
-					return
-				}
-			}
-		}
-
-		global = false
-		for aidx, state := range miniData.AppLocalStates {
-			for key, tv := range state.KeyValue {
-				venc := protocol.Encode(&tv)
-				_, err = insertKeyStmt.Exec(addr[:], aidx, global, key, tv.Type, venc)
-				if err != nil {
-					return
-				}
-			}
-		}
-	}
-
-	// fixup tables
-	au.log.Infof("upgradeDatabaseSchema4: table rename")
-	_, err = tx.Exec("DROP TABLE accountbase; ALTER TABLE miniaccountbase RENAME TO accountbase")
-	if err != nil {
-		return
-	}
-
-	au.log.Infof("upgradeDatabaseSchema4: done")
-
-	return 5, nil
-}
-
 // deleteStoredCatchpoints iterates over the storedcatchpoints table and deletes all the files stored on disk.
 // once all the files have been deleted, it would go ahead and remove the entries from the table.
 func (au *accountUpdates) deleteStoredCatchpoints(ctx context.Context, dbQueries *accountsDbQueries) (err error) {
@@ -1774,11 +1648,11 @@ func (au *accountUpdates) newBlockImpl(blk bookkeeping.Block, delta StateDelta) 
 	au.voters.newBlock(blk.BlockHeader)
 }
 
-// lookupWithRewardsImpl returns the account data for a given address at a given round.
+// lookupWithRewards returns the account data for a given address at a given round.
 // The rewards are added to the AccountData before returning. Note that the function doesn't update the account with the rewards,
 // even while it does return the AccoutData which represent the "rewarded" account data.
 // The resultant AccountData does not include application states.
-func (au *accountUpdates) lookupWithRewardsImpl(rnd basics.Round, addr basics.Address) (data basics.AccountData, err error) {
+func (au *accountUpdates) lookupWithRewards(rnd basics.Round, addr basics.Address) (data basics.AccountData, err error) {
 	au.accountsMu.RLock()
 	needUnlock := true
 	defer func() {
@@ -1828,6 +1702,16 @@ func (au *accountUpdates) lookupWithRewardsImpl(rnd basics.Round, addr basics.Ad
 				offset--
 				d, ok := au.deltas[offset][addr]
 				if ok {
+					// apply storage delta
+					smap, ok := au.storageDeltas[offset][addr]
+					if ok {
+						for aapp, storeDelta := range smap {
+							d.new, err = applyStorageDelta(d.new, aapp, storeDelta)
+							if err != nil {
+								return basics.AccountData{}, fmt.Errorf("lookupWithRewards: failed to apply storage delta for %v under %v at offset %v, dbRound %v: %v", addr, aapp.aidx, offset, au.dbRound, err)
+							}
+						}
+					}
 					return d.new, nil
 				}
 			}
@@ -1859,9 +1743,9 @@ func (au *accountUpdates) lookupWithRewardsImpl(rnd basics.Round, addr basics.Ad
 	}
 }
 
-// lookupWithoutRewardsImpl returns the account data for a given address at a given round.
+// lookupWithoutRewards returns the account data for a given address at a given round.
 // The resultant AccountData does not include application states.
-func (au *accountUpdates) lookupWithoutRewardsImpl(rnd basics.Round, addr basics.Address, syncronized bool) (data basics.AccountData, validThrough basics.Round, err error) {
+func (au *accountUpdates) lookupWithoutRewards(rnd basics.Round, addr basics.Address, syncronized bool) (data basics.AccountData, validThrough basics.Round, err error) {
 	needUnlock := false
 	if syncronized {
 		au.accountsMu.RLock()
@@ -1897,6 +1781,16 @@ func (au *accountUpdates) lookupWithoutRewardsImpl(rnd basics.Round, addr basics
 				offset--
 				d, ok := au.deltas[offset][addr]
 				if ok {
+					// apply storage delta
+					smap, ok := au.storageDeltas[offset][addr]
+					if ok {
+						for aapp, storeDelta := range smap {
+							d.new, err = applyStorageDelta(d.new, aapp, storeDelta)
+							if err != nil {
+								return basics.AccountData{}, 0, fmt.Errorf("lookupWithoutRewards: failed to apply storage delta for %v under %v at offset %v, dbRound %v: %v", addr, aapp.aidx, offset, au.dbRound, err)
+							}
+						}
+					}
 					// the returned validThrough here is not optimal, but it still correct. We could get a more accurate value by scanning
 					// the deltas forward, but this would be time consuming loop, which might not pay off.
 					return d.new, rnd, nil
@@ -2015,7 +1909,7 @@ func (au *accountUpdates) getCreatorForRoundImpl(rnd basics.Round, cidx basics.C
 	}
 }
 
-func (au *accountUpdates) countStorageForRoundImpl(rnd basics.Round, addr basics.Address, aidx basics.AppIndex, global bool) (basics.StateSchema, error) {
+func (au *accountUpdates) countStorageForRound(rnd basics.Round, addr basics.Address, aidx basics.AppIndex, global bool) (basics.StateSchema, error) {
 	offset, err := au.roundOffset(rnd)
 	if err != nil {
 		return basics.StateSchema{}, err
@@ -2041,10 +1935,34 @@ func (au *accountUpdates) countStorageForRoundImpl(rnd basics.Round, addr basics
 	}
 
 	// Consult the database
-	return au.accountsq.countStorage(addr, aapp)
+	ad, _, err := au.accountsq.lookup(addr)
+	if err != nil {
+		return basics.StateSchema{}, err
+	}
+
+	count := basics.StateSchema{}
+	kv := basics.TealKeyValue{}
+	if global {
+		if app, ok := ad.AppParams[aidx]; ok {
+			kv = app.GlobalState
+		}
+	} else {
+		if ls, ok := ad.AppLocalStates[aidx]; ok {
+			kv = ls.KeyValue
+		}
+	}
+
+	for _, v := range kv {
+		if v.Type == basics.TealUintType {
+			count.NumUint++
+		} else {
+			count.NumByteSlice++
+		}
+	}
+	return count, nil
 }
 
-func (au *accountUpdates) getKeyForRoundImpl(rnd basics.Round, addr basics.Address, aidx basics.AppIndex, global bool, key string) (basics.TealValue, bool, error) {
+func (au *accountUpdates) getKeyForRound(rnd basics.Round, addr basics.Address, aidx basics.AppIndex, global bool, key string) (basics.TealValue, bool, error) {
 	offset, err := au.roundOffset(rnd)
 	if err != nil {
 		return basics.TealValue{}, false, err
@@ -2100,7 +2018,24 @@ func (au *accountUpdates) getKeyForRoundImpl(rnd basics.Round, addr basics.Addre
 	}
 
 	// Consult the database
-	return au.accountsq.lookupKey(addr, aapp, key)
+
+	ad, _, err := au.accountsq.lookup(addr)
+	if err != nil {
+		return basics.TealValue{}, false, err
+	}
+
+	kv := basics.TealKeyValue{}
+	if global {
+		if app, ok := ad.AppParams[aidx]; ok {
+			kv = app.GlobalState
+		}
+	} else {
+		if ls, ok := ad.AppLocalStates[aidx]; ok {
+			kv = ls.KeyValue
+		}
+	}
+	val, exist := kv[key]
+	return val, exist, nil
 }
 
 // accountsCreateCatchpointLabel creates a catchpoint label and write it.
@@ -2186,7 +2121,7 @@ func (au *accountUpdates) commitRound(offset uint64, dbRound basics.Round, lookb
 	isCatchpointRound := ((offset + uint64(lookback+dbRound)) > 0) && (au.catchpointInterval != 0) && (0 == (uint64((offset + uint64(lookback+dbRound))) % au.catchpointInterval))
 
 	// create a copy of the deltas, round totals and protos for the range we're going to flush.
-	deltas := make([]map[basics.Address]miniAccountDelta, offset, offset)
+	deltas := make([]map[basics.Address]accountDelta, offset, offset)
 	creatableDeltas := make([]map[basics.CreatableIndex]modifiedCreatable, offset, offset)
 	storageDeltas := make([]map[basics.Address]map[storagePtr]*storageDelta, offset, offset)
 	roundTotals := make([]AccountTotals, offset+1, offset+1)
@@ -2211,63 +2146,23 @@ func (au *accountUpdates) commitRound(offset uint64, dbRound basics.Round, lookb
 		committedRoundDigest = au.roundDigest[offset+uint64(lookback)-1]
 	}
 
-	// accountUpdates stores account and app deltas separately, but
-	// catchpoints expect unified deltas, keyed off of address.
-	// Look up initial account states here.
-	fullDeltas := make([]map[basics.Address]accountDelta, len(deltas))
-	for i := range deltas {
-		rndDelta := deltas[i]
-		smap := storageDeltas[i]
-
-		fullRndDelta := make(map[basics.Address]accountDelta, len(rndDelta)+len(smap))
-		for addr := range rndDelta {
-			old, err := au.fullLookup(dbRound+basics.Round(i), addr, false)
-			if err != nil {
-				au.log.Warnf("commitRound: fullLookup failed for %v at %d: %v", addr, dbRound+basics.Round(i), err)
-				return
-			}
-			delta := accountDelta{old: old, new: old}
-			fullRndDelta[addr] = delta
-		}
-
-		for addr := range smap {
-			if _, ok := fullRndDelta[addr]; ok {
-				continue
-			}
-			old, err := au.fullLookup(dbRound+basics.Round(i), addr, false)
-			if err != nil {
-				au.log.Warnf("commitRound: fullLookup failed for %v at %d: %v", addr, dbRound+basics.Round(i), err)
-				return
-			}
-			delta := accountDelta{old: old, new: old}
-			fullRndDelta[addr] = delta
-		}
-		fullDeltas[i] = fullRndDelta
-	}
-
 	au.accountsMu.RUnlock()
 
-	// accountUpdates stores account and app deltas separately, but
-	// catchpoints expect unified deltas, keyed off of address.
+	// accountUpdates stores account and app deltas separately for the current round,
+	// but catchpoints and accountdb expect unified deltas, keyed off of address.
 	// Unify the deltas here.
-	for i, rndDelta := range deltas {
-		for addr, mini := range rndDelta {
-			delta := fullDeltas[i][addr]
-			delta.new = applyMiniDelta(delta.new, mini)
-			fullDeltas[i][addr] = delta
-		}
-
+	for i := range deltas {
 		smap := storageDeltas[i]
 		for addr, rndDelta := range smap {
 			for aapp, storeDelta := range rndDelta {
 				var err error
-				delta := fullDeltas[i][addr]
+				delta := deltas[i][addr]
 				delta.new, err = applyStorageDelta(delta.new, aapp, storeDelta)
 				if err != nil {
 					au.log.Warnf("commitRound: unable to apply storage delta: %v", err)
 					return
 				}
-				fullDeltas[i][addr] = delta
+				deltas[i][addr] = delta
 			}
 		}
 	}
@@ -2337,18 +2232,13 @@ func (au *accountUpdates) commitRound(offset uint64, dbRound basics.Round, lookb
 			if err != nil {
 				return err
 			}
-
-			err = storageNewRound(tx, storageDeltas[i], au.log)
-			if err != nil {
-				return err
-			}
 		}
 		err = totalsNewRounds(tx, deltas[:offset], roundTotals[1:offset+1], protos[1:offset+1])
 		if err != nil {
 			return err
 		}
 
-		err = au.accountsUpdateBalances(fullDeltas, offset)
+		err = au.accountsUpdateBalances(deltas, offset)
 		if err != nil {
 			return err
 		}

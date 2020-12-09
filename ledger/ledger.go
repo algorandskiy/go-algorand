@@ -460,12 +460,12 @@ func (l *Ledger) Lookup(rnd basics.Round, addr basics.Address) (basics.AccountDa
 	defer l.trackerMu.RUnlock()
 
 	// Intentionally apply (pending) rewards up to rnd.
-	mini, err := l.accts.LookupWithRewards(rnd, addr)
+	ad, err := l.accts.LookupWithRewards(rnd, addr)
 	if err != nil {
 		return basics.AccountData{}, err
 	}
 
-	return mini, nil
+	return ad, nil
 }
 
 // LookupWithoutRewards is like lookup but does not apply pending rewards up
@@ -475,19 +475,12 @@ func (l *Ledger) LookupWithoutRewards(rnd basics.Round, addr basics.Address) (ba
 	l.trackerMu.RLock()
 	defer l.trackerMu.RUnlock()
 
-	mini, validThrough, err := l.accts.LookupWithoutRewards(rnd, addr)
+	ad, validThrough, err := l.accts.LookupWithoutRewards(rnd, addr)
 	if err != nil {
 		return basics.AccountData{}, basics.Round(0), err
 	}
 
-	return mini, validThrough, nil
-}
-
-// FullLookup is like Lookup but it includes application key-value pairs.
-func (l *Ledger) FullLookup(rnd basics.Round, addr basics.Address) (basics.AccountData, error) {
-	l.trackerMu.RLock()
-	defer l.trackerMu.RUnlock()
-	return l.accts.FullLookup(rnd, addr, true)
+	return ad, validThrough, nil
 }
 
 // Totals returns the totals of all accounts at the end of round rnd.

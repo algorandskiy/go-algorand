@@ -75,22 +75,11 @@ type catchpointWriter struct {
 	accountsIterator  encodedAccountsBatchIter
 }
 
-type storageData struct {
-	_struct struct{} `codec:",omitempty,omitemptyarray"`
-
-	Aidx   uint64 `codec:"i"`
-	Global bool   `codec:"g"`
-	Key    []byte `codec:"k,allocbound=maxAppKeyValueLen"`
-	Vtype  uint64 `codec:"t"`
-	Venc   []byte `codec:"v,allocbound=maxAppKeyValueLen"`
-}
-
 type encodedBalanceRecord struct {
 	_struct struct{} `codec:",omitempty,omitemptyarray"`
 
-	Address         basics.Address `codec:"pk,allocbound=crypto.DigestSize"`
-	MiniAccountData msgp.Raw       `codec:"ad,allocbound=basics.MaxEncodedAccountDataSize"`
-	StorageData     []storageData  `codec:"sd,allocbound=maxEncodedAppStateEntries"`
+	Address     basics.Address `codec:"pk,allocbound=crypto.DigestSize"`
+	AccountData msgp.Raw       `codec:"ad,allocbound=basics.MaxEncodedAccountDataSize"`
 }
 
 // CatchpointFileHeader is the content we would have in the "content.msgpack" file in the catchpoint tar archive.
