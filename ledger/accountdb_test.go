@@ -988,3 +988,321 @@ func BenchmarkWriteCatchpointStagingBalances(b *testing.B) {
 		})
 	}
 }
+
+func BenchmarkStorageTableLayout2(b *testing.B) {
+	genesisInitState, _ := testGenerateInitState(b, protocol.ConsensusCurrentVersion)
+	const inMem = false
+	log := logging.TestingLog(b)
+	cfg := config.GetDefaultLocal()
+	cfg.Archival = false
+	log.SetLevel(logging.Warn)
+	dbBaseFileName := strings.Replace(b.Name(), "/", "_", -1)
+	l, err := OpenLedger(log, dbBaseFileName, inMem, genesisInitState, cfg)
+	require.NoErrorf(b, err, "could not open ledger filename : %s", dbBaseFileName)
+	defer func() {
+		l.Close()
+		os.Remove(dbBaseFileName + ".block.sqlite")
+		os.Remove(dbBaseFileName + ".tracker.sqlite")
+	}()
+	_, err = l.trackerDBs.wdb.Handle.Exec("CREATE TABLE storage(groupid INTEGER PRIMARY KEY, groupdata BLOB, ctype int)")
+	require.NoError(b, err)
+	randomData := make([]byte, 3900)
+	crypto.RandBytes(randomData)
+	tx, err := l.trackerDBs.wdb.Handle.BeginTx(context.Background(), nil)
+	require.NoError(b, err)
+	insertStmt, err := tx.Prepare("INSERT INTO storage(groupid, groupdata, ctype) values(?, ?, ?)")
+	require.NoError(b, err)
+	dataSize := 1000000
+	for i := 0; i < dataSize; i++ {
+		ctype := 0
+		if i%2 == 0 {
+			ctype = 1
+		}
+		_, err = insertStmt.Exec(i, randomData, ctype)
+		require.NoError(b, err)
+	}
+	insertStmt.Close()
+	err = tx.Commit()
+	require.NoError(b, err)
+
+	b.Run("RandomRead", func(b *testing.B) {
+		tx, err := l.trackerDBs.wdb.Handle.BeginTx(context.Background(), nil)
+		require.NoError(b, err)
+		readStmt, err := tx.Prepare("SELECT groupdata, ctype FROM storage WHERE groupid=?")
+		require.NoError(b, err)
+		entries := rand.Perm(dataSize)
+
+		if b.N < dataSize {
+			b.N = dataSize
+		}
+
+		b.ResetTimer()
+		var groupdata []byte
+		var ctype int
+		for p := 0; p < b.N; p++ {
+			for _, i := range entries {
+				sqlRow := readStmt.QueryRow(i)
+				sqlRow.Scan(&groupdata, &ctype)
+				require.NoError(b, err)
+				p++
+				if p == b.N {
+					break
+				}
+			}
+		}
+		b.StopTimer()
+		readStmt.Close()
+
+		err = tx.Commit()
+		require.NoError(b, err)
+	})
+
+	b.Run("RandomWrite", func(b *testing.B) {
+		tx, err := l.trackerDBs.wdb.Handle.BeginTx(context.Background(), nil)
+		require.NoError(b, err)
+		updateStmt, err := tx.Prepare("UPDATE storage SET groupdata=?, ctype=? WHERE groupid=?")
+		require.NoError(b, err)
+		entries := rand.Perm(dataSize)
+		crypto.RandBytes(randomData)
+
+		if b.N < dataSize {
+			b.N = dataSize
+		}
+
+		b.ResetTimer()
+		for p := 0; p < b.N; p++ {
+			for a, i := range entries {
+				ctype := 0
+				if a%2 == 0 {
+					ctype = 1
+				}
+				_, err = updateStmt.Exec(randomData, ctype, i)
+				require.NoError(b, err)
+				p++
+				if p == b.N {
+					break
+				}
+			}
+		}
+		b.StopTimer()
+		updateStmt.Close()
+
+		err = tx.Commit()
+		require.NoError(b, err)
+	})
+}
+
+func BenchmarkStorageTableLayout3(b *testing.B) {
+	genesisInitState, _ := testGenerateInitState(b, protocol.ConsensusCurrentVersion)
+	const inMem = false
+	log := logging.TestingLog(b)
+	cfg := config.GetDefaultLocal()
+	cfg.Archival = false
+	log.SetLevel(logging.Warn)
+	dbBaseFileName := strings.Replace(b.Name(), "/", "_", -1)
+	l, err := OpenLedger(log, dbBaseFileName, inMem, genesisInitState, cfg)
+	require.NoErrorf(b, err, "could not open ledger filename : %s", dbBaseFileName)
+	defer func() {
+		l.Close()
+		os.Remove(dbBaseFileName + ".block.sqlite")
+		os.Remove(dbBaseFileName + ".tracker.sqlite")
+	}()
+
+	makeAddr := func(i int) basics.Address {
+		return basics.Address(
+			crypto.Hash([]byte{
+				byte(i % 256),
+				byte((i / 256) % 256),
+				byte((i / 65536) % 256),
+				byte((i / 16777216) % 256),
+			}))
+	}
+
+	makeGroupid := func(i int) int {
+		return i % 7
+	}
+
+	_, err = l.trackerDBs.wdb.Handle.Exec("CREATE TABLE storage(useraddrs BLOB, groupid INTEGER, groupdata BLOB, ctype int, PRIMARY KEY (useraddrs, groupid))")
+	require.NoError(b, err)
+	randomData := make([]byte, 3900)
+	crypto.RandBytes(randomData)
+	tx, err := l.trackerDBs.wdb.Handle.BeginTx(context.Background(), nil)
+	require.NoError(b, err)
+	insertStmt, err := tx.Prepare("INSERT INTO storage(useraddrs, groupid, groupdata, ctype) values(?, ?, ?, ?)")
+	require.NoError(b, err)
+	dataSize := 1000000
+	for i := 0; i < dataSize; i++ {
+		ctype := 0
+		if i%2 == 0 {
+			ctype = 1
+		}
+		addr := makeAddr(i)
+		_, err = insertStmt.Exec(addr[:], makeGroupid(i), randomData, ctype)
+		require.NoErrorf(b, err, "i=%d", i)
+	}
+	insertStmt.Close()
+	err = tx.Commit()
+	require.NoError(b, err)
+
+	b.Run("RandomRead", func(b *testing.B) {
+		tx, err := l.trackerDBs.rdb.Handle.BeginTx(context.Background(), nil)
+		require.NoError(b, err)
+		readStmt, err := tx.Prepare("SELECT groupdata, ctype FROM storage WHERE useraddrs=? AND groupid=?")
+		require.NoError(b, err)
+		entries := rand.Perm(dataSize)
+
+		if b.N < dataSize {
+			b.N = dataSize
+		}
+
+		b.ResetTimer()
+		var groupdata []byte
+		var ctype int
+		for p := 0; p < b.N; p++ {
+			for _, i := range entries {
+				addr := makeAddr(i)
+				sqlRow := readStmt.QueryRow(addr[:], makeGroupid(i))
+				sqlRow.Scan(&groupdata, &ctype)
+				require.NoError(b, err)
+				p++
+				if p == b.N {
+					break
+				}
+			}
+		}
+		b.StopTimer()
+		readStmt.Close()
+
+		err = tx.Commit()
+		require.NoError(b, err)
+	})
+
+	b.Run("RandomWrite", func(b *testing.B) {
+		tx, err := l.trackerDBs.rdb.Handle.BeginTx(context.Background(), nil)
+		require.NoError(b, err)
+		updateStmt, err := tx.Prepare("UPDATE storage SET groupdata=?, ctype=? WHERE useraddrs=? AND groupid=?")
+		require.NoError(b, err)
+		entries := rand.Perm(dataSize)
+		crypto.RandBytes(randomData)
+
+		if b.N < dataSize {
+			b.N = dataSize
+		}
+
+		b.ResetTimer()
+		for p := 0; p < b.N; p++ {
+			for a, i := range entries {
+				ctype := 0
+				if a%2 == 0 {
+					ctype = 1
+				}
+				addr := makeAddr(i)
+				_, err = updateStmt.Exec(randomData, ctype, addr[:], makeGroupid(i))
+				require.NoError(b, err)
+				p++
+				if p == b.N {
+					break
+				}
+			}
+		}
+		b.StopTimer()
+		updateStmt.Close()
+
+		err = tx.Commit()
+		require.NoError(b, err)
+	})
+}
+
+func BenchmarkStorageTableLayout1(b *testing.B) {
+	genesisInitState, _ := testGenerateInitState(b, protocol.ConsensusCurrentVersion)
+	const inMem = false
+	log := logging.TestingLog(b)
+	cfg := config.GetDefaultLocal()
+	cfg.Archival = false
+	log.SetLevel(logging.Warn)
+	dbBaseFileName := strings.Replace(b.Name(), "/", "_", -1)
+	l, err := OpenLedger(log, dbBaseFileName, inMem, genesisInitState, cfg)
+	require.NoErrorf(b, err, "could not open ledger filename : %s", dbBaseFileName)
+	defer func() {
+		l.Close()
+		os.Remove(dbBaseFileName + ".block.sqlite")
+		os.Remove(dbBaseFileName + ".tracker.sqlite")
+	}()
+	_, err = l.trackerDBs.wdb.Handle.Exec("CREATE TABLE storage(groupid INTEGER PRIMARY KEY, groupdata BLOB)")
+	require.NoError(b, err)
+	randomData := make([]byte, 3900)
+	crypto.RandBytes(randomData)
+	tx, err := l.trackerDBs.wdb.Handle.BeginTx(context.Background(), nil)
+	require.NoError(b, err)
+	insertStmt, err := tx.Prepare("INSERT INTO storage(groupid, groupdata) values(?, ?)")
+	require.NoError(b, err)
+	dataSize := 1000000
+	for i := 0; i < dataSize; i++ {
+		_, err = insertStmt.Exec(i, randomData)
+		require.NoError(b, err)
+	}
+	insertStmt.Close()
+	err = tx.Commit()
+	require.NoError(b, err)
+
+	b.Run("RandomRead", func(b *testing.B) {
+		tx, err := l.trackerDBs.rdb.Handle.BeginTx(context.Background(), nil)
+		require.NoError(b, err)
+		readStmt, err := tx.Prepare("SELECT groupdata FROM storage WHERE groupid=?")
+		require.NoError(b, err)
+		entries := rand.Perm(dataSize)
+
+		if b.N < dataSize {
+			b.N = dataSize
+		}
+
+		b.ResetTimer()
+		var groupdata []byte
+		for p := 0; p < b.N; p++ {
+			for _, i := range entries {
+				sqlRow := readStmt.QueryRow(i)
+				sqlRow.Scan(&groupdata)
+				require.NoError(b, err)
+				p++
+				if p == b.N {
+					break
+				}
+			}
+		}
+		b.StopTimer()
+		readStmt.Close()
+
+		err = tx.Commit()
+		require.NoError(b, err)
+	})
+
+	b.Run("RandomWrite", func(b *testing.B) {
+		tx, err := l.trackerDBs.wdb.Handle.BeginTx(context.Background(), nil)
+		require.NoError(b, err)
+		updateStmt, err := tx.Prepare("UPDATE storage SET groupdata=? WHERE groupid=?")
+		require.NoError(b, err)
+		entries := rand.Perm(dataSize)
+		crypto.RandBytes(randomData)
+
+		if b.N < dataSize {
+			b.N = dataSize
+		}
+
+		b.ResetTimer()
+		for p := 0; p < b.N; p++ {
+			for _, i := range entries {
+				_, err = updateStmt.Exec(randomData, i)
+				require.NoError(b, err)
+				p++
+				if p == b.N {
+					break
+				}
+			}
+		}
+		b.StopTimer()
+		updateStmt.Close()
+
+		err = tx.Commit()
+		require.NoError(b, err)
+	})
+}
