@@ -67,7 +67,7 @@ func randomAccountData(rewardsLevel uint64) basics.AccountData {
 	return data
 }
 
-func randomFullAccountData(rewardsLevel, lastCreatableID uint64) (basics.AccountData, uint64) {
+func randomFullAccountData(rewardsLevel, lastCreatableID uint64, acctType randAccountType) (basics.AccountData, uint64) {
 	data := randomAccountData(rewardsLevel)
 
 	crypto.RandBytes(data.VoteID[:])
@@ -99,9 +99,12 @@ func randomFullAccountData(rewardsLevel, lastCreatableID uint64) (basics.Account
 	}
 	if 1 == (crypto.RandUint64() % 2) {
 		// if account owns assets
-		data.Assets = make(map[basics.AssetIndex]basics.AssetHolding)
-		ownedAssetsCount := crypto.RandUint64()%20 + 1
-		for i := uint64(0); i < ownedAssetsCount; i++ {
+		ownedAssetsCount := int(crypto.RandUint64()%20 + 1)
+		if acctType == heavyAssetAccount {
+			ownedAssetsCount = 1000 + int(crypto.RandUint64()%512)
+		}
+		data.Assets = make(map[basics.AssetIndex]basics.AssetHolding, ownedAssetsCount)
+		for i := 0; i < ownedAssetsCount; i++ {
 			ah := basics.AssetHolding{
 				Amount: crypto.RandUint64(),
 				Frozen: (crypto.RandUint64()%2 == 0),
@@ -213,16 +216,24 @@ func randomFullAccountData(rewardsLevel, lastCreatableID uint64) (basics.Account
 	return data, lastCreatableID
 }
 
-func randomAccounts(niter int, simpleAccounts bool) map[basics.Address]basics.AccountData {
-	res := make(map[basics.Address]basics.AccountData)
-	if simpleAccounts {
+type randAccountType int
+
+const (
+	simpleAccount randAccountType = iota
+	fullAccount
+	heavyAssetAccount
+)
+
+func randomAccounts(niter int, acctType randAccountType) map[basics.Address]basics.AccountData {
+	res := make(map[basics.Address]basics.AccountData, niter)
+	if acctType == simpleAccount {
 		for i := 0; i < niter; i++ {
 			res[randomAddress()] = randomAccountData(0)
 		}
 	} else {
-		lastCreatableID := crypto.RandUint64() % 512
+		lastCreatableID := 1000 + crypto.RandUint64()%4096
 		for i := 0; i < niter; i++ {
-			res[randomAddress()], lastCreatableID = randomFullAccountData(0, lastCreatableID)
+			res[randomAddress()], lastCreatableID = randomFullAccountData(0, lastCreatableID, acctType)
 		}
 	}
 	return res
@@ -281,7 +292,7 @@ func randomDeltasImpl(niter int, base map[basics.Address]basics.AccountData, rew
 			if simple {
 				new = randomAccountData(rewardsLevel)
 			} else {
-				new, lastCreatableID = randomFullAccountData(rewardsLevel, lastCreatableID)
+				new, lastCreatableID = randomFullAccountData(rewardsLevel, lastCreatableID, fullAccount)
 			}
 			updates.Upsert(addr, new)
 			imbalance += int64(old.WithUpdatedRewards(proto, rewardsLevel).MicroAlgos.Raw - new.MicroAlgos.Raw)
@@ -298,7 +309,7 @@ func randomDeltasImpl(niter int, base map[basics.Address]basics.AccountData, rew
 		if simple {
 			new = randomAccountData(rewardsLevel)
 		} else {
-			new, lastCreatableID = randomFullAccountData(rewardsLevel, lastCreatableID)
+			new, lastCreatableID = randomFullAccountData(rewardsLevel, lastCreatableID, fullAccount)
 		}
 		updates.Upsert(addr, new)
 		imbalance += int64(old.WithUpdatedRewards(proto, rewardsLevel).MicroAlgos.Raw - new.MicroAlgos.Raw)
@@ -352,9 +363,13 @@ func checkAccounts(t *testing.T, tx *sql.Tx, rnd basics.Round, accts map[basics.
 	var totalOnline, totalOffline, totalNotPart uint64
 
 	for addr, data := range accts {
-		pad, err := aq.lookup(addr)
-		d := pad.pad.AccountData
+		dbad, err := aq.lookupFull(addr)
+		d := dbad.pad.AccountData
 		require.NoError(t, err)
+		// res := reflect.DeepEqual(data, d)
+		// if !res {
+		// 	panic(addr)
+		// }
 		require.Equal(t, d, data)
 
 		switch d.Status {
@@ -371,7 +386,23 @@ func checkAccounts(t *testing.T, tx *sql.Tx, rnd basics.Round, accts map[basics.
 
 	all, err := accountsAll(tx)
 	require.NoError(t, err)
-	require.Equal(t, all, accts)
+	assetsThreshold := config.Consensus[protocol.ConsensusV18].MaxAssetsPerAccount
+	acctsExt := make(map[basics.Address]PersistedAccountData, len(accts))
+	for a, d := range accts {
+		pad := PersistedAccountData{AccountData: d}
+		if len(d.Assets) > assetsThreshold {
+			pad.ExtendedAssetHolding.convertToGroups(d.Assets)
+		}
+		acctsExt[a] = pad
+	}
+	// clear AssetGroupKey since convertToGroups does not fill them
+	for a, pad := range all {
+		for gi := 0; gi < len(pad.ExtendedAssetHolding.Groups); gi++ {
+			pad.ExtendedAssetHolding.Groups[gi].AssetGroupKey = 0
+		}
+		all[a] = pad
+	}
+	require.Equal(t, all, acctsExt)
 
 	totals, err := accountsTotals(tx, false)
 	require.NoError(t, err)
@@ -438,7 +469,7 @@ func TestAccountDBInit(t *testing.T) {
 	require.NoError(t, err)
 	defer tx.Rollback()
 
-	accts := randomAccounts(20, true)
+	accts := randomAccounts(20, simpleAccount)
 	err = accountsInit(tx, accts, proto)
 	require.NoError(t, err)
 	checkAccounts(t, tx, 0, accts)
@@ -527,7 +558,62 @@ func TestAccountDBRound(t *testing.T) {
 	require.NoError(t, err)
 	defer tx.Rollback()
 
-	accts := randomAccounts(20, true)
+	accts := randomAccounts(20, simpleAccount)
+	err = accountsInit(tx, accts, proto)
+	require.NoError(t, err)
+	checkAccounts(t, tx, 0, accts)
+
+	// used to determine how many creatables element will be in the test per iteration
+	numElementsPerSegement := 10
+
+	// lastCreatableID stores asset or app max used index to get rid of conflicts
+	lastCreatableID := crypto.RandUint64() % 512
+	ctbsList, randomCtbs := randomCreatables(numElementsPerSegement)
+	expectedDbImage := make(map[basics.CreatableIndex]ledgercore.ModifiedCreatable)
+	var baseAccounts lruAccounts
+	baseAccounts.init(nil, 100, 80)
+	for i := 1; i < 10; i++ {
+		var updates ledgercore.AccountDeltas
+		var newaccts map[basics.Address]basics.AccountData
+		updates, newaccts, _, lastCreatableID = randomDeltasFull(20, accts, 0, lastCreatableID)
+		accts = newaccts
+		ctbsWithDeletes := randomCreatableSampling(i, ctbsList, randomCtbs,
+			expectedDbImage, numElementsPerSegement)
+
+		updatesCnt := makeCompactAccountDeltas([]ledgercore.AccountDeltas{updates}, baseAccounts)
+		err = updatesCnt.accountsLoadOld(tx)
+		require.NoError(t, err)
+		err = totalsNewRounds(tx, []ledgercore.AccountDeltas{updates}, updatesCnt, []ledgercore.AccountTotals{{}}, []config.ConsensusParams{proto})
+		require.NoError(t, err)
+		_, err = accountsNewRound(tx, updatesCnt, ctbsWithDeletes, proto, basics.Round(i))
+		require.NoError(t, err)
+		err = updateAccountsRound(tx, basics.Round(i), 0)
+		require.NoError(t, err)
+		checkAccounts(t, tx, basics.Round(i), accts)
+		checkCreatables(t, tx, i, expectedDbImage)
+	}
+}
+
+func TestAccountDBRoundLarge(t *testing.T) {
+	proto := config.Consensus[protocol.ConsensusCurrentVersion]
+
+	dbs, _ := dbOpenTest(t, true)
+	setDbLogging(t, dbs)
+	defer dbs.Close()
+
+	tx, err := dbs.Wdb.Handle.Begin()
+	require.NoError(t, err)
+	defer tx.Rollback()
+
+	accts := randomAccounts(20, heavyAssetAccount)
+	largeAcctCount := 0
+	for _, v := range accts {
+		if len(v.Assets) > 1000 {
+			largeAcctCount++
+		}
+	}
+	// require.Greater(t, largeAcctCount, 1)
+
 	err = accountsInit(tx, accts, proto)
 	require.NoError(t, err)
 	checkAccounts(t, tx, 0, accts)
@@ -1381,8 +1467,10 @@ func genExtendedHolding(t *testing.T, spec []groupSpec) (e ExtendedAssetHolding)
 			am[s.count-1] = uint64(s.end)
 		}
 		e.Groups[i].groupData = AssetsHoldingGroupData{AssetOffsets: ao, Amounts: am, Frozens: make([]bool, len(ao))}
+		e.Groups[i].loaded = true
 		e.Count += uint32(s.count)
 	}
+	e.loaded = true
 
 	a := require.New(t)
 	for _, s := range spec {
@@ -2284,7 +2372,7 @@ func TestAccountsNewCRUD(t *testing.T) {
 	// len(old.Assets) > assetsThreshold
 	// new count > assetsThreshold => delete most and update, create some
 
-	holdingMap, err := loadHoldings(qs.loadAssetHoldingGroupStmt, old.pad.ExtendedAssetHolding)
+	holdingMap, _, err := loadHoldings(qs.loadAssetHoldingGroupStmt, old.pad.ExtendedAssetHolding)
 	a.Equal(len(savedAssets), len(holdingMap))
 	for k := range savedAssets {
 		a.Contains(holdingMap, k)

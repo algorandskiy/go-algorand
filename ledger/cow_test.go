@@ -103,7 +103,7 @@ func applyUpdates(cow *roundCowState, updates ledgercore.AccountDeltas) {
 }
 
 func TestCowBalance(t *testing.T) {
-	accts0 := randomAccounts(20, true)
+	accts0 := randomAccounts(20, simpleAccount)
 	ml := mockLedger{balanceMap: accts0}
 
 	c0 := makeRoundCowState(&ml, bookkeeping.BlockHeader{}, 0, 0)

@@ -181,7 +181,7 @@ func (ml *mockLedgerForTracker) GenesisProto() config.ConsensusParams {
 // function has a conceptual flaw in that it attempts to load the entire balances into memory. This might
 // not work if we have large number of balances. On these unit testing, however, it's not the case, and it's
 // safe to call it.
-func (au *accountUpdates) allBalances(rnd basics.Round) (bals map[basics.Address]basics.AccountData, err error) {
+func (au *accountUpdates) allBalances(rnd basics.Round) (bals map[basics.Address]PersistedAccountData, err error) {
 	au.accountsMu.RLock()
 	defer au.accountsMu.RUnlock()
 	offsetLimit, err := au.roundOffset(rnd)
@@ -202,7 +202,7 @@ func (au *accountUpdates) allBalances(rnd basics.Round) (bals map[basics.Address
 	for offset := uint64(0); offset < offsetLimit; offset++ {
 		for i := 0; i < au.deltas[offset].Len(); i++ {
 			addr, delta := au.deltas[offset].GetByIdx(i)
-			bals[addr] = delta
+			bals[addr] = PersistedAccountData{AccountData: delta}
 		}
 	}
 	return
@@ -317,7 +317,7 @@ func TestAcctUpdates(t *testing.T) {
 	ml := makeMockLedgerForTracker(t, true, 10, protocol.ConsensusCurrentVersion)
 	defer ml.Close()
 
-	accts := []map[basics.Address]basics.AccountData{randomAccounts(20, true)}
+	accts := []map[basics.Address]basics.AccountData{randomAccounts(20, simpleAccount)}
 	rewardsLevels := []uint64{0}
 
 	pooldata := basics.AccountData{}
@@ -401,7 +401,7 @@ func TestAcctUpdatesFastUpdates(t *testing.T) {
 	ml := makeMockLedgerForTracker(t, true, 10, protocol.ConsensusCurrentVersion)
 	defer ml.Close()
 
-	accts := []map[basics.Address]basics.AccountData{randomAccounts(20, true)}
+	accts := []map[basics.Address]basics.AccountData{randomAccounts(20, simpleAccount)}
 	rewardsLevels := []uint64{0}
 
 	pooldata := basics.AccountData{}
@@ -493,7 +493,7 @@ func BenchmarkBalancesChanges(b *testing.B) {
 	defer ml.Close()
 
 	accountsCount := 5000
-	accts := []map[basics.Address]basics.AccountData{randomAccounts(accountsCount, true)}
+	accts := []map[basics.Address]basics.AccountData{randomAccounts(accountsCount, simpleAccount)}
 	rewardsLevels := []uint64{0}
 
 	pooldata := basics.AccountData{}
@@ -621,7 +621,7 @@ func TestLargeAccountCountCatchpointGeneration(t *testing.T) {
 
 	ml := makeMockLedgerForTracker(t, true, 10, testProtocolVersion)
 	defer ml.Close()
-	accts := []map[basics.Address]basics.AccountData{randomAccounts(100000, true)}
+	accts := []map[basics.Address]basics.AccountData{randomAccounts(100000, simpleAccount)}
 	rewardsLevels := []uint64{0}
 
 	pooldata := basics.AccountData{}
@@ -711,7 +711,7 @@ func TestAcctUpdatesUpdatesCorrectness(t *testing.T) {
 		ml := makeMockLedgerForTracker(t, inMemory, 10, testProtocolVersion)
 		defer ml.Close()
 
-		accts := []map[basics.Address]basics.AccountData{randomAccounts(9, true)}
+		accts := []map[basics.Address]basics.AccountData{randomAccounts(9, simpleAccount)}
 
 		pooldata := basics.AccountData{}
 		pooldata.MicroAlgos.Raw = 1000 * 1000 * 1000 * 1000
@@ -871,7 +871,7 @@ func TestAcctUpdatesDeleteStoredCatchpoints(t *testing.T) {
 	ml := makeMockLedgerForTracker(t, true, 10, protocol.ConsensusCurrentVersion)
 	defer ml.Close()
 
-	accts := []map[basics.Address]basics.AccountData{randomAccounts(20, true)}
+	accts := []map[basics.Address]basics.AccountData{randomAccounts(20, simpleAccount)}
 	au := &accountUpdates{}
 	conf := config.GetDefaultLocal()
 	conf.CatchpointInterval = 1
@@ -1105,7 +1105,7 @@ func TestGetCatchpointStream(t *testing.T) {
 	ml := makeMockLedgerForTracker(t, true, 10, protocol.ConsensusCurrentVersion)
 	defer ml.Close()
 
-	accts := []map[basics.Address]basics.AccountData{randomAccounts(20, true)}
+	accts := []map[basics.Address]basics.AccountData{randomAccounts(20, simpleAccount)}
 	au := &accountUpdates{}
 	conf := config.GetDefaultLocal()
 	conf.CatchpointInterval = 1
@@ -1173,14 +1173,20 @@ func TestGetCatchpointStream(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func accountsAll(tx *sql.Tx) (bals map[basics.Address]basics.AccountData, err error) {
+func accountsAll(tx *sql.Tx) (bals map[basics.Address]PersistedAccountData, err error) {
 	rows, err := tx.Query("SELECT address, data FROM accountbase")
 	if err != nil {
 		return
 	}
 	defer rows.Close()
 
-	bals = make(map[basics.Address]basics.AccountData)
+	stmt, err := tx.Prepare("SELECT data FROM accountext WHERE id=?")
+	if err != nil {
+		return
+	}
+	defer stmt.Close()
+
+	bals = make(map[basics.Address]PersistedAccountData)
 	for rows.Next() {
 		var addrbuf []byte
 		var buf []byte
@@ -1189,8 +1195,8 @@ func accountsAll(tx *sql.Tx) (bals map[basics.Address]basics.AccountData, err er
 			return
 		}
 
-		var data basics.AccountData
-		err = protocol.Decode(buf, &data)
+		var pad PersistedAccountData
+		err = protocol.Decode(buf, &pad)
 		if err != nil {
 			return
 		}
@@ -1200,9 +1206,12 @@ func accountsAll(tx *sql.Tx) (bals map[basics.Address]basics.AccountData, err er
 			err = fmt.Errorf("Account DB address length mismatch: %d != %d", len(addrbuf), len(addr))
 			return
 		}
+		if pad.ExtendedAssetHolding.Count > 0 {
+			pad.AccountData.Assets, pad.ExtendedAssetHolding, err = loadHoldings(stmt, pad.ExtendedAssetHolding)
+		}
 
 		copy(addr[:], addrbuf)
-		bals[addr] = data
+		bals[addr] = pad
 	}
 
 	err = rows.Err()
@@ -1215,7 +1224,7 @@ func BenchmarkLargeMerkleTrieRebuild(b *testing.B) {
 	ml := makeMockLedgerForTracker(b, true, 10, protocol.ConsensusCurrentVersion)
 	defer ml.Close()
 
-	accts := []map[basics.Address]basics.AccountData{randomAccounts(5, true)}
+	accts := []map[basics.Address]basics.AccountData{randomAccounts(5, simpleAccount)}
 
 	pooldata := basics.AccountData{}
 	pooldata.MicroAlgos.Raw = 1000 * 1000 * 1000 * 1000
@@ -1275,7 +1284,7 @@ func BenchmarkLargeCatchpointWriting(b *testing.B) {
 	ml := makeMockLedgerForTracker(b, true, 10, protocol.ConsensusCurrentVersion)
 	defer ml.Close()
 
-	accts := []map[basics.Address]basics.AccountData{randomAccounts(5, true)}
+	accts := []map[basics.Address]basics.AccountData{randomAccounts(5, simpleAccount)}
 
 	pooldata := basics.AccountData{}
 	pooldata.MicroAlgos.Raw = 1000 * 1000 * 1000 * 1000
@@ -1443,7 +1452,7 @@ func TestReproducibleCatchpointLabels(t *testing.T) {
 	ml := makeMockLedgerForTracker(t, false, 1, testProtocolVersion)
 	defer ml.Close()
 
-	accts := []map[basics.Address]basics.AccountData{randomAccounts(20, true)}
+	accts := []map[basics.Address]basics.AccountData{randomAccounts(20, simpleAccount)}
 	rewardsLevels := []uint64{0}
 
 	pooldata := basics.AccountData{}

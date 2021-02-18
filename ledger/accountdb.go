@@ -379,9 +379,12 @@ func (c *compactAccountDeltas) accountsLoadOld(tx *sql.Tx) (err error) {
 				}
 
 				// fetch holdings that are in new
-				// these are either new or modified, and needed to write back later.
-				// to figure simplify reconciliation load them
+				// these are either new or modified, and needed to be written back later.
+				// to simplify upcoming reconciliation load them now
 				_, delta := c.getByIdx(idx)
+				if len(delta.new.Assets) > 0 && len(dbad.pad.Assets) == 0 {
+					dbad.pad.Assets = make(map[basics.AssetIndex]basics.AssetHolding, len(delta.new.Assets))
+				}
 				for aidx := range delta.new.Assets {
 					if _, ok := dbad.pad.AccountData.Assets[aidx]; !ok {
 						gi, ai := dbad.pad.ExtendedAssetHolding.findAsset(aidx, 0)
@@ -392,7 +395,13 @@ func (c *compactAccountDeltas) accountsLoadOld(tx *sql.Tx) (err error) {
 								return err
 							}
 							g.loaded = true
-							dbad.pad.AccountData.Assets[aidx] = basics.AssetHolding{Amount: g.groupData.Amounts[ai], Frozen: g.groupData.Frozens[ai]}
+							_, ai = dbad.pad.ExtendedAssetHolding.findAsset(aidx, gi)
+							if ai != -1 {
+								// found!
+								dbad.pad.AccountData.Assets[aidx] = basics.AssetHolding{Amount: g.groupData.Amounts[ai], Frozen: g.groupData.Frozens[ai]}
+							} else {
+								// no such asset => newly created
+							}
 						}
 					}
 				}
@@ -641,6 +650,14 @@ func getCatchpoint(tx *sql.Tx, round basics.Round) (fileName string, catchpoint 
 	return
 }
 
+type accountsInitInserter struct {
+	stmt *sql.Stmt
+}
+
+func (ai *accountsInitInserter) Exec(args ...interface{}) (sql.Result, error) {
+	return ai.stmt.Exec(args[0], args[2])
+}
+
 // accountsInit fills the database using tx with initAccounts if the
 // database has not been initialized yet.
 //
@@ -674,9 +691,19 @@ func accountsInit(tx *sql.Tx, initAccounts map[basics.Address]basics.AccountData
 		var ot basics.OverflowTracker
 		var totals ledgercore.AccountTotals
 
+		insertBaseStmt, err := tx.Prepare("INSERT INTO accountbase (address, data) VALUES (?, ?)")
+		if err != nil {
+			return err
+		}
+		insertBase := accountsInitInserter{insertBaseStmt}
+
+		insertExt, err := tx.Prepare("INSERT INTO accountext (data) VALUES (?)")
+		if err != nil {
+			return err
+		}
+		updatedAccounts := []dbAccountData{{}}
 		for addr, data := range initAccounts {
-			_, err = tx.Exec("INSERT INTO accountbase (address, data) VALUES (?, ?)",
-				addr[:], protocol.Encode(&data))
+			_, err = accountsNewCreate(&insertBase, insertExt, addr, data, proto, updatedAccounts, 0)
 			if err != nil {
 				return err
 			}
@@ -738,13 +765,13 @@ func accountsAddNormalizedBalance(tx *sql.Tx, proto config.ConsensusParams) erro
 			return err
 		}
 
-		var data basics.AccountData
-		err = protocol.Decode(buf, &data)
+		var pad PersistedAccountData
+		err = protocol.Decode(buf, &pad)
 		if err != nil {
 			return err
 		}
 
-		normBalance := data.NormalizedOnlineBalance(proto)
+		normBalance := pad.AccountData.NormalizedOnlineBalance(proto)
 		if normBalance > 0 {
 			_, err = tx.Exec("UPDATE accountbase SET normalizedonlinebalance=? WHERE address=?", normBalance, addrbuf)
 			if err != nil {
@@ -959,6 +986,20 @@ func (qs *accountsDbQueries) lookup(addr basics.Address) (data dbAccountData, er
 	return
 }
 
+func (qs *accountsDbQueries) lookupFull(addr basics.Address) (data dbAccountData, err error) {
+	data, err = qs.lookup(addr)
+	if err != nil {
+		return
+	}
+
+	if data.pad.ExtendedAssetHolding.Count == 0 {
+		return
+	}
+
+	data.pad.Assets, data.pad.ExtendedAssetHolding, err = loadHoldings(qs.loadAssetHoldingGroupStmt, data.pad.ExtendedAssetHolding)
+	return
+}
+
 func (qs *accountsDbQueries) storeCatchpoint(ctx context.Context, round basics.Round, fileName string, catchpoint string, fileSize int64) (err error) {
 	err = db.Retry(func() (err error) {
 		_, err = qs.deleteStoredCatchpoint.ExecContext(ctx, round)
@@ -1085,34 +1126,38 @@ func (qs *accountsDbQueries) close() {
 	}
 }
 
-func loadHoldings(stmt *sql.Stmt, eah ExtendedAssetHolding) (holdings map[basics.AssetIndex]basics.AssetHolding, err error) {
+func loadHoldings(stmt *sql.Stmt, eah ExtendedAssetHolding) (map[basics.AssetIndex]basics.AssetHolding, ExtendedAssetHolding, error) {
 	if len(eah.Groups) == 0 {
-		return nil, nil
+		return nil, ExtendedAssetHolding{}, nil
 	}
-	holdings = make(map[basics.AssetIndex]basics.AssetHolding, eah.Count)
-	for _, g := range eah.Groups {
-		holdings, err = loadHoldingGroup(stmt, g, holdings)
+	var err error
+	holdings := make(map[basics.AssetIndex]basics.AssetHolding, eah.Count)
+	for gi, g := range eah.Groups {
+		holdings, eah.Groups[gi], err = loadHoldingGroup(stmt, g, holdings)
 		if err != nil {
-			return nil, err
+			return nil, ExtendedAssetHolding{}, err
 		}
 	}
-	return holdings, nil
+	eah.loaded = true
+	return holdings, eah, nil
 }
 
-func loadHoldingGroup(stmt *sql.Stmt, g AssetsHoldingGroup, holdings map[basics.AssetIndex]basics.AssetHolding) (map[basics.AssetIndex]basics.AssetHolding, error) {
+func loadHoldingGroup(stmt *sql.Stmt, g AssetsHoldingGroup, holdings map[basics.AssetIndex]basics.AssetHolding) (map[basics.AssetIndex]basics.AssetHolding, AssetsHoldingGroup, error) {
 	if holdings == nil {
 		holdings = make(map[basics.AssetIndex]basics.AssetHolding, g.Count)
 	}
-	group, err := loadAssetHoldingGroupData(stmt, g.AssetGroupKey)
+	groupData, err := loadAssetHoldingGroupData(stmt, g.AssetGroupKey)
 	if err != nil {
-		return nil, err
+		return nil, AssetsHoldingGroup{}, err
 	}
 	aidx := g.MinAssetIndex
-	for i := 0; i < len(group.AssetOffsets); i++ {
-		aidx += group.AssetOffsets[i]
-		holdings[aidx] = basics.AssetHolding{Amount: group.Amounts[i], Frozen: group.Frozens[i]}
+	for i := 0; i < len(groupData.AssetOffsets); i++ {
+		aidx += groupData.AssetOffsets[i]
+		holdings[aidx] = basics.AssetHolding{Amount: groupData.Amounts[i], Frozen: groupData.Frozens[i]}
 	}
-	return holdings, nil
+	g.groupData = groupData
+	g.loaded = true
+	return holdings, g, nil
 }
 
 func loadAssetHoldingGroupData(stmt *sql.Stmt, key int64) (group AssetsHoldingGroupData, err error) {
@@ -1151,8 +1196,8 @@ func accountsOnlineTop(tx *sql.Tx, offset, n uint64, proto config.ConsensusParam
 			return nil, err
 		}
 
-		var data basics.AccountData
-		err = protocol.Decode(buf, &data)
+		var pad PersistedAccountData
+		err = protocol.Decode(buf, &pad)
 		if err != nil {
 			return nil, err
 		}
@@ -1164,7 +1209,7 @@ func accountsOnlineTop(tx *sql.Tx, offset, n uint64, proto config.ConsensusParam
 		}
 
 		copy(addr[:], addrbuf)
-		res[addr] = accountDataToOnline(addr, &data, proto)
+		res[addr] = accountDataToOnline(addr, &pad.AccountData, proto)
 	}
 
 	return res, rows.Err()
@@ -1491,6 +1536,12 @@ func (e ExtendedAssetHolding) findAsset(aidx basics.AssetIndex, startIdx int) (i
 
 	for gi, g := range e.Groups[startIdx:] {
 		if aidx >= g.MinAssetIndex && aidx <= g.MinAssetIndex+basics.AssetIndex(g.DeltaMaxAssetIndex) {
+			if !g.loaded {
+				// groupData not loaded, but the group boundaries match
+				// return group match and -1 as asset index indicating loading is need
+				return gi, -1
+			}
+
 			// TODO: bin search
 			cur := g.MinAssetIndex
 			for ai, d := range g.groupData.AssetOffsets {
@@ -1499,11 +1550,9 @@ func (e ExtendedAssetHolding) findAsset(aidx basics.AssetIndex, startIdx int) (i
 					return gi + startIdx, ai
 				}
 			}
-			if e.Groups[gi].loaded {
-				return -1, -1
-			}
-			// groupData not loaded, but the group matches
-			return gi, -1
+
+			// the group is loaded and the asset not found
+			return -1, -1
 		}
 	}
 
@@ -1590,7 +1639,7 @@ func (e *ExtendedAssetHolding) convertToGroups(assets map[basics.AssetIndex]basi
 	e.Groups[currentGroup].DeltaMaxAssetIndex = uint64(flatten[len(flatten)-1].aidx - e.Groups[currentGroup].MinAssetIndex)
 }
 
-func accountsNewCreate(qabi *sql.Stmt, qaei *sql.Stmt, addr basics.Address, ad basics.AccountData, proto config.ConsensusParams, updatedAccounts []dbAccountData, updateIdx int) ([]dbAccountData, error) {
+func accountsNewCreate(qabi db.Executable, qaei *sql.Stmt, addr basics.Address, ad basics.AccountData, proto config.ConsensusParams, updatedAccounts []dbAccountData, updateIdx int) ([]dbAccountData, error) {
 	assetsThreshold := config.Consensus[protocol.ConsensusV18].MaxAssetsPerAccount
 	var pad PersistedAccountData
 	if len(ad.Assets) <= assetsThreshold {
@@ -1654,7 +1703,7 @@ func accountsNewUpdate(qabu, qabq, qaeu, qaei, qaed *sql.Stmt, addr basics.Addre
 	assetsThreshold := config.Consensus[protocol.ConsensusV18].MaxAssetsPerAccount
 
 	// need to reconcile asset holdings
-	// old must always have all the assets (cached in Assets field) modified in new (see accountsLoadOld)
+	// old.Assets must always have the assets modified in new (see accountsLoadOld)
 	// PersistedAccountData stores the data either in Assets field or as ExtendedHoldings
 	// this means:
 	// 1. if both old and new below the threshold then all set
@@ -1665,6 +1714,8 @@ func accountsNewUpdate(qabu, qabq, qaeu, qaei, qaed *sql.Stmt, addr basics.Addre
 	//  - if the result is above the threshold then merge in changes into group data
 	var pad PersistedAccountData
 	var err error
+	fmt.Printf("%s\n", addr.String())
+	fmt.Printf("len old assets: %d len new assets: %d\n", delta.old.pad.NumAssetHoldings(), len(delta.new.Assets))
 	if delta.old.pad.NumAssetHoldings() <= assetsThreshold && len(delta.new.Assets) <= assetsThreshold {
 		pad.AccountData = delta.new
 	} else if delta.old.pad.NumAssetHoldings() <= assetsThreshold && len(delta.new.Assets) > assetsThreshold {
@@ -1684,14 +1735,15 @@ func accountsNewUpdate(qabu, qabq, qaeu, qaei, qaed *sql.Stmt, addr basics.Addre
 				break
 			}
 		}
-	} else if delta.old.pad.NumAssetHoldings() > assetsThreshold {
+	} else { // default case: delta.old.pad.NumAssetHoldings() > assetsThreshold
 		deleted := make([]basics.AssetIndex, 0, len(delta.old.pad.Assets)) // items in old but not in new
 		updated := make([]basics.AssetIndex, 0, len(delta.new.Assets))     // items in both new and old
 		created := make([]basics.AssetIndex, 0, len(delta.new.Assets))     // items in new but not in old
 
-		pad = delta.old.pad
+		pad.AccountData = delta.new
+		oldPad := delta.old.pad
 
-		for aidx := range pad.AccountData.Assets {
+		for aidx := range oldPad.AccountData.Assets {
 			if _, ok := delta.new.Assets[aidx]; ok {
 				updated = append(updated, aidx)
 			} else {
@@ -1699,16 +1751,18 @@ func accountsNewUpdate(qabu, qabq, qaeu, qaei, qaed *sql.Stmt, addr basics.Addre
 			}
 		}
 		for aidx := range delta.new.Assets {
-			if _, ok := pad.AccountData.Assets[aidx]; ok {
+			if _, ok := oldPad.AccountData.Assets[aidx]; ok {
+				// updated = append(updated, aidx)
 				// handled above as updated
 			} else {
 				created = append(created, aidx)
 			}
 		}
-		newCount := pad.NumAssetHoldings() + len(created) - len(deleted)
+		newCount := oldPad.NumAssetHoldings() + len(created) - len(deleted)
+		fmt.Printf("newCount %d\n", newCount)
 		if newCount < assetsThreshold {
 			// Move all assets from groups to Assets field
-			assets, err := loadHoldings(qabq, pad.ExtendedAssetHolding)
+			assets, _, err := loadHoldings(qabq, oldPad.ExtendedAssetHolding)
 			if err != nil {
 				return updatedAccounts, err
 			}
@@ -1724,7 +1778,7 @@ func accountsNewUpdate(qabu, qabq, qaeu, qaei, qaed *sql.Stmt, addr basics.Addre
 			pad.AccountData.Assets = assets
 
 			// now delete all old groups
-			for _, g := range pad.ExtendedAssetHolding.Groups {
+			for _, g := range oldPad.ExtendedAssetHolding.Groups {
 				qaed.Exec(g.AssetGroupKey)
 			}
 			pad.ExtendedAssetHolding = ExtendedAssetHolding{}
@@ -1732,36 +1786,43 @@ func accountsNewUpdate(qabu, qabq, qaeu, qaei, qaed *sql.Stmt, addr basics.Addre
 			// Reconcile groups data:
 			// identify groups, load, update, then delete and insert, dump to the disk
 
-			sort.SliceStable(updated, func(i, j int) bool { return updated[i] < updated[j] })
-			gi, ai := 0, 0
-			for _, aidx := range updated {
-				gi, ai = pad.ExtendedAssetHolding.findAsset(aidx, gi)
-				if gi == -1 || ai == -1 {
-					return updatedAccounts, fmt.Errorf("failed to find asset group for %d", aidx)
-				}
-				// group data is loaded in accountsLoadOld
-				pad.ExtendedAssetHolding.Groups[gi].groupData.update(ai, delta.new.Assets[aidx])
-			}
-
-			// TODO: handle pad.NumAssetHoldings() == len(deleted)
-			sort.SliceStable(deleted, func(i, j int) bool { return deleted[i] < deleted[j] })
-			gi, ai = 0, 0
-			for _, aidx := range deleted {
-				gi, ai = pad.ExtendedAssetHolding.findAsset(aidx, gi)
-				if gi == -1 || ai == -1 {
-					return updatedAccounts, fmt.Errorf("failed to find asset group for %d", aidx)
-				}
-				// group data is loaded in accountsLoadOld
-				key := pad.ExtendedAssetHolding.Groups[gi].AssetGroupKey
-				if pad.ExtendedAssetHolding.delete(gi, ai) {
-					// the only one asset was in the group, delete the group
-					qaed.Exec(key)
+			pad.ExtendedAssetHolding = oldPad.ExtendedAssetHolding
+			if len(updated) > 0 {
+				sort.SliceStable(updated, func(i, j int) bool { return updated[i] < updated[j] })
+				gi, ai := 0, 0
+				for _, aidx := range updated {
+					gi, ai = pad.ExtendedAssetHolding.findAsset(aidx, gi)
+					if gi == -1 || ai == -1 {
+						return updatedAccounts, fmt.Errorf("failed to find asset group for %d", aidx)
+					}
+					// group data is loaded in accountsLoadOld
+					pad.ExtendedAssetHolding.Groups[gi].groupData.update(ai, delta.new.Assets[aidx])
 				}
 			}
 
-			// sort created, they do not exist in old
-			sort.SliceStable(created, func(i, j int) bool { return created[i] < created[j] })
-			pad.ExtendedAssetHolding.insert(created, delta.new.Assets)
+			if len(deleted) > 0 {
+				// TODO: handle pad.NumAssetHoldings() == len(deleted)
+				sort.SliceStable(deleted, func(i, j int) bool { return deleted[i] < deleted[j] })
+				gi, ai := 0, 0
+				for _, aidx := range deleted {
+					gi, ai = pad.ExtendedAssetHolding.findAsset(aidx, gi)
+					if gi == -1 || ai == -1 {
+						return updatedAccounts, fmt.Errorf("failed to find asset group for %d", aidx)
+					}
+					// group data is loaded in accountsLoadOld
+					key := pad.ExtendedAssetHolding.Groups[gi].AssetGroupKey
+					if pad.ExtendedAssetHolding.delete(gi, ai) {
+						// the only one asset was in the group, delete the group
+						qaed.Exec(key)
+					}
+				}
+			}
+
+			if len(created) > 0 {
+				// sort created, they do not exist in old
+				sort.SliceStable(created, func(i, j int) bool { return created[i] < created[j] })
+				pad.ExtendedAssetHolding.insert(created, delta.new.Assets)
+			}
 
 			// update DB
 			var result sql.Result
@@ -1921,6 +1982,7 @@ func accountsNewRound(tx *sql.Tx, updates compactAccountDeltas, creatables map[b
 					updatedAccounts, updatedAccountIdx)
 			} else {
 				// non-zero rowid means we had a previous value so make an update.
+				fmt.Printf("updating: %s\n", addr.String())
 				updatedAccounts, err = accountsNewUpdate(
 					q.updateStmt, q.queryGroupDataStmt,
 					q.updateGroupDataStmt, q.insertGroupDataStmt, q.deleteGroupDataStmt,

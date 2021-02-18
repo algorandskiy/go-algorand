@@ -182,7 +182,7 @@ func TestBasicCatchpointWriter(t *testing.T) {
 
 	ml := makeMockLedgerForTracker(t, true, 10, testProtocolVersion)
 	defer ml.Close()
-	accts := randomAccounts(300, false)
+	accts := randomAccounts(300, fullAccount)
 
 	au := &accountUpdates{}
 	conf := config.GetDefaultLocal()
@@ -280,7 +280,7 @@ func TestFullCatchpointWriter(t *testing.T) {
 
 	ml := makeMockLedgerForTracker(t, true, 10, testProtocolVersion)
 	defer ml.Close()
-	accts := randomAccounts(BalancesPerCatchpointFileChunk*3, false)
+	accts := randomAccounts(BalancesPerCatchpointFileChunk*3, fullAccount)
 
 	au := &accountUpdates{}
 	conf := config.GetDefaultLocal()

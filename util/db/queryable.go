@@ -33,3 +33,8 @@ type Queryable interface {
 	Query(query string, args ...interface{}) (*sql.Rows, error)
 	QueryRow(query string, args ...interface{}) *sql.Row
 }
+
+// Executable abstracts sql.Stmt for unit testing and tricky initialization
+type Executable interface {
+	Exec(args ...interface{}) (sql.Result, error)
+}
