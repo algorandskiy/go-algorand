@@ -518,7 +518,7 @@ func (au *accountUpdates) onlineTop(rnd basics.Round, voteRnd basics.Round, n ui
 					continue
 				}
 
-				modifiedAccounts[addr] = accountDataToOnline(addr, &d, proto)
+				modifiedAccounts[addr] = accountDataToOnline(addr, &d.AccountData, proto)
 			}
 		}
 
@@ -1476,11 +1476,11 @@ func (au *accountUpdates) newBlockImpl(blk bookkeeping.Block, delta ledgercore.S
 		}
 
 		newTotals.DelAccount(proto, previousAccountData, &ot)
-		newTotals.AddAccount(proto, data, &ot)
+		newTotals.AddAccount(proto, data.AccountData, &ot)
 
 		macct := au.accounts[addr]
 		macct.ndeltas++
-		macct.data = data
+		macct.data = data.AccountData
 		au.accounts[addr] = macct
 	}
 
@@ -1566,7 +1566,7 @@ func (au *accountUpdates) lookupWithRewards(rnd basics.Round, addr basics.Addres
 				offset--
 				d, ok := au.deltas[offset].Get(addr)
 				if ok {
-					return PersistedAccountData{AccountData: d}, nil
+					return PersistedAccountData{AccountData: d.AccountData}, nil
 				}
 			}
 		}
@@ -1655,18 +1655,21 @@ func (au *accountUpdates) lookupWithHolding(rnd basics.Round, addr basics.Addres
 		return
 	}
 
-	gi, _ := pad.ExtendedAssetHolding.findAsset(basics.AssetIndex(cidx), 0)
-	if gi != -1 {
-		g := pad.ExtendedAssetHolding.Groups[gi]
-		var holdings map[basics.AssetIndex]basics.AssetHolding
-		holdings, _, err = loadHoldingGroup(au.accountsq.loadAssetHoldingGroupStmt, g, nil)
-		if err != nil {
-			return
+	if ctype == basics.AssetCreatable {
+		gi, _ := pad.ExtendedAssetHolding.findAsset(basics.AssetIndex(cidx), 0)
+		if gi != -1 {
+			g := pad.ExtendedAssetHolding.Groups[gi]
+			var holdings map[basics.AssetIndex]basics.AssetHolding
+			holdings, _, err = loadHoldingGroup(au.accountsq.loadAssetHoldingGroupStmt, g, nil)
+			if err != nil {
+				return
+			}
+			_, ai := pad.ExtendedAssetHolding.findAsset(basics.AssetIndex(cidx), gi)
+			if ai != -1 {
+				data.Assets = make(map[basics.AssetIndex]basics.AssetHolding, 1)
+				data.Assets[basics.AssetIndex(cidx)] = holdings[basics.AssetIndex(cidx)]
+			}
 		}
-		if ctype == basics.AssetCreatable {
-			data.Assets[basics.AssetIndex(cidx)] = holdings[basics.AssetIndex(cidx)]
-		}
-
 	}
 
 	return
@@ -1712,7 +1715,7 @@ func (au *accountUpdates) lookupWithoutRewards(rnd basics.Round, addr basics.Add
 				if ok {
 					// the returned validThrough here is not optimal, but it still correct. We could get a more accurate value by scanning
 					// the deltas forward, but this would be time consuming loop, which might not pay off.
-					return PersistedAccountData{AccountData: d}, rnd, nil
+					return PersistedAccountData{AccountData: d.AccountData}, rnd, nil
 				}
 			}
 		} else {

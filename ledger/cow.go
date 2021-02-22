@@ -36,8 +36,8 @@ import (
 //                  ||     ||
 
 type roundCowParent interface {
-	lookup(basics.Address) (basics.AccountData, error)
-	lookupWithHolding(addr basics.Address, cidx basics.CreatableIndex, ctype basics.CreatableType) (data basics.AccountData, err error)
+	lookup(basics.Address) (PersistedAccountData, error)
+	lookupWithHolding(addr basics.Address, cidx basics.CreatableIndex, ctype basics.CreatableType) (PersistedAccountData, error)
 	checkDup(basics.Round, basics.Round, transactions.Txid, ledgercore.Txlease) error
 	txnCounter() uint64
 	getCreator(cidx basics.CreatableIndex, ctype basics.CreatableType) (basics.Address, bool, error)
@@ -85,17 +85,17 @@ func (cb *roundCowState) deltas() ledgercore.StateDelta {
 	//    SetKey/DelKey work only with sdeltas, so need to pull missing accounts
 	// 2. Call applyStorageDelta for every delta per account
 	for addr, smap := range cb.sdeltas {
-		var delta basics.AccountData
+		var delta ledgercore.AccountDataMods
 		var exist bool
 		if delta, exist = cb.mods.Accts.Get(addr); !exist {
 			ad, err := cb.lookup(addr)
 			if err != nil {
 				panic(fmt.Sprintf("fetching account data failed for addr %s: %s", addr.String(), err.Error()))
 			}
-			delta = ad
+			delta.AccountData = ad
 		}
 		for aapp, storeDelta := range smap {
-			if delta, err = applyStorageDelta(delta, aapp, storeDelta); err != nil {
+			if delta.AccountData, err = applyStorageDelta(delta.AccountData, aapp, storeDelta); err != nil {
 				panic(fmt.Sprintf("applying storage delta failed for addr %s app %d: %s", addr.String(), aapp.aidx, err.Error()))
 			}
 		}
@@ -127,25 +127,26 @@ func (cb *roundCowState) getCreator(cidx basics.CreatableIndex, ctype basics.Cre
 	return cb.lookupParent.getCreator(cidx, ctype)
 }
 
-func (cb *roundCowState) lookup(addr basics.Address) (data basics.AccountData, err error) {
+func (cb *roundCowState) lookup(addr basics.Address) (data PersistedAccountData, err error) {
 	d, ok := cb.mods.Accts.Get(addr)
 	if ok {
-		return d, nil
+		return d.AccountData, nil
 	}
 
 	return cb.lookupParent.lookup(addr)
 }
 
 // lookupWithHolding is gets account data but also fetches asset holding or app local data for a specified creatable
-func (cb *roundCowState) lookupWithHolding(addr basics.Address, cidx basics.CreatableIndex, ctype basics.CreatableType) (data basics.AccountData, err error) {
-	d, ok := cb.mods.Accts.Get(addr)
+func (cb *roundCowState) lookupWithHolding(addr basics.Address, cidx basics.CreatableIndex, ctype basics.CreatableType) (data PersistedAccountData, err error) {
+	add, ok := cb.mods.Accts.Get(addr)
 	if ok {
-		if d.HoldingExists(cidx, ctype) {
-			return d, nil
+		if add.AccountData.HasHolding(cidx, ctype) {
+			return add.AccountData, nil
 		}
 	}
 
-	d, err = cb.lookupParent.lookupWithHolding(addr, cidx, ctype)
+	d, err := cb.lookupParent.lookupWithHolding(addr, cidx, ctype)
+	cb.mods.Accts.Register(addr, d) // save ExtendedHolding portion if any for later reference
 	return d, err
 }
 
@@ -180,24 +181,35 @@ func (cb *roundCowState) blockHdr(r basics.Round) (bookkeeping.BlockHeader, erro
 	return cb.lookupParent.blockHdr(r)
 }
 
-func (cb *roundCowState) put(addr basics.Address, new basics.AccountData, newCreatable *basics.CreatableLocator, deletedCreatable *basics.CreatableLocator) {
-	cb.mods.Accts.Upsert(addr, new)
+func (cb *roundCowState) put(addr basics.Address, new basics.AccountData, creatableMods *basics.CreatableLocator) {
+	add := ledgercore.AccountDataMods{AccountData: new}
 
-	if newCreatable != nil {
-		cb.mods.Creatables[newCreatable.Index] = ledgercore.ModifiedCreatable{
-			Ctype:   newCreatable.Type,
-			Creator: newCreatable.Creator,
-			Created: true,
+	if creatableMods != nil {
+		switch creatableMods.Action {
+		case basics.CreatableCreateAction:
+			cb.mods.Creatables[creatableMods.Index] = ledgercore.ModifiedCreatable{
+				Ctype:   creatableMods.Type,
+				Creator: creatableMods.Creator,
+				Created: true,
+			}
+		case basics.CreatableDeleteAction:
+			cb.mods.Creatables[creatableMods.Index] = ledgercore.ModifiedCreatable{
+				Ctype:   creatableMods.Type,
+				Creator: creatableMods.Creator,
+				Created: false,
+			}
+		case basics.CreatableHoldingCreateAction:
+			fallthrough
+		case basics.CreatableHoldingDeleteAction:
+			fallthrough
+		case basics.CreatableHoldingUpdateAction:
+			add.CreatableLocator = *creatableMods
+		default:
+			panic(fmt.Sprintf("Unsupported CreatableCreateAction %d", basics.CreatableCreateAction))
 		}
 	}
 
-	if deletedCreatable != nil {
-		cb.mods.Creatables[deletedCreatable.Index] = ledgercore.ModifiedCreatable{
-			Ctype:   deletedCreatable.Type,
-			Creator: deletedCreatable.Creator,
-			Created: false,
-		}
-	}
+	cb.mods.Accts.Upsert(addr, add)
 }
 
 func (cb *roundCowState) addTx(txn transactions.Transaction, txid transactions.Txid) {

@@ -47,7 +47,7 @@ type Txlease struct {
 
 // StateDelta describes the delta between a given round to the previous round
 type StateDelta struct {
-	// modified accounts
+	// modified accounts, modified by roundCowState.put and roundCowState.deltas
 	Accts AccountDeltas
 
 	// new Txids for the txtail and TxnCounter, mapped to txn.LastValid
@@ -73,16 +73,28 @@ type StateDelta struct {
 // AccountDeltas stores ordered accounts and allows fast lookup by address
 type AccountDeltas struct {
 	// actual data
-	accts []basics.BalanceRecord
+	accts []AccountDataModsRecord
 	// cache for addr to deltas index resolution
 	acctsCache map[basics.Address]int
+}
+
+// AccountDataModsRecord is similar to AccountData but contains AccountDataDelta
+type AccountDataModsRecord struct {
+	addr basics.Address
+	AccountDataMods
+}
+
+// AccountDataMods encapsulates intermediate creatable change for AccountData
+type AccountDataMods struct {
+	basics.AccountData
+	basics.CreatableLocator
 }
 
 // MakeStateDelta creates a new instance of StateDelta
 func MakeStateDelta(hdr *bookkeeping.BlockHeader, prevTimestamp int64, hint int) StateDelta {
 	return StateDelta{
 		Accts: AccountDeltas{
-			accts:      make([]basics.BalanceRecord, 0, hint*2),
+			accts:      make([]AccountDataModsRecord, 0, hint*2),
 			acctsCache: make(map[basics.Address]int, hint*2),
 		},
 		Txids:         make(map[transactions.Txid]basics.Round, hint),
@@ -94,19 +106,19 @@ func MakeStateDelta(hdr *bookkeeping.BlockHeader, prevTimestamp int64, hint int)
 }
 
 // Get lookups AccountData by address
-func (ad *AccountDeltas) Get(addr basics.Address) (basics.AccountData, bool) {
+func (ad *AccountDeltas) Get(addr basics.Address) (AccountDataMods, bool) {
 	idx, ok := ad.acctsCache[addr]
 	if !ok {
-		return basics.AccountData{}, false
+		return AccountDataMods{}, false
 	}
-	return ad.accts[idx].AccountData, true
+	return ad.accts[idx].AccountDataMods, true
 }
 
 // ModifiedAccounts returns list of addresses of modified accounts
 func (ad *AccountDeltas) ModifiedAccounts() []basics.Address {
 	result := make([]basics.Address, len(ad.accts))
 	for i := 0; i < len(ad.accts); i++ {
-		result[i] = ad.accts[i].Addr
+		result[i] = ad.accts[i].addr
 	}
 	return result
 }
@@ -125,27 +137,26 @@ func (ad *AccountDeltas) Len() int {
 
 // GetByIdx returns address and AccountData
 // It does NOT check boundaries.
-func (ad *AccountDeltas) GetByIdx(i int) (basics.Address, basics.AccountData) {
-	return ad.accts[i].Addr, ad.accts[i].AccountData
+func (ad *AccountDeltas) GetByIdx(i int) (basics.Address, AccountDataMods) {
+	return ad.accts[i].addr, ad.accts[i].AccountDataMods
 }
 
 // Upsert adds new or updates existing account account
-func (ad *AccountDeltas) Upsert(addr basics.Address, data basics.AccountData) {
-	ad.upsert(basics.BalanceRecord{Addr: addr, AccountData: data})
+func (ad *AccountDeltas) Upsert(addr basics.Address, data AccountDataMods) {
+	ad.upsert(AccountDataModsRecord{addr: addr, AccountDataMods: data})
 }
 
-func (ad *AccountDeltas) upsert(br basics.BalanceRecord) {
-	addr := br.Addr
-	if idx, exist := ad.acctsCache[addr]; exist { // nil map lookup is OK
-		ad.accts[idx] = br
+func (ad *AccountDeltas) upsert(rec AccountDataModsRecord) {
+	if idx, exist := ad.acctsCache[rec.addr]; exist { // nil map lookup is OK
+		ad.accts[idx] = rec
 		return
 	}
 
 	last := len(ad.accts)
-	ad.accts = append(ad.accts, br)
+	ad.accts = append(ad.accts, rec)
 
 	if ad.acctsCache == nil {
 		ad.acctsCache = make(map[basics.Address]int)
 	}
-	ad.acctsCache[addr] = last
+	ad.acctsCache[rec.addr] = last
 }

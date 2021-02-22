@@ -251,7 +251,7 @@ type compactAccountDeltas struct {
 
 type accountDelta struct {
 	old     dbAccountData
-	new     basics.AccountData
+	new     ledgercore.AccountDataMods
 	ndeltas int
 }
 
@@ -1970,7 +1970,7 @@ func accountsNewRound(tx *sql.Tx, updates compactAccountDeltas, creatables map[b
 				// create a new entry.
 				updatedAccounts, err = accountsNewCreate(
 					q.insertStmt, q.insertGroupDataStmt,
-					addr, delta.new, proto,
+					addr, delta.new.AccountData, proto,
 					updatedAccounts, updatedAccountIdx)
 			}
 		} else {
@@ -2059,8 +2059,8 @@ func totalsNewRounds(tx *sql.Tx, updates []ledgercore.AccountDeltas, compactUpda
 				return
 			}
 
-			totals.AddAccount(protos[i], data, &ot)
-			accounts[addr] = data
+			totals.AddAccount(protos[i], data.AccountData, &ot)
+			accounts[addr] = data.AccountData
 		}
 	}
 

@@ -213,18 +213,17 @@ func (cs *roundCowState) Get(addr basics.Address, withPendingRewards bool) (basi
 		return basics.AccountData{}, err
 	}
 	if withPendingRewards {
-		acct = acct.WithUpdatedRewards(cs.proto, cs.rewardsLevel())
+		acct.AccountData = acct.AccountData.WithUpdatedRewards(cs.proto, cs.rewardsLevel())
 	}
-	return acct, nil
+	return acct.AccountData, nil
 }
 
-// wrappers for roundCowState to satisfy the (current) apply.Balances interface
-func (cs *roundCowState) GetWithHolding(addr basics.Address, cidx basics.CreatableIndex, ctype basics.CreatableType) (basics.AccountData, error) {
+func (cs *roundCowState) GetEx(addr basics.Address, cidx basics.CreatableIndex, ctype basics.CreatableType) (basics.AccountData, error) {
 	acct, err := cs.lookupWithHolding(addr, cidx, ctype)
 	if err != nil {
 		return basics.AccountData{}, err
 	}
-	return acct, nil
+	return acct.AccountData, nil
 }
 
 func (cs *roundCowState) GetCreator(cidx basics.CreatableIndex, ctype basics.CreatableType) (basics.Address, bool, error) {
@@ -232,11 +231,11 @@ func (cs *roundCowState) GetCreator(cidx basics.CreatableIndex, ctype basics.Cre
 }
 
 func (cs *roundCowState) Put(addr basics.Address, acct basics.AccountData) error {
-	return cs.PutWithCreatable(addr, acct, nil, nil)
+	return cs.PutWithCreatable(addr, acct, nil)
 }
 
-func (cs *roundCowState) PutWithCreatable(addr basics.Address, acct basics.AccountData, newCreatable *basics.CreatableLocator, deletedCreatable *basics.CreatableLocator) error {
-	cs.put(addr, acct, newCreatable, deletedCreatable)
+func (cs *roundCowState) PutWithCreatable(addr basics.Address, acct basics.AccountData, creatableMods *basics.CreatableLocator) error {
+	cs.put(addr, acct, creatableMods)
 	return nil
 }
 
@@ -263,7 +262,7 @@ func (cs *roundCowState) Move(from basics.Address, to basics.Address, amt basics
 	if overflowed {
 		return fmt.Errorf("overspend (account %v, data %+v, tried to spend %v)", from, fromBal, amt)
 	}
-	cs.put(from, fromBalNew, nil, nil)
+	cs.put(from, fromBalNew, nil)
 
 	toBal, err := cs.lookup(to)
 	if err != nil {
@@ -284,7 +283,7 @@ func (cs *roundCowState) Move(from basics.Address, to basics.Address, amt basics
 	if overflowed {
 		return fmt.Errorf("balance overflow (account %v, data %+v, was going to receive %v)", to, toBal, amt)
 	}
-	cs.put(to, toBalNew, nil, nil)
+	cs.put(to, toBalNew, nil)
 
 	return nil
 }
