@@ -1032,18 +1032,80 @@ func generateRandomTestingAccountBalances(numAccounts int) (updates map[basics.A
 	return
 }
 
-func benchmarkInitBalances(b testing.TB, numAccounts int, dbs db.Pair, proto config.ConsensusParams) (updates map[basics.Address]basics.AccountData) {
+// benchmarkInitBalances is a common accounts initialization function for benchmarks.
+// numAccounts specifies how many accounts to create
+// maxHoldingsPerAccount sets a maximum asset holdings per account (normally distributed across all accounts)
+// largeAccountsRatio is a percentage of numAccounts to have maxHoldingsPerAccount holdings
+func benchmarkInitBalances(b testing.TB, numAccounts int, dbs db.Pair, proto config.ConsensusParams, maxHoldingsPerAccount int, largeAccountsRatio int) (accts map[basics.Address]basics.AccountData) {
 	tx, err := dbs.Wdb.Handle.Begin()
 	require.NoError(b, err)
 
-	updates = generateRandomTestingAccountBalances(numAccounts)
+	accts = generateRandomTestingAccountBalances(numAccounts)
 
-	err = accountsInit(tx, updates, proto)
+	err = accountsInit(tx, accts, proto)
 	require.NoError(b, err)
 	err = accountsAddNormalizedBalance(tx, proto)
 	require.NoError(b, err)
+	err = createAccountExtTable(tx)
+	require.NoError(b, err)
+
+	// create large holdings as an update because accountsInit does not know about accountext table
+	// the distribution is normal from (maxAssets / numAccounts) to maxHoldingsPerAccount
+	// want have 95% of accounts to be between [1/4 maxHoldingsPerAccount/8, maxHoldingsPerAccount] then
+	// mean = 5/8 maxHoldingsPerAccount and stddev = 3/16 maxHoldingsPerAccount
+
+	largeHoldings := maxHoldingsPerAccount > numAccounts
+	if largeHoldings {
+		maxAssetIndex := maxHoldingsPerAccount + 1
+		aidxs := make([]basics.AssetIndex, maxAssetIndex, maxAssetIndex)
+		for i := 0; i < maxAssetIndex; i++ {
+			aidxs[i] = basics.AssetIndex(i + 1)
+		}
+		maxAccts := numAccounts * largeAccountsRatio / 100
+		var updates ledgercore.AccountDeltas
+		acctCounter := 0
+		for addr, ad := range accts {
+			rand.Shuffle(len(aidxs), func(i, j int) { aidxs[i], aidxs[j] = aidxs[j], aidxs[i] })
+			numHoldings := int(rand.NormFloat64()*3*float64(maxHoldingsPerAccount)/16 + float64(5*maxHoldingsPerAccount)/8)
+			if numHoldings > maxAssetIndex {
+				numHoldings = maxAssetIndex
+			}
+			if numHoldings < 0 {
+				numHoldings = 0
+			}
+			for _, aidx := range aidxs[:numHoldings] {
+				if _, ok := ad.Assets[aidx]; !ok {
+					ad.Assets[aidx] = basics.AssetHolding{Amount: uint64(aidx), Frozen: true}
+					updates.SetHoldingDelta(addr, aidx, true)
+				}
+			}
+			updates.Upsert(addr, ledgercore.PersistedAccountData{AccountData: ad})
+			accts[addr] = ad
+
+			acctCounter++
+			if acctCounter >= maxAccts {
+				break
+			}
+		}
+
+		baseAccounts := lruAccounts{}
+		updatesCnt := makeCompactAccountDeltas([]ledgercore.AccountDeltas{updates}, baseAccounts)
+		err = updatesCnt.accountsLoadOld(tx)
+		require.NoError(b, err)
+
+		round := basics.Round(1)
+		for j := range updatesCnt.deltas {
+			updatesCnt.deltas[j].new.ExtendedAssetHolding = updatesCnt.deltas[j].old.pad.ExtendedAssetHolding
+		}
+		_, err = accountsNewRound(tx, updatesCnt, nil, proto, round)
+		require.NoError(b, err)
+		err = updateAccountsRound(tx, round, 0)
+		require.NoError(b, err)
+	}
+
 	err = tx.Commit()
 	require.NoError(b, err)
+
 	return
 }
 
@@ -1054,20 +1116,34 @@ func cleanupTestDb(dbs db.Pair, dbName string, inMemory bool) {
 	}
 }
 
-func benchmarkReadingAllBalances(b *testing.B, inMemory bool) {
+func benchmarkReadingAllBalances(b *testing.B, inMemory bool, maxHoldingsPerAccount int, largeAccountsRatio int) {
 	proto := config.Consensus[protocol.ConsensusCurrentVersion]
 	dbs, fn := dbOpenTest(b, inMemory)
 	setDbLogging(b, dbs)
 	defer cleanupTestDb(dbs, fn, inMemory)
 
-	benchmarkInitBalances(b, b.N, dbs, proto)
+	benchmarkInitBalances(b, b.N, dbs, proto, maxHoldingsPerAccount, largeAccountsRatio)
 	tx, err := dbs.Rdb.Handle.Begin()
 	require.NoError(b, err)
 
+	var bal map[basics.Address]ledgercore.PersistedAccountData
 	b.ResetTimer()
-	// read all the balances in the database.
-	bal, err2 := accountsAll(tx)
-	require.NoError(b, err2)
+	for i := 0; i < b.N; i++ {
+		// read all the balances in the database.
+		bal, err = accountsAll(tx)
+		require.NoError(b, err)
+	}
+	b.StopTimer()
+
+	var numDbReads int
+	err = tx.QueryRow("SELECT COUNT(1) FROM accountbase").Scan(&numDbReads)
+	require.NoError(b, err)
+	var numGroupData int
+	err = tx.QueryRow("SELECT COUNT(1) FROM accountext").Scan(&numGroupData)
+	numDbReads += numGroupData
+	require.NoError(b, err)
+	b.ReportMetric(float64(numDbReads), "num_db_reads")
+
 	tx.Commit()
 
 	prevHash := crypto.Digest{}
@@ -1079,20 +1155,52 @@ func benchmarkReadingAllBalances(b *testing.B, inMemory bool) {
 }
 
 func BenchmarkReadingAllBalancesRAM(b *testing.B) {
-	benchmarkReadingAllBalances(b, true)
+	benchmarkReadingAllBalances(b, true, 1, 100)
 }
 
 func BenchmarkReadingAllBalancesDisk(b *testing.B) {
-	benchmarkReadingAllBalances(b, false)
+	benchmarkReadingAllBalances(b, false, 1, 100)
 }
 
-func benchmarkReadingRandomBalances(b *testing.B, inMemory bool) {
+func benchmarkReadingAllBalancesLarge(b *testing.B, inMemory bool) {
+	var pct = []int{100, 10}
+	var tests = []int{1, 512, 2000, 3000, 5000, 10000, 100000}
+	for _, p := range pct {
+		for _, n := range tests {
+			b.Run(fmt.Sprintf("holdings=%d/pct=%d", n, p), func(b *testing.B) {
+				benchmarkReadingAllBalances(b, inMemory, n, p)
+			})
+		}
+	}
+}
+
+func BenchmarkReadingAllBalancesRAMLarge(b *testing.B) {
+	benchmarkReadingAllBalancesLarge(b, true)
+}
+
+func BenchmarkReadingAllBalancesDiskLarge(b *testing.B) {
+	benchmarkReadingAllBalancesLarge(b, false)
+}
+
+func benchLoadHolding(b *testing.B, qs *accountsDbQueries, dbad dbAccountData, aidx basics.AssetIndex) basics.AssetHolding {
+	gi, ai := dbad.pad.ExtendedAssetHolding.FindAsset(aidx, 0)
+	require.NotEqual(b, -1, gi)
+	require.Equal(b, -1, ai)
+	var err error
+	_, dbad.pad.ExtendedAssetHolding.Groups[gi], err = loadHoldingGroup(qs.loadAssetHoldingGroupStmt, dbad.pad.ExtendedAssetHolding.Groups[gi], nil)
+	require.NoError(b, err)
+	_, ai = dbad.pad.ExtendedAssetHolding.FindAsset(aidx, gi)
+	require.NotEqual(b, -1, ai)
+	return dbad.pad.ExtendedAssetHolding.Groups[gi].GetHolding(ai)
+}
+
+func benchmarkReadingRandomBalances(b *testing.B, inMemory bool, maxHoldingsPerAccount int, largeAccountsRatio int, simple bool) {
 	proto := config.Consensus[protocol.ConsensusCurrentVersion]
 	dbs, fn := dbOpenTest(b, inMemory)
 	setDbLogging(b, dbs)
 	defer cleanupTestDb(dbs, fn, inMemory)
 
-	accounts := benchmarkInitBalances(b, b.N, dbs, proto)
+	accounts := benchmarkInitBalances(b, b.N, dbs, proto, maxHoldingsPerAccount, largeAccountsRatio)
 
 	qs, err := accountsDbInit(dbs.Rdb.Handle, dbs.Wdb.Handle)
 	require.NoError(b, err)
@@ -1106,21 +1214,51 @@ func benchmarkReadingRandomBalances(b *testing.B, inMemory bool) {
 	}
 	rand.Shuffle(len(addrs), func(i, j int) { addrs[i], addrs[j] = addrs[j], addrs[i] })
 
+	assetsThreshold := config.Consensus[protocol.ConsensusV18].MaxAssetsPerAccount
 	// only measure the actual fetch time
 	b.ResetTimer()
-	for _, addr := range addrs {
-		_, err = qs.lookup(addr)
-		require.NoError(b, err)
+	for i := 0; i < b.N; i++ {
+		for _, addr := range addrs {
+			dbad, err := qs.lookup(addr)
+			require.NoError(b, err)
+			if !simple && len(accounts[addr].Assets) > assetsThreshold {
+				for aidx := range accounts[addr].Assets {
+					h := benchLoadHolding(b, qs, dbad, aidx)
+					require.NotEmpty(b, h)
+					break // take first from randomly interated map
+				}
+			}
+		}
 	}
 }
 
 func BenchmarkReadingRandomBalancesRAM(b *testing.B) {
-	benchmarkReadingRandomBalances(b, true)
+	benchmarkReadingRandomBalances(b, true, 1, 100, true)
 }
 
 func BenchmarkReadingRandomBalancesDisk(b *testing.B) {
-	benchmarkReadingRandomBalances(b, false)
+	benchmarkReadingRandomBalances(b, false, 1, 100, true)
 }
+
+func BenchmarkReadingRandomBalancesDiskLarge(b *testing.B) {
+	var tests = []struct {
+		numHoldings int
+		simple      bool
+	}{
+		{1, true},
+		{512, true},
+		{2000, false},
+		{5000, false},
+		{10000, false},
+		{100000, false},
+	}
+	for _, t := range tests {
+		b.Run(fmt.Sprintf("holdings=%d simple=%v", t.numHoldings, t.simple), func(b *testing.B) {
+			benchmarkReadingRandomBalances(b, false, t.numHoldings, 10, t.simple)
+		})
+	}
+}
+
 func BenchmarkWritingRandomBalancesDisk(b *testing.B) {
 	totalStartupAccountsNumber := 5000000
 	batchCount := 1000
@@ -1133,7 +1271,7 @@ func BenchmarkWritingRandomBalancesDisk(b *testing.B) {
 			cleanupTestDb(dbs, fn, false)
 		}
 
-		benchmarkInitBalances(b, startupAcct, dbs, proto)
+		benchmarkInitBalances(b, startupAcct, dbs, proto, 1, 100)
 		dbs.Wdb.SetSynchronousMode(context.Background(), db.SynchronousModeOff, false)
 
 		// insert 1M accounts data, in batches of 1000
@@ -1244,6 +1382,91 @@ func BenchmarkWritingRandomBalancesDisk(b *testing.B) {
 	err = tx.Commit()
 	require.NoError(b, err)
 }
+
+func benchmarkAcctUpdateLarge(b *testing.B, maxHoldingsPerAccount int, largeHoldingsRation int, assetUpdateRatio int) {
+	proto := config.Consensus[protocol.ConsensusCurrentVersion]
+	dbs, fn := dbOpenTest(b, false)
+	setDbLogging(b, dbs)
+	defer cleanupTestDb(dbs, fn, false)
+
+	numAccounts := 100
+	accts := benchmarkInitBalances(b, numAccounts, dbs, proto, maxHoldingsPerAccount, largeHoldingsRation)
+
+	tx, err := dbs.Wdb.Handle.Begin()
+	require.NoError(b, err)
+
+	qs, err := accountsDbInit(dbs.Rdb.Handle, dbs.Wdb.Handle)
+	require.NoError(b, err)
+
+	loaded := make(map[basics.Address]dbAccountData, len(accts))
+	for addr := range accts {
+		loaded[addr], err = qs.lookupFull(addr)
+		require.NoError(b, err)
+	}
+
+	acctUpdateStmt, err := tx.Prepare("UPDATE accountbase SET normalizedonlinebalance = ?, data = ? WHERE rowid = ?")
+	require.NoError(b, err)
+	gdUpdateStmt, err := tx.Prepare("UPDATE accountext SET data = ? WHERE id = ?")
+	require.NoError(b, err)
+
+	type groupDataUpdate struct {
+		gi   int
+		data []byte
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		for addr := range accts {
+			b.StopTimer()
+			// one AD update per account and few group data updates
+			dbad := loaded[addr]
+			encodedPad := protocol.Encode(&dbad.pad)
+			var numToUpdate int
+			var gdu []groupDataUpdate
+			if len(dbad.pad.Assets) > assetsThreshold {
+				numToUpdate = assetUpdateRatio * len(dbad.pad.Assets) / 100
+				gdu = make([]groupDataUpdate, numToUpdate, numToUpdate)
+				k := 0
+				for aidx := range dbad.pad.Assets {
+					gi := dbad.pad.ExtendedAssetHolding.FindGroup(aidx, 0)
+					require.NotEqual(b, -1, gi)
+					data := dbad.pad.ExtendedAssetHolding.Groups[gi].TestGetGroupData()
+					gdu[k] = groupDataUpdate{gi, protocol.Encode(&data)}
+					k++
+					if k >= numToUpdate {
+						break
+					}
+				}
+			}
+
+			b.StartTimer()
+			_, err = acctUpdateStmt.Exec(dbad.pad.MicroAlgos.Raw, encodedPad, dbad.rowid)
+			require.NoError(b, err)
+
+			if len(dbad.pad.Assets) > assetsThreshold {
+				for _, entry := range gdu {
+					_, err = gdUpdateStmt.Exec(entry.data, entry.gi)
+				}
+			}
+		}
+	}
+
+	tx.Commit()
+}
+
+// Benchmark large asset holding writing
+func BenchmarkAcctUpdatesDiskLarge(b *testing.B) {
+	holdings := []int{1, 512, 2000, 3000, 5000, 10000, 100000}
+	largeRatio := []int{100, 10}
+	for _, p := range largeRatio {
+		for _, n := range holdings {
+			b.Run(fmt.Sprintf("holdings=%d/pct=%d", n, p), func(b *testing.B) {
+				benchmarkAcctUpdateLarge(b, n, p, 50)
+			})
+		}
+	}
+}
+
 func TestAccountsReencoding(t *testing.T) {
 	oldEncodedAccountsData := [][]byte{
 		{132, 164, 97, 108, 103, 111, 206, 5, 234, 236, 80, 164, 97, 112, 97, 114, 129, 206, 0, 3, 60, 164, 137, 162, 97, 109, 196, 32, 49, 54, 101, 102, 97, 97, 51, 57, 50, 52, 97, 54, 102, 100, 57, 100, 51, 97, 52, 56, 50, 52, 55, 57, 57, 97, 52, 97, 99, 54, 53, 100, 162, 97, 110, 167, 65, 80, 84, 75, 73, 78, 71, 162, 97, 117, 174, 104, 116, 116, 112, 58, 47, 47, 115, 111, 109, 101, 117, 114, 108, 161, 99, 196, 32, 183, 97, 139, 76, 1, 45, 180, 52, 183, 186, 220, 252, 85, 135, 185, 87, 156, 87, 158, 83, 49, 200, 133, 169, 43, 205, 26, 148, 50, 121, 28, 105, 161, 102, 196, 32, 183, 97, 139, 76, 1, 45, 180, 52, 183, 186, 220, 252, 85, 135, 185, 87, 156, 87, 158, 83, 49, 200, 133, 169, 43, 205, 26, 148, 50, 121, 28, 105, 161, 109, 196, 32, 60, 69, 244, 159, 234, 26, 168, 145, 153, 184, 85, 182, 46, 124, 227, 144, 84, 113, 176, 206, 109, 204, 245, 165, 100, 23, 71, 49, 32, 242, 146, 68, 161, 114, 196, 32, 183, 97, 139, 76, 1, 45, 180, 52, 183, 186, 220, 252, 85, 135, 185, 87, 156, 87, 158, 83, 49, 200, 133, 169, 43, 205, 26, 148, 50, 121, 28, 105, 161, 116, 205, 3, 32, 162, 117, 110, 163, 65, 80, 75, 165, 97, 115, 115, 101, 116, 129, 206, 0, 3, 60, 164, 130, 161, 97, 0, 161, 102, 194, 165, 101, 98, 97, 115, 101, 205, 98, 54},
