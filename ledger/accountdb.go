@@ -243,7 +243,7 @@ func makeCompactAccountDeltas(accountDeltas []ledgercore.AccountDeltas, baseAcco
 				}
 				if baseAccountData, has := baseAccounts.read(addr); has {
 					newEntry.old = baseAccountData
-					outAccountDeltas.insert(addr, newEntry) // insert instead of upsert economizes one map lookup
+					outAccountDeltas.insert(addr, newEntry)
 				} else {
 					// missing old entries will be populated in accountsLoadOld
 					outAccountDeltas.insertMissing(addr, newEntry)
@@ -1234,7 +1234,6 @@ func loadHoldings(stmt *sql.Stmt, eah ledgercore.ExtendedAssetHolding) (map[basi
 		}
 	}
 	eah.Groups = groups
-	eah.SetLoaded()
 	return holdings, eah, nil
 }
 
@@ -1243,10 +1242,10 @@ func loadHoldingGroup(stmt *sql.Stmt, g ledgercore.AssetsHoldingGroup, holdings 
 	if err != nil {
 		return nil, ledgercore.AssetsHoldingGroup{}, err
 	}
-	aidx := g.MinAssetIndex
-	for i := 0; i < len(groupData.AssetOffsets); i++ {
-		aidx += groupData.AssetOffsets[i]
-		if holdings != nil {
+	if holdings != nil {
+		aidx := g.MinAssetIndex
+		for i := 0; i < len(groupData.AssetOffsets); i++ {
+			aidx += groupData.AssetOffsets[i]
 			holdings[aidx] = groupData.GetHolding(i)
 		}
 	}
@@ -1444,7 +1443,10 @@ func accountsNewUpdate(qabu, qabq, qaeu, qaei, qaed *sql.Stmt, addr basics.Addre
 					key := pad.ExtendedAssetHolding.Groups[gi].AssetGroupKey
 					if pad.ExtendedAssetHolding.Delete(gi, ai) {
 						// the only one asset was in the group, delete the group
-						qaed.Exec(key)
+						_, err = qaed.Exec(key)
+						if err != nil {
+							return updatedAccounts, err
+						}
 					}
 				}
 			}
@@ -1455,27 +1457,34 @@ func accountsNewUpdate(qabu, qabq, qaeu, qaei, qaed *sql.Stmt, addr basics.Addre
 				pad.ExtendedAssetHolding.Insert(created, delta.new.Assets)
 			}
 
+			loaded, deletedKeys := pad.ExtendedAssetHolding.Merge()
+
 			// update DB
+			for _, key := range deletedKeys {
+				_, err = qaed.Exec(key)
+				if err != nil {
+					return updatedAccounts, err
+				}
+			}
+
 			var result sql.Result
-			for i := 0; i < len(pad.ExtendedAssetHolding.Groups); i++ {
-				if pad.ExtendedAssetHolding.Groups[i].Loaded() {
-					if pad.ExtendedAssetHolding.Groups[i].AssetGroupKey != 0 { // existing entry, update
-						_, err = qaeu.Exec(
-							pad.ExtendedAssetHolding.Groups[i].Encode(),
-							pad.ExtendedAssetHolding.Groups[i].AssetGroupKey)
-						if err != nil {
-							break
-						}
-					} else {
-						// new entry, insert
-						result, err = qaei.Exec(pad.ExtendedAssetHolding.Groups[i].Encode())
-						if err != nil {
-							break
-						}
-						pad.ExtendedAssetHolding.Groups[i].AssetGroupKey, err = result.LastInsertId()
-						if err != nil {
-							break
-						}
+			for _, i := range loaded {
+				if pad.ExtendedAssetHolding.Groups[i].AssetGroupKey != 0 { // existing entry, update
+					_, err = qaeu.Exec(
+						pad.ExtendedAssetHolding.Groups[i].Encode(),
+						pad.ExtendedAssetHolding.Groups[i].AssetGroupKey)
+					if err != nil {
+						break
+					}
+				} else {
+					// new entry, insert
+					result, err = qaei.Exec(pad.ExtendedAssetHolding.Groups[i].Encode())
+					if err != nil {
+						break
+					}
+					pad.ExtendedAssetHolding.Groups[i].AssetGroupKey, err = result.LastInsertId()
+					if err != nil {
+						break
 					}
 				}
 			}
