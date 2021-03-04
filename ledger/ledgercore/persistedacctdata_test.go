@@ -111,6 +111,7 @@ func TestAssetHoldingFindAsset(t *testing.T) {
 		groups    []int
 		assets    []int
 	}{
+		{8, 1, []basics.AssetIndex{1, 5, 10, 12}, []int{0, 0, -1, -1}, []int{0, 4, -1, -1}},
 		{10, 1, []basics.AssetIndex{1, 5, 10, 12}, []int{0, 0, 0, -1}, []int{0, 4, 9, -1}},
 		{255, 1, []basics.AssetIndex{1, 255, 256, 257, 258}, []int{0, 0, -1, -1, -1}, []int{0, 254, -1, -1, -1}},
 		{256, 1, []basics.AssetIndex{1, 255, 256, 257, 258}, []int{0, 0, 0, -1, -1}, []int{0, 254, 255, -1, -1}},

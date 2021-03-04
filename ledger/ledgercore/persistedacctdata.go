@@ -473,7 +473,7 @@ func (e ExtendedAssetHolding) FindAsset(aidx basics.AssetIndex, startIdx int) (i
 				return gi, -1
 			}
 
-			// TODO: bin search
+			// linear search because AssetOffsets is delta-encoded, not values
 			cur := g.MinAssetIndex
 			for ai, d := range g.groupData.AssetOffsets {
 				cur = d + cur
