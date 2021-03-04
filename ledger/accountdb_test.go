@@ -2053,7 +2053,6 @@ func TestAccountsNewCRUD(t *testing.T) {
 	a.NoError(err)
 	a.Equal(0, len(old.pad.AccountData.Assets))
 	a.Equal(numBaseAssets+numNewAssets1+numNewAssets2, old.pad.NumAssetHoldings())
-	a.False(old.pad.ExtendedAssetHolding.Loaded())
 	for i := 0; i < len(old.pad.ExtendedAssetHolding.Groups); i++ {
 		a.False(old.pad.ExtendedAssetHolding.Groups[i].Loaded())
 		a.NotZero(old.pad.ExtendedAssetHolding.Groups[i].AssetGroupKey)

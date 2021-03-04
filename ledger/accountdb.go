@@ -1136,7 +1136,6 @@ func loadHoldings(stmt *sql.Stmt, eah ledgercore.ExtendedAssetHolding) (map[basi
 			return nil, ledgercore.ExtendedAssetHolding{}, err
 		}
 	}
-	eah.SetLoaded()
 	return holdings, eah, nil
 }
 

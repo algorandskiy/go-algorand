@@ -34,12 +34,10 @@ func TestAssetHoldingConvertToGroups(t *testing.T) {
 	e.ConvertToGroups(nil)
 	a.Equal(uint32(0), e.Count)
 	a.Equal(0, len(e.Groups))
-	a.False(e.loaded)
 
 	e.ConvertToGroups(map[basics.AssetIndex]basics.AssetHolding{})
 	a.Equal(uint32(0), e.Count)
 	a.Equal(0, len(e.Groups))
-	a.False(e.loaded)
 
 	var tests = []struct {
 		size        int
@@ -65,7 +63,6 @@ func TestAssetHoldingConvertToGroups(t *testing.T) {
 			var e ExtendedAssetHolding
 			e.ConvertToGroups(assets)
 			a.Equal(uint32(test.size), e.Count)
-			a.True(e.loaded)
 			a.Equal(test.numGroups, len(e.Groups))
 			total := 0
 			for i := 0; i < len(e.Groups); i++ {
@@ -186,8 +183,6 @@ func genExtendedHolding(t *testing.T, spec []groupSpec) (e ExtendedAssetHolding)
 		e.Groups[i].loaded = true
 		e.Count += uint32(s.count)
 	}
-	e.loaded = true
-
 	a := require.New(t)
 	for _, s := range spec {
 		gi, ai := e.FindAsset(s.start, 0)

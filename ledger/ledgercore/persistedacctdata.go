@@ -75,9 +75,6 @@ type ExtendedAssetHolding struct {
 	_struct struct{}             `codec:",omitempty,omitemptyarray"`
 	Count   uint32               `codec:"c"`
 	Groups  []AssetsHoldingGroup `codec:"gs,allocbound=4096"` // 1M asset holdings
-
-	//msgp:ignore loaded
-	loaded bool
 }
 
 // PersistedAccountData represents actual data stored in DB
@@ -521,7 +518,6 @@ func (e *ExtendedAssetHolding) ConvertToGroups(assets map[basics.AssetIndex]basi
 
 	e.Count = uint32(len(assets))
 	e.Groups = make([]AssetsHoldingGroup, numGroups)
-	e.loaded = true
 
 	size := min(MaxHoldingGroupSize, len(assets))
 	currentGroup := 0
@@ -563,19 +559,8 @@ func (e *ExtendedAssetHolding) ConvertToGroups(assets map[basics.AssetIndex]basi
 	e.Groups[currentGroup].DeltaMaxAssetIndex = uint64(flatten[len(flatten)-1].aidx - e.Groups[currentGroup].MinAssetIndex)
 }
 
-// Loaded return a boolean flag indicated if groups are loaded or not
-func (e ExtendedAssetHolding) Loaded() bool {
-	return e.loaded
-}
-
-// SetLoaded sets loaded flag to true
-func (e *ExtendedAssetHolding) SetLoaded() {
-	e.loaded = true
-}
-
 // Clear removes all the groups, used in tests only
 func (e *ExtendedAssetHolding) Clear() {
-	e.loaded = false // ignored on serialization
 	for i := 0; i < len(e.Groups); i++ {
 		// ignored on serialization
 		e.Groups[i].groupData = AssetsHoldingGroupData{}
