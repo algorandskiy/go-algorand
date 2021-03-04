@@ -49,6 +49,8 @@ const (
 	largeAssetHoldingsAccount                        // like full but 1k+ asset holdings
 )
 
+var assetsThreshold = config.Consensus[protocol.ConsensusV18].MaxAssetsPerAccount
+
 func randomAddress() basics.Address {
 	var addr basics.Address
 	crypto.RandBytes(addr[:])
@@ -610,7 +612,6 @@ func TestAccountDBRound(t *testing.T) {
 	}
 
 	// add deltas with 1000+ holdings
-	assetsThreshold := config.Consensus[protocol.ConsensusV18].MaxAssetsPerAccount
 	ctbsList, randomCtbs = randomCreatables(numElementsPerSegment)
 	lastCreatableID = lastCreatableID + 4096
 	largeHoldingsNum := 0
@@ -697,20 +698,40 @@ retry:
 	if largeHoldingsNum < 50 {
 		goto retry
 	}
+}
 
+func TestAccountDBRoundAssetHoldings(t *testing.T) {
 	// deterministic test for 1000+ holdings:
 	// select an account, add 256 * 6 holdings, then delete one bucket, and modify others
 	// ensure all holdings match expectations
 
+	proto := config.Consensus[protocol.ConsensusCurrentVersion]
+
+	dbs, _ := dbOpenTest(t, true)
+	setDbLogging(t, dbs)
+	defer dbs.Close()
+
+	tx, err := dbs.Wdb.Handle.Begin()
+	require.NoError(t, err)
+	defer tx.Rollback()
+
+	accts := randomAccounts(20, true)
+	err = initTestAccountDB(tx, accts, proto)
+	require.NoError(t, err)
+	checkAccounts(t, tx, 0, accts)
+
+	// lastCreatableID stores asset or app max used index to get rid of conflicts
+	var baseAccounts lruAccounts
+	baseAccounts.init(nil, 100, 80)
+	round := basics.Round(1)
+
+	// select some random account
 	var addr basics.Address
 	var ad basics.AccountData
-	baseAccounts = lruAccounts{}
 	for a, data := range accts {
-		if len(data.Assets) > assetsThreshold {
-			addr = a
-			ad = data
-			break
-		}
+		addr = a
+		ad = data
+		break
 	}
 	require.NotEmpty(t, addr)
 
@@ -719,7 +740,10 @@ retry:
 		err = updatesCnt.accountsLoadOld(tx)
 		require.NoError(t, err)
 
-		updatesCnt = fixupOldPad(updatesCnt)
+		for j := range updatesCnt.deltas {
+			updatesCnt.deltas[j].new.ExtendedAssetHolding = updatesCnt.deltas[j].old.pad.ExtendedAssetHolding
+		}
+
 		_, err = accountsNewRound(tx, updatesCnt, nil, proto, round)
 		require.NoError(t, err)
 		err = updateAccountsRound(tx, round, 0)
@@ -856,6 +880,30 @@ retry:
 		}
 		gi++
 	}
+
+	// delete groups 0, 2, 4 and ensure holdins collapse back to ad.Assets
+	updates = ledgercore.AccountDeltas{}
+	ad = dbad.pad.AccountData
+	for _, gi := range []int{0, 2, 4} {
+		start := gi*ledgercore.MaxHoldingGroupSize + 1
+		end := (gi + 1) * ledgercore.MaxHoldingGroupSize
+		for aidx := start; aidx <= end; aidx++ {
+			delete(ad.Assets, basics.AssetIndex(aidx))
+			updates.SetHoldingDelta(addr, basics.AssetIndex(aidx), false)
+		}
+	}
+
+	updates.Upsert(addr, ledgercore.PersistedAccountData{AccountData: ad})
+	applyUpdate(updates)
+
+	// check removal
+	dbad1, err := aq.lookupFull(addr)
+	require.NoError(t, err)
+	dbad2, err := aq.lookup(addr)
+	require.NoError(t, err)
+	require.Equal(t, dbad1, dbad2)
+	require.Equal(t, holdingsNum-2*32-3*ledgercore.MaxHoldingGroupSize, len(dbad1.pad.AccountData.Assets))
+	require.Empty(t, dbad1.pad.ExtendedAssetHolding)
 
 	// delete the account
 	updates = ledgercore.AccountDeltas{}
@@ -1214,7 +1262,6 @@ func benchmarkReadingRandomBalances(b *testing.B, inMemory bool, maxHoldingsPerA
 	}
 	rand.Shuffle(len(addrs), func(i, j int) { addrs[i], addrs[j] = addrs[j], addrs[i] })
 
-	assetsThreshold := config.Consensus[protocol.ConsensusV18].MaxAssetsPerAccount
 	// only measure the actual fetch time
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -1776,7 +1823,6 @@ func TestAccountsNewCRUD(t *testing.T) {
 	a.NoError(err)
 
 	addr := randomAddress()
-	assetsThreshold := config.Consensus[protocol.ConsensusV18].MaxAssetsPerAccount
 
 	//----------------------------------------------------------------------------------------------
 	// test create and delete function
