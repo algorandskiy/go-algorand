@@ -244,7 +244,7 @@ func makeCompactAccountDeltas(accountDeltas []ledgercore.AccountDeltas, baseAcco
 				}
 				if baseAccountData, has := baseAccounts.read(addr); has {
 					newEntry.old = baseAccountData
-					outAccountDeltas.insert(addr, newEntry) // insert instead of upsert economizes one map lookup
+					outAccountDeltas.insert(addr, newEntry)
 				} else {
 					// missing old entries will be populated in accountsLoadOld
 					outAccountDeltas.insertMissing(addr, newEntry)
@@ -1130,8 +1130,8 @@ func loadHoldings(stmt *sql.Stmt, eah ledgercore.ExtendedAssetHolding) (map[basi
 	}
 	var err error
 	holdings := make(map[basics.AssetIndex]basics.AssetHolding, eah.Count)
-	for gi, g := range eah.Groups {
-		holdings, eah.Groups[gi], err = loadHoldingGroup(stmt, g, holdings)
+	for gi := range eah.Groups {
+		holdings, eah.Groups[gi], err = loadHoldingGroup(stmt, eah.Groups[gi], holdings)
 		if err != nil {
 			return nil, ledgercore.ExtendedAssetHolding{}, err
 		}
@@ -1144,10 +1144,10 @@ func loadHoldingGroup(stmt *sql.Stmt, g ledgercore.AssetsHoldingGroup, holdings 
 	if err != nil {
 		return nil, ledgercore.AssetsHoldingGroup{}, err
 	}
-	aidx := g.MinAssetIndex
-	for i := 0; i < len(groupData.AssetOffsets); i++ {
-		aidx += groupData.AssetOffsets[i]
-		if holdings != nil {
+	if holdings != nil {
+		aidx := g.MinAssetIndex
+		for i := 0; i < len(groupData.AssetOffsets); i++ {
+			aidx += groupData.AssetOffsets[i]
 			holdings[aidx] = groupData.GetHolding(i)
 		}
 	}

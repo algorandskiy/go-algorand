@@ -300,13 +300,13 @@ func randomDeltasImpl(niter int, base map[basics.Address]basics.AccountData, rew
 				for aidx := range new.Assets {
 					if _, ok := old.Assets[aidx]; !ok {
 						// if not in old => created
-						updates.SetHoldingDelta(addr, aidx, true)
+						updates.SetHoldingDelta(addr, aidx, ledgercore.ActionCreate)
 					}
 				}
 				for aidx := range old.Assets {
 					if _, ok := new.Assets[aidx]; !ok {
 						// if not in new => deleted
-						updates.SetHoldingDelta(addr, aidx, false)
+						updates.SetHoldingDelta(addr, aidx, ledgercore.ActionDelete)
 					}
 				}
 			}
@@ -753,7 +753,7 @@ func TestAccountDBRoundAssetHoldings(t *testing.T) {
 	// remove all the assets first to make predictable assets distribution
 	var updates ledgercore.AccountDeltas
 	for aidx := range ad.Assets {
-		updates.SetHoldingDelta(addr, aidx, false)
+		updates.SetHoldingDelta(addr, aidx, ledgercore.ActionDelete)
 	}
 	ad.Assets = nil
 	updates.Upsert(addr, ledgercore.PersistedAccountData{AccountData: ad})
@@ -775,7 +775,7 @@ func TestAccountDBRoundAssetHoldings(t *testing.T) {
 	ad.Assets = make(map[basics.AssetIndex]basics.AssetHolding, holdingsNum)
 	for aidx := 1; aidx <= holdingsNum; aidx++ {
 		ad.Assets[basics.AssetIndex(aidx)] = basics.AssetHolding{Amount: uint64(aidx)}
-		updates.SetHoldingDelta(addr, basics.AssetIndex(aidx), true)
+		updates.SetHoldingDelta(addr, basics.AssetIndex(aidx), ledgercore.ActionCreate)
 	}
 	updates.Upsert(addr, ledgercore.PersistedAccountData{AccountData: ad})
 	applyUpdate(updates)
@@ -792,7 +792,7 @@ func TestAccountDBRoundAssetHoldings(t *testing.T) {
 	ad = dbad.pad.AccountData
 	for aidx := ledgercore.MaxHoldingGroupSize + 1; aidx <= 2*ledgercore.MaxHoldingGroupSize; aidx++ {
 		delete(ad.Assets, basics.AssetIndex(aidx))
-		updates.SetHoldingDelta(addr, basics.AssetIndex(aidx), false)
+		updates.SetHoldingDelta(addr, basics.AssetIndex(aidx), ledgercore.ActionDelete)
 	}
 	updates.Upsert(addr, ledgercore.PersistedAccountData{AccountData: ad})
 	for _, gi := range []int{0, 2, 3, 4, 5} {
@@ -805,7 +805,7 @@ func TestAccountDBRoundAssetHoldings(t *testing.T) {
 		rand.Shuffle(ledgercore.MaxHoldingGroupSize, func(i, j int) { seq[i], seq[j] = seq[j], seq[i] })
 		for _, aidx := range seq[:32] {
 			delete(ad.Assets, basics.AssetIndex(aidx))
-			updates.SetHoldingDelta(addr, basics.AssetIndex(aidx), false)
+			updates.SetHoldingDelta(addr, basics.AssetIndex(aidx), ledgercore.ActionDelete)
 		}
 		for _, aidx := range seq[32:64] {
 			ad.Assets[basics.AssetIndex(aidx)] = basics.AssetHolding{Amount: uint64(aidx * 10)}
@@ -847,7 +847,7 @@ func TestAccountDBRoundAssetHoldings(t *testing.T) {
 	ad = dbad.pad.AccountData
 	ad.Assets = make(map[basics.AssetIndex]basics.AssetHolding, ledgercore.MaxHoldingGroupSize)
 	for aidx := 6*ledgercore.MaxHoldingGroupSize + 1; aidx <= 7*ledgercore.MaxHoldingGroupSize; aidx++ {
-		updates.SetHoldingDelta(addr, basics.AssetIndex(aidx), true)
+		updates.SetHoldingDelta(addr, basics.AssetIndex(aidx), ledgercore.ActionCreate)
 		ad.Assets[basics.AssetIndex(aidx)] = basics.AssetHolding{Amount: uint64(aidx)}
 	}
 	updates.Upsert(addr, ledgercore.PersistedAccountData{AccountData: ad})
@@ -889,7 +889,7 @@ func TestAccountDBRoundAssetHoldings(t *testing.T) {
 		end := (gi + 1) * ledgercore.MaxHoldingGroupSize
 		for aidx := start; aidx <= end; aidx++ {
 			delete(ad.Assets, basics.AssetIndex(aidx))
-			updates.SetHoldingDelta(addr, basics.AssetIndex(aidx), false)
+			updates.SetHoldingDelta(addr, basics.AssetIndex(aidx), ledgercore.ActionDelete)
 		}
 	}
 
@@ -1124,7 +1124,7 @@ func benchmarkInitBalances(b testing.TB, numAccounts int, dbs db.Pair, proto con
 			for _, aidx := range aidxs[:numHoldings] {
 				if _, ok := ad.Assets[aidx]; !ok {
 					ad.Assets[aidx] = basics.AssetHolding{Amount: uint64(aidx), Frozen: true}
-					updates.SetHoldingDelta(addr, aidx, true)
+					updates.SetHoldingDelta(addr, aidx, ledgercore.ActionCreate)
 				}
 			}
 			updates.Upsert(addr, ledgercore.PersistedAccountData{AccountData: ad})
