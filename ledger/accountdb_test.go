@@ -832,9 +832,9 @@ func TestAccountDBRoundAssetHoldings(t *testing.T) {
 		require.LessOrEqual(t, uint64(start), uint64(g.MinAssetIndex))
 		require.LessOrEqual(t, uint64(g.MinAssetIndex)+g.DeltaMaxAssetIndex, uint64(end))
 		aidx := g.MinAssetIndex
-		for ai, offset := range g.GetGroupData().AssetOffsets {
+		for ai, d := range g.TestGetGroupData().Data {
 			h := g.GetHolding(ai)
-			aidx += offset
+			aidx += d.AssetOffset
 			require.True(t, h.Amount == uint64(aidx) || h.Amount == uint64(aidx*10))
 			require.GreaterOrEqual(t, uint64(aidx), uint64(g.MinAssetIndex))
 			require.LessOrEqual(t, uint64(aidx), uint64(g.MinAssetIndex)+g.DeltaMaxAssetIndex)
@@ -871,9 +871,9 @@ func TestAccountDBRoundAssetHoldings(t *testing.T) {
 		require.LessOrEqual(t, uint64(start), uint64(g.MinAssetIndex))
 		require.LessOrEqual(t, uint64(g.MinAssetIndex)+g.DeltaMaxAssetIndex, uint64(end))
 		aidx := g.MinAssetIndex
-		for ai, offset := range g.GetGroupData().AssetOffsets {
+		for ai, d := range g.TestGetGroupData().Data {
 			h := g.GetHolding(ai)
-			aidx += offset
+			aidx += d.AssetOffset
 			require.True(t, h.Amount == uint64(aidx) || h.Amount == uint64(aidx*10))
 			require.GreaterOrEqual(t, uint64(aidx), uint64(g.MinAssetIndex))
 			require.LessOrEqual(t, uint64(aidx), uint64(g.MinAssetIndex)+g.DeltaMaxAssetIndex)
@@ -1839,7 +1839,7 @@ func TestAccountsNewCRUD(t *testing.T) {
 		if len(clean.ExtendedAssetHolding.Groups) > 0 {
 			clean.ExtendedAssetHolding.Groups = make([]ledgercore.AssetsHoldingGroup, len(pad.ExtendedAssetHolding.Groups))
 			copy(clean.ExtendedAssetHolding.Groups, pad.ExtendedAssetHolding.Groups)
-			clean.ExtendedAssetHolding.Clear() // group data ignored on serialization, reset
+			clean.ExtendedAssetHolding.TestClear() // group data ignored on serialization, reset
 		}
 		return clean
 	}
@@ -1886,7 +1886,7 @@ func TestAccountsNewCRUD(t *testing.T) {
 				a.NoError(err)
 				var gd ledgercore.AssetsHoldingGroupData
 				a.NoError(protocol.Decode(buf, &gd))
-				a.Equal(updatedAccounts[updatedAccountIdx].pad.ExtendedAssetHolding.Groups[i].GetGroupData(), gd)
+				a.Equal(updatedAccounts[updatedAccountIdx].pad.ExtendedAssetHolding.Groups[i].TestGetGroupData(), gd)
 				i++
 			}
 			rows.Close()
@@ -2041,7 +2041,7 @@ func TestAccountsNewCRUD(t *testing.T) {
 		a.NoError(err)
 		var gd ledgercore.AssetsHoldingGroupData
 		a.NoError(protocol.Decode(buf, &gd))
-		a.Equal(updatedAccounts[updatedAccountIdx].pad.ExtendedAssetHolding.Groups[i].GetGroupData(), gd)
+		a.Equal(updatedAccounts[updatedAccountIdx].pad.ExtendedAssetHolding.Groups[i].TestGetGroupData(), gd)
 		i++
 	}
 	rows.Close()
@@ -2146,7 +2146,7 @@ func TestAccountsNewCRUD(t *testing.T) {
 		var gd ledgercore.AssetsHoldingGroupData
 		a.NoError(protocol.Decode(buf, &gd))
 		if loaded[i] {
-			a.Equal(updatedAccounts[updatedAccountIdx].pad.ExtendedAssetHolding.Groups[i].GetGroupData(), gd, i)
+			a.Equal(updatedAccounts[updatedAccountIdx].pad.ExtendedAssetHolding.Groups[i].TestGetGroupData(), gd, i)
 			j++
 		}
 		i++

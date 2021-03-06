@@ -55,19 +55,20 @@ type AssetsHoldingGroup struct {
 type AssetsHoldingGroupData struct {
 	_struct struct{} `codec:",omitempty,omitemptyarray"`
 
+	Data []AssetsHoldingGroupDataElement `codec:"d,allocbound=MaxHoldingGroupSize"`
+}
+
+// AssetsHoldingGroupDataElement is a single holding element
+type AssetsHoldingGroupDataElement struct {
+	_struct struct{} `codec:",omitempty,omitemptyarray"`
+
 	// offset relative to MinAssetIndex and differential afterward
-	// assetId1 = AmountsAssetIndicesOffsets[0] + MinAssetIndex and assetIdx1 == MinAssetIndex
-	// assetId2 = AmountsAssetIndicesOffsets[1] + assetIdx1
-	// assetId3 = AmountsAssetIndicesOffsets[2] + assetIdx2
-	AssetOffsets []basics.AssetIndex `codec:"ao,allocbound=MaxHoldingGroupSize"`
-
-	// Holding amount
-	// same number of elements as in AmountsAssetIndicesOffsets
-	Amounts []uint64 `codec:"a,allocbound=MaxHoldingGroupSize"`
-
-	// Holding "frozen" flag
-	// same number of elements as in AmountsAssetIndicesOffsets
-	Frozens []bool `codec:"f,allocbound=MaxHoldingGroupSize"`
+	// assetId1 = data[0].AssetOffset + MinAssetIndex; assetIdx1 == MinAssetIndex
+	// assetId2 = data[1].AssetOffset + assetIdx1
+	// assetId3 = data[2].AssetOffset + assetIdx2
+	AssetOffset basics.AssetIndex `codec:"o"`
+	Amount      uint64            `codec:"a"`
+	Frozen      bool              `codec:"f"`
 }
 
 // ExtendedAssetHolding is AccountData's extension for storing asset holdings
@@ -120,35 +121,27 @@ func (pad PersistedAccountData) NumAssetHoldings() int {
 }
 
 func (gd *AssetsHoldingGroupData) update(ai int, hodl basics.AssetHolding) {
-	gd.Amounts[ai] = hodl.Amount
-	gd.Frozens[ai] = hodl.Frozen
+	gd.Data[ai].Amount = hodl.Amount
+	gd.Data[ai].Frozen = hodl.Frozen
 }
 
 func (gd *AssetsHoldingGroupData) delete(ai int) {
 	if ai == 0 {
-		gd.AssetOffsets = gd.AssetOffsets[1:]
-		gd.AssetOffsets[0] = 0
-		gd.Amounts = gd.Amounts[1:]
-		gd.Frozens = gd.Frozens[1:]
-	} else if ai == len(gd.AssetOffsets)-1 {
-		gd.AssetOffsets = gd.AssetOffsets[:len(gd.AssetOffsets)-1]
-		gd.Amounts = gd.Amounts[:len(gd.Amounts)-1]
-		gd.Frozens = gd.Frozens[:len(gd.Frozens)-1]
+		gd.Data = gd.Data[1:]
+		gd.Data[0].AssetOffset = 0
+	} else if ai == len(gd.Data)-1 {
+		gd.Data = gd.Data[:len(gd.Data)-1]
 	} else {
-		gd.AssetOffsets[ai+1] += gd.AssetOffsets[ai]
-		copy(gd.AssetOffsets[ai:], gd.AssetOffsets[ai+1:])
-		gd.AssetOffsets = gd.AssetOffsets[:len(gd.AssetOffsets)-1]
+		gd.Data[ai+1].AssetOffset += gd.Data[ai].AssetOffset
 
-		copy(gd.Amounts[ai:], gd.Amounts[ai+1:])
-		gd.Amounts = gd.Amounts[:len(gd.Amounts)-1]
-		copy(gd.Frozens[ai:], gd.Frozens[ai+1:])
-		gd.Frozens = gd.Frozens[:len(gd.Frozens)-1]
+		copy(gd.Data[ai:], gd.Data[ai+1:])
+		gd.Data = gd.Data[:len(gd.Data)-1]
 	}
 }
 
 // GetHolding returns AssetHolding from group data by asset index ai
 func (gd AssetsHoldingGroupData) GetHolding(ai int) basics.AssetHolding {
-	return basics.AssetHolding{Amount: gd.Amounts[ai], Frozen: gd.Frozens[ai]}
+	return basics.AssetHolding{Amount: gd.Data[ai].Amount, Frozen: gd.Data[ai].Frozen}
 }
 
 // GetHolding returns AssetHolding from group data by asset index ai
@@ -161,8 +154,8 @@ func (g AssetsHoldingGroup) Encode() []byte {
 	return protocol.Encode(&g.groupData)
 }
 
-// GetGroupData returns group data. Used in tests only
-func (g AssetsHoldingGroup) GetGroupData() AssetsHoldingGroupData {
+// TestGetGroupData returns group data. Used in tests only
+func (g AssetsHoldingGroup) TestGetGroupData() AssetsHoldingGroupData {
 	return g.groupData
 }
 
@@ -192,11 +185,12 @@ func (g *AssetsHoldingGroup) delete(ai int) {
 
 	if ai == 0 {
 		// when deleting the first element, update MinAssetIndex and DeltaMaxAssetIndex
-		g.MinAssetIndex += g.groupData.AssetOffsets[1]
-		g.DeltaMaxAssetIndex -= uint64(g.groupData.AssetOffsets[1])
+		g.MinAssetIndex += g.groupData.Data[1].AssetOffset
+		g.DeltaMaxAssetIndex -= uint64(g.groupData.Data[1].AssetOffset)
 	} else if uint32(ai) == g.Count-1 {
 		// when deleting the last element, update DeltaMaxAssetIndex
-		g.DeltaMaxAssetIndex -= uint64(g.groupData.AssetOffsets[len(g.groupData.AssetOffsets)-1])
+		idx := len(g.groupData.Data) - 1
+		g.DeltaMaxAssetIndex -= uint64(g.groupData.Data[idx].AssetOffset)
 	}
 	g.groupData.delete(ai)
 	g.Count--
@@ -205,40 +199,39 @@ func (g *AssetsHoldingGroup) delete(ai int) {
 func (g *AssetsHoldingGroup) insert(aidx basics.AssetIndex, holding basics.AssetHolding) {
 	if aidx < g.MinAssetIndex {
 		// prepend
-		g.groupData.Amounts = append([]uint64{holding.Amount}, g.groupData.Amounts...)
-		g.groupData.Frozens = append([]bool{holding.Frozen}, g.groupData.Frozens...)
-		g.groupData.AssetOffsets[0] = g.MinAssetIndex - aidx
-		g.groupData.AssetOffsets = append([]basics.AssetIndex{0}, g.groupData.AssetOffsets...)
+		g.groupData.Data[0].AssetOffset = g.MinAssetIndex - aidx
+		g.groupData.Data = append(
+			[]AssetsHoldingGroupDataElement{
+				{AssetOffset: 0, Amount: holding.Amount, Frozen: holding.Frozen}},
+			g.groupData.Data...)
+
 		g.DeltaMaxAssetIndex += uint64(g.MinAssetIndex - aidx)
 		g.MinAssetIndex = aidx
 	} else if aidx >= g.MinAssetIndex+basics.AssetIndex(g.DeltaMaxAssetIndex) {
 		// append
-		g.groupData.Amounts = append(g.groupData.Amounts, holding.Amount)
-		g.groupData.Frozens = append(g.groupData.Frozens, holding.Frozen)
 		lastAssetIndex := g.MinAssetIndex + basics.AssetIndex(g.DeltaMaxAssetIndex)
 		delta := aidx - lastAssetIndex
-		g.groupData.AssetOffsets = append(g.groupData.AssetOffsets, delta)
+		g.groupData.Data = append(
+			g.groupData.Data,
+			AssetsHoldingGroupDataElement{AssetOffset: delta, Amount: holding.Amount, Frozen: holding.Frozen})
+
 		g.DeltaMaxAssetIndex = uint64(aidx - g.MinAssetIndex)
 	} else {
 		// find position and insert
 		cur := g.MinAssetIndex
-		for ai, d := range g.groupData.AssetOffsets {
-			cur = d + cur
+		for ai, d := range g.groupData.Data {
+			cur = d.AssetOffset + cur
 			if aidx < cur {
-				g.groupData.AssetOffsets = append(g.groupData.AssetOffsets, 0)
-				copy(g.groupData.AssetOffsets[ai:], g.groupData.AssetOffsets[ai-1:])
-				prev := cur - d
-				g.groupData.AssetOffsets[ai] = aidx - prev
-				g.groupData.AssetOffsets[ai+1] = cur - aidx
+				prev := cur - d.AssetOffset
 
-				g.groupData.Amounts = append(g.groupData.Amounts, 0)
-				copy(g.groupData.Amounts[ai:], g.groupData.Amounts[ai-1:])
-				g.groupData.Amounts[ai] = holding.Amount
-
-				g.groupData.Frozens = append(g.groupData.Frozens, false)
-				copy(g.groupData.Frozens[ai:], g.groupData.Frozens[ai-1:])
-				g.groupData.Frozens[ai] = holding.Frozen
-
+				g.groupData.Data = append(g.groupData.Data, AssetsHoldingGroupDataElement{})
+				copy(g.groupData.Data[ai:], g.groupData.Data[ai-1:])
+				g.groupData.Data[ai] = AssetsHoldingGroupDataElement{
+					AssetOffset: aidx - prev,
+					Amount:      holding.Amount,
+					Frozen:      holding.Frozen,
+				}
+				g.groupData.Data[ai+1].AssetOffset = cur - aidx
 				break
 			}
 		}
@@ -267,10 +260,10 @@ func (e *ExtendedAssetHolding) splitInsert(gi int, aidx basics.AssetIndex, holdi
 	pos := g.Count / 2
 	asset := g.MinAssetIndex
 	for i := 0; i < int(pos); i++ {
-		asset += g.groupData.AssetOffsets[i]
+		asset += g.groupData.Data[i].AssetOffset
 	}
 	rgCount := g.Count - g.Count/2
-	rgMinAssetIndex := asset + g.groupData.AssetOffsets[pos]
+	rgMinAssetIndex := asset + g.groupData.Data[pos].AssetOffset
 	rgDeltaMaxIndex := g.MinAssetIndex + basics.AssetIndex(g.DeltaMaxAssetIndex) - rgMinAssetIndex
 	lgMinAssetIndex := g.MinAssetIndex
 	lgCount := g.Count - rgCount
@@ -281,14 +274,9 @@ func (e *ExtendedAssetHolding) splitInsert(gi int, aidx basics.AssetIndex, holdi
 		// if new asset goes into right group, reserve space
 		rgCap++
 	}
-	rgd := AssetsHoldingGroupData{
-		Amounts:      make([]uint64, rgCount, rgCap),
-		Frozens:      make([]bool, rgCount, rgCap),
-		AssetOffsets: make([]basics.AssetIndex, rgCount, rgCap),
-	}
-	copy(rgd.Amounts, g.groupData.Amounts[pos:])
-	copy(rgd.Frozens, g.groupData.Frozens[pos:])
-	copy(rgd.AssetOffsets, g.groupData.AssetOffsets[pos:])
+	rgd := AssetsHoldingGroupData{Data: make([]AssetsHoldingGroupDataElement, rgCount, rgCap)}
+
+	copy(rgd.Data, g.groupData.Data[pos:])
 	rightGroup := AssetsHoldingGroup{
 		Count:              rgCount,
 		MinAssetIndex:      rgMinAssetIndex,
@@ -296,14 +284,12 @@ func (e *ExtendedAssetHolding) splitInsert(gi int, aidx basics.AssetIndex, holdi
 		groupData:          rgd,
 		loaded:             true,
 	}
-	rightGroup.groupData.AssetOffsets[0] = 0
+	rightGroup.groupData.Data[0].AssetOffset = 0
 
 	e.Groups[gi].Count = lgCount
 	e.Groups[gi].DeltaMaxAssetIndex = uint64(lgDeltaMaxIndex)
 	e.Groups[gi].groupData = AssetsHoldingGroupData{
-		Amounts:      g.groupData.Amounts[:pos],
-		Frozens:      g.groupData.Frozens[:pos],
-		AssetOffsets: g.groupData.AssetOffsets[:pos],
+		Data: g.groupData.Data[:pos],
 	}
 	if aidx < lgMinAssetIndex+lgDeltaMaxIndex {
 		e.Groups[gi].insert(aidx, holding)
@@ -340,9 +326,11 @@ func (e *ExtendedAssetHolding) Insert(input []basics.AssetIndex, data map[basics
 				DeltaMaxAssetIndex: 0,
 				AssetGroupKey:      0,
 				groupData: AssetsHoldingGroupData{
-					AssetOffsets: []basics.AssetIndex{0},
-					Amounts:      []uint64{holding.Amount},
-					Frozens:      []bool{holding.Frozen},
+					Data: []AssetsHoldingGroupDataElement{{
+						AssetOffset: 0,
+						Amount:      holding.Amount,
+						Frozen:      holding.Frozen,
+					}},
 				},
 				loaded: true,
 			}
@@ -472,8 +460,8 @@ func (e ExtendedAssetHolding) FindAsset(aidx basics.AssetIndex, startIdx int) (i
 
 			// linear search because AssetOffsets is delta-encoded, not values
 			cur := g.MinAssetIndex
-			for ai, d := range g.groupData.AssetOffsets {
-				cur = d + cur
+			for ai, d := range g.groupData.Data {
+				cur = d.AssetOffset + cur
 				if aidx == cur {
 					return gi + startIdx, ai
 				}
@@ -503,6 +491,8 @@ func (e *ExtendedAssetHolding) ConvertToGroups(assets map[basics.AssetIndex]basi
 		flatten[i] = asset{k, v}
 		i++
 	}
+	// TODO: possible optimization
+	// if max asset id - min asset id less than X then use counting/radix sort ?
 	sort.SliceStable(flatten, func(i, j int) bool { return flatten[i].aidx < flatten[j].aidx })
 
 	numGroups := len(assets) / MaxHoldingGroupSize
@@ -525,9 +515,7 @@ func (e *ExtendedAssetHolding) ConvertToGroups(assets map[basics.AssetIndex]basi
 		Count:         uint32(size),
 		MinAssetIndex: flatten[0].aidx,
 		groupData: AssetsHoldingGroupData{
-			AssetOffsets: make([]basics.AssetIndex, size, size),
-			Amounts:      make([]uint64, size, size),
-			Frozens:      make([]bool, size, size),
+			Data: make([]AssetsHoldingGroupDataElement, size, size),
 		},
 		loaded: true,
 	}
@@ -542,25 +530,25 @@ func (e *ExtendedAssetHolding) ConvertToGroups(assets map[basics.AssetIndex]basi
 				Count:         uint32(size),
 				MinAssetIndex: flatten[i].aidx,
 				groupData: AssetsHoldingGroupData{
-					AssetOffsets: make([]basics.AssetIndex, size, size),
-					Amounts:      make([]uint64, size, size),
-					Frozens:      make([]bool, size, size),
+					Data: make([]AssetsHoldingGroupDataElement, size, size),
 				},
 				loaded: true,
 			}
 			prevAssetIndex = e.Groups[currentGroup].MinAssetIndex
 			prevGroupIndex = currentGroup
 		}
-		e.Groups[currentGroup].groupData.AssetOffsets[i%MaxHoldingGroupSize] = a.aidx - prevAssetIndex
-		e.Groups[currentGroup].groupData.Amounts[i%MaxHoldingGroupSize] = a.holdings.Amount
-		e.Groups[currentGroup].groupData.Frozens[i%MaxHoldingGroupSize] = a.holdings.Frozen
+		e.Groups[currentGroup].groupData.Data[i%MaxHoldingGroupSize] = AssetsHoldingGroupDataElement{
+			AssetOffset: a.aidx - prevAssetIndex,
+			Amount:      a.holdings.Amount,
+			Frozen:      a.holdings.Frozen,
+		}
 		prevAssetIndex = a.aidx
 	}
 	e.Groups[currentGroup].DeltaMaxAssetIndex = uint64(flatten[len(flatten)-1].aidx - e.Groups[currentGroup].MinAssetIndex)
 }
 
-// Clear removes all the groups, used in tests only
-func (e *ExtendedAssetHolding) Clear() {
+// TestClear removes all the groups, used in tests only
+func (e *ExtendedAssetHolding) TestClear() {
 	for i := 0; i < len(e.Groups); i++ {
 		// ignored on serialization
 		e.Groups[i].groupData = AssetsHoldingGroupData{}

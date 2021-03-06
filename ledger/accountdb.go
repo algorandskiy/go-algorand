@@ -1146,8 +1146,8 @@ func loadHoldingGroup(stmt *sql.Stmt, g ledgercore.AssetsHoldingGroup, holdings 
 	}
 	if holdings != nil {
 		aidx := g.MinAssetIndex
-		for i := 0; i < len(groupData.AssetOffsets); i++ {
-			aidx += groupData.AssetOffsets[i]
+		for i := 0; i < len(groupData.Data); i++ {
+			aidx += groupData.Data[i].AssetOffset
 			holdings[aidx] = groupData.GetHolding(i)
 		}
 	}

@@ -72,15 +72,13 @@ func TestAssetHoldingConvertToGroups(t *testing.T) {
 				a.Equal(int64(0), e.Groups[i].AssetGroupKey)
 				a.True(e.Groups[i].loaded)
 
-				a.Equal(int(e.Groups[i].Count), len(e.Groups[i].groupData.Amounts))
-				a.Equal(len(e.Groups[i].groupData.Amounts), len(e.Groups[i].groupData.Frozens))
-				a.Equal(len(e.Groups[i].groupData.Amounts), len(e.Groups[i].groupData.AssetOffsets))
+				a.Equal(int(e.Groups[i].Count), len(e.Groups[i].groupData.Data))
 				aidx := e.Groups[i].MinAssetIndex
-				a.Equal(0, int(e.Groups[i].groupData.AssetOffsets[0]))
-				for j := 0; j < len(e.Groups[i].groupData.AssetOffsets); j++ {
-					aidx += e.Groups[i].groupData.AssetOffsets[j]
+				a.Equal(0, int(e.Groups[i].groupData.Data[0].AssetOffset))
+				for j := 0; j < len(e.Groups[i].groupData.Data); j++ {
+					aidx += e.Groups[i].groupData.Data[j].AssetOffset
 					a.Contains(assets, aidx)
-					a.Equal(uint64(aidx)-1, e.Groups[i].groupData.Amounts[j])
+					a.Equal(uint64(aidx)-1, e.Groups[i].groupData.Data[j].Amount)
 				}
 				a.Equal(e.Groups[i].MinAssetIndex+basics.AssetIndex(e.Groups[i].DeltaMaxAssetIndex), aidx)
 			}
@@ -164,22 +162,22 @@ func genExtendedHolding(t *testing.T, spec []groupSpec) (e ExtendedAssetHolding)
 		e.Groups[i].Count = uint32(s.count)
 		e.Groups[i].MinAssetIndex = s.start
 		e.Groups[i].DeltaMaxAssetIndex = uint64(s.end - s.start)
-		ao := make([]basics.AssetIndex, s.count)
-		am := make([]uint64, s.count)
-		ao[0] = 0
-		am[0] = uint64(s.start)
+
+		el := make([]AssetsHoldingGroupDataElement, s.count)
+		el[0].AssetOffset = 0
+		el[0].Amount = uint64(s.start)
 		gap := (s.end + 1 - s.start) / basics.AssetIndex(s.count)
 		aidx := s.start
 		for j := 1; j < s.count; j++ {
-			ao[j] = gap
+			el[j].AssetOffset = gap
 			aidx += gap
-			am[j] = uint64(aidx)
+			el[j].Amount = uint64(aidx)
 		}
 		if aidx != s.end {
-			ao[s.count-1] = s.end - aidx + gap
-			am[s.count-1] = uint64(s.end)
+			el[s.count-1].AssetOffset = s.end - aidx + gap
+			el[s.count-1].Amount = uint64(s.end)
 		}
-		e.Groups[i].groupData = AssetsHoldingGroupData{AssetOffsets: ao, Amounts: am, Frozens: make([]bool, len(ao))}
+		e.Groups[i].groupData = AssetsHoldingGroupData{Data: el}
 		e.Groups[i].loaded = true
 		e.Count += uint32(s.count)
 	}
@@ -188,11 +186,11 @@ func genExtendedHolding(t *testing.T, spec []groupSpec) (e ExtendedAssetHolding)
 		gi, ai := e.FindAsset(s.start, 0)
 		a.NotEqual(-1, gi)
 		a.NotEqual(-1, ai)
-		a.Equal(uint64(s.start), e.Groups[gi].groupData.Amounts[ai])
+		a.Equal(uint64(s.start), e.Groups[gi].groupData.Data[ai].Amount)
 		gi, ai = e.FindAsset(s.end, 0)
 		a.NotEqual(-1, gi)
 		a.NotEqual(-1, ai)
-		a.Equal(uint64(s.end), e.Groups[gi].groupData.Amounts[ai])
+		a.Equal(uint64(s.end), e.Groups[gi].groupData.Data[ai].Amount)
 	}
 
 	return e
@@ -209,12 +207,12 @@ func TestAssetHoldingGroupInsert(t *testing.T) {
 	e := genExtendedHolding(t, spec)
 	oldCount := e.Count
 	oldDeltaMaxAssetIndex := e.Groups[0].DeltaMaxAssetIndex
-	oldAssetOffsets := make([]basics.AssetIndex, spec[0].count)
+	oldGroupData := make([]AssetsHoldingGroupDataElement, spec[0].count)
 	oldAssets := make(map[basics.AssetIndex]basics.AssetHolding, spec[0].count)
 	aidx := e.Groups[0].MinAssetIndex
 	for i := 0; i < spec[0].count; i++ {
-		oldAssetOffsets[i] = e.Groups[0].groupData.AssetOffsets[i]
-		aidx += e.Groups[0].groupData.AssetOffsets[i]
+		oldGroupData[i] = e.Groups[0].groupData.Data[i]
+		aidx += e.Groups[0].groupData.Data[i].AssetOffset
 		oldAssets[aidx] = basics.AssetHolding{}
 	}
 	a.Equal(int(oldCount), len(oldAssets))
@@ -225,9 +223,9 @@ func TestAssetHoldingGroupInsert(t *testing.T) {
 		newAssets := make(map[basics.AssetIndex]basics.AssetHolding, g.Count)
 		aidx := g.MinAssetIndex
 		for i := 0; i < int(g.Count); i++ {
-			aidx += g.groupData.AssetOffsets[i]
+			aidx += g.groupData.Data[i].AssetOffset
 			newAssets[aidx] = basics.AssetHolding{}
-			a.Equal(uint64(aidx), g.groupData.Amounts[i])
+			a.Equal(uint64(aidx), g.groupData.Data[i].Amount)
 		}
 		a.Equal(int(g.Count), len(newAssets))
 		a.Contains(newAssets, newAsset)
@@ -241,12 +239,10 @@ func TestAssetHoldingGroupInsert(t *testing.T) {
 	a.Equal(oldCount+1, e.Groups[0].Count)
 	a.Equal(aidx, e.Groups[0].MinAssetIndex)
 	a.Equal(oldDeltaMaxAssetIndex+uint64((spec[0].start-aidx)), e.Groups[0].DeltaMaxAssetIndex)
-	a.Equal(int(e.Groups[0].Count), len(e.Groups[0].groupData.AssetOffsets))
-	a.Equal(int(e.Groups[0].Count), len(e.Groups[0].groupData.Amounts))
-	a.Equal(int(e.Groups[0].Count), len(e.Groups[0].groupData.Frozens))
-	a.Equal(basics.AssetIndex(0), e.Groups[0].groupData.AssetOffsets[0])
-	a.Equal(spec[0].start-aidx, e.Groups[0].groupData.AssetOffsets[1])
-	a.Equal(oldAssetOffsets[1:], e.Groups[0].groupData.AssetOffsets[2:])
+	a.Equal(int(e.Groups[0].Count), len(e.Groups[0].groupData.Data))
+	a.Equal(basics.AssetIndex(0), e.Groups[0].groupData.Data[0].AssetOffset)
+	a.Equal(spec[0].start-aidx, e.Groups[0].groupData.Data[1].AssetOffset)
+	a.Equal(oldGroupData[1:], e.Groups[0].groupData.Data[2:])
 	checkAssetMap(aidx, e.Groups[0])
 
 	// append
@@ -256,12 +252,10 @@ func TestAssetHoldingGroupInsert(t *testing.T) {
 	a.Equal(oldCount+1, e.Groups[0].Count)
 	a.Equal(spec[0].start, e.Groups[0].MinAssetIndex)
 	a.Equal(uint64(aidx-spec[0].start), e.Groups[0].DeltaMaxAssetIndex)
-	a.Equal(int(e.Groups[0].Count), len(e.Groups[0].groupData.AssetOffsets))
-	a.Equal(int(e.Groups[0].Count), len(e.Groups[0].groupData.Amounts))
-	a.Equal(int(e.Groups[0].Count), len(e.Groups[0].groupData.Frozens))
-	a.Equal(basics.AssetIndex(0), e.Groups[0].groupData.AssetOffsets[0])
-	a.Equal(oldAssetOffsets, e.Groups[0].groupData.AssetOffsets[:e.Groups[0].Count-1])
-	a.Equal(aidx-spec[0].end, e.Groups[0].groupData.AssetOffsets[e.Groups[0].Count-1])
+	a.Equal(int(e.Groups[0].Count), len(e.Groups[0].groupData.Data))
+	a.Equal(basics.AssetIndex(0), e.Groups[0].groupData.Data[0].AssetOffset)
+	a.Equal(oldGroupData, e.Groups[0].groupData.Data[:e.Groups[0].Count-1])
+	a.Equal(aidx-spec[0].end, e.Groups[0].groupData.Data[e.Groups[0].Count-1].AssetOffset)
 	checkAssetMap(aidx, e.Groups[0])
 
 	// insert in the middle
@@ -272,13 +266,11 @@ func TestAssetHoldingGroupInsert(t *testing.T) {
 	a.Equal(oldCount+1, e.Groups[0].Count)
 	a.Equal(spec[0].start, e.Groups[0].MinAssetIndex)
 	a.Equal(uint64(spec[0].end-spec[0].start), e.Groups[0].DeltaMaxAssetIndex)
-	a.Equal(int(e.Groups[0].Count), len(e.Groups[0].groupData.AssetOffsets))
-	a.Equal(int(e.Groups[0].Count), len(e.Groups[0].groupData.Amounts))
-	a.Equal(int(e.Groups[0].Count), len(e.Groups[0].groupData.Frozens))
-	a.Equal(basics.AssetIndex(0), e.Groups[0].groupData.AssetOffsets[0])
-	a.Equal(oldAssetOffsets[:len(oldAssetOffsets)-1], e.Groups[0].groupData.AssetOffsets[:e.Groups[0].Count-2])
-	a.Equal(oldAssetOffsets[len(oldAssetOffsets)-1]-delta, e.Groups[0].groupData.AssetOffsets[e.Groups[0].Count-2])
-	a.Equal(delta, e.Groups[0].groupData.AssetOffsets[e.Groups[0].Count-1])
+	a.Equal(int(e.Groups[0].Count), len(e.Groups[0].groupData.Data))
+	a.Equal(basics.AssetIndex(0), e.Groups[0].groupData.Data[0].AssetOffset)
+	a.Equal(oldGroupData[:len(oldGroupData)-1], e.Groups[0].groupData.Data[:e.Groups[0].Count-2])
+	a.Equal(oldGroupData[len(oldGroupData)-1].AssetOffset-delta, e.Groups[0].groupData.Data[e.Groups[0].Count-2].AssetOffset)
+	a.Equal(delta, e.Groups[0].groupData.Data[e.Groups[0].Count-1].AssetOffset)
 	checkAssetMap(aidx, e.Groups[0])
 }
 
@@ -286,8 +278,8 @@ func checkHoldings(t *testing.T, g AssetsHoldingGroup) {
 	a := require.New(t)
 	aidx := g.MinAssetIndex
 	for i := 0; i < int(g.Count); i++ {
-		aidx += g.groupData.AssetOffsets[i]
-		a.Equal(uint64(aidx), g.groupData.Amounts[i])
+		aidx += g.groupData.Data[i].AssetOffset
+		a.Equal(uint64(aidx), g.groupData.Data[i].Amount)
 	}
 }
 
@@ -303,11 +295,11 @@ func TestAssetHoldingSplitInsertGroup(t *testing.T) {
 	// save original data for later comparison
 	oldCount := e.Count
 	a.Equal(uint32(spec[0].count), oldCount)
-	oldAssetOffsets1 := make([]basics.AssetIndex, spec[0].count/2)
-	oldAssetOffsets2 := make([]basics.AssetIndex, spec[0].count/2)
+	oldGroupData1 := make([]AssetsHoldingGroupDataElement, spec[0].count/2)
+	oldGroupData2 := make([]AssetsHoldingGroupDataElement, spec[0].count/2)
 	for i := 0; i < spec[0].count/2; i++ {
-		oldAssetOffsets1[i] = e.Groups[0].groupData.AssetOffsets[i]
-		oldAssetOffsets2[i] = e.Groups[0].groupData.AssetOffsets[i+spec[0].count/2]
+		oldGroupData1[i] = e.Groups[0].groupData.Data[i]
+		oldGroupData2[i] = e.Groups[0].groupData.Data[i+spec[0].count/2]
 	}
 	num := spec[0].count / 2
 	// genExtendedHoldingfunction increments assets as (700-20)/256 = 2
@@ -323,23 +315,19 @@ func TestAssetHoldingSplitInsertGroup(t *testing.T) {
 	a.Equal(spec[0].start, e.Groups[0].MinAssetIndex)
 	a.Equal(uint32(MaxHoldingGroupSize/2+1), e.Groups[0].Count)
 	a.Equal(uint64((num-1)*gap), e.Groups[0].DeltaMaxAssetIndex)
-	a.Equal(int(e.Groups[0].Count), len(e.Groups[0].groupData.AssetOffsets))
-	a.Equal(int(e.Groups[0].Count), len(e.Groups[0].groupData.Amounts))
-	a.Equal(int(e.Groups[0].Count), len(e.Groups[0].groupData.Frozens))
-	a.Equal(oldAssetOffsets1[0], e.Groups[0].groupData.AssetOffsets[0])
-	a.Equal(basics.AssetIndex(1), e.Groups[0].groupData.AssetOffsets[1])
-	a.Equal(basics.AssetIndex(1), e.Groups[0].groupData.AssetOffsets[2])
-	a.Equal(oldAssetOffsets1[2:], e.Groups[0].groupData.AssetOffsets[3:])
+	a.Equal(int(e.Groups[0].Count), len(e.Groups[0].groupData.Data))
+	a.Equal(oldGroupData1[0], e.Groups[0].groupData.Data[0])
+	a.Equal(basics.AssetIndex(1), e.Groups[0].groupData.Data[1].AssetOffset)
+	a.Equal(basics.AssetIndex(1), e.Groups[0].groupData.Data[2].AssetOffset)
+	a.Equal(oldGroupData1[2:], e.Groups[0].groupData.Data[3:])
 	checkHoldings(t, e.Groups[0])
 
 	a.Equal(spec[0].start+basics.AssetIndex(e.Groups[0].DeltaMaxAssetIndex+uint64(gap)), e.Groups[1].MinAssetIndex)
 	a.Equal(uint32(MaxHoldingGroupSize/2), e.Groups[1].Count)
 	a.Equal(uint64(spec[0].end-e.Groups[1].MinAssetIndex), e.Groups[1].DeltaMaxAssetIndex)
-	a.Equal(int(e.Groups[1].Count), len(e.Groups[1].groupData.AssetOffsets))
-	a.Equal(int(e.Groups[1].Count), len(e.Groups[1].groupData.Amounts))
-	a.Equal(int(e.Groups[1].Count), len(e.Groups[1].groupData.Frozens))
-	a.Equal(basics.AssetIndex(0), e.Groups[1].groupData.AssetOffsets[0])
-	a.Equal(oldAssetOffsets2[1:], e.Groups[1].groupData.AssetOffsets[1:])
+	a.Equal(int(e.Groups[1].Count), len(e.Groups[1].groupData.Data))
+	a.Equal(basics.AssetIndex(0), e.Groups[1].groupData.Data[0].AssetOffset)
+	a.Equal(oldGroupData2[1:], e.Groups[1].groupData.Data[1:])
 	checkHoldings(t, e.Groups[1])
 
 	e = genExtendedHolding(t, spec)
@@ -354,22 +342,18 @@ func TestAssetHoldingSplitInsertGroup(t *testing.T) {
 	a.Equal(spec[0].start, e.Groups[0].MinAssetIndex)
 	a.Equal(uint32(MaxHoldingGroupSize/2), e.Groups[0].Count)
 	a.Equal(uint64((num-1)*gap), e.Groups[0].DeltaMaxAssetIndex)
-	a.Equal(int(e.Groups[0].Count), len(e.Groups[0].groupData.AssetOffsets))
-	a.Equal(int(e.Groups[0].Count), len(e.Groups[0].groupData.Amounts))
-	a.Equal(int(e.Groups[0].Count), len(e.Groups[0].groupData.Frozens))
-	a.Equal(oldAssetOffsets1, e.Groups[0].groupData.AssetOffsets)
+	a.Equal(int(e.Groups[0].Count), len(e.Groups[0].groupData.Data))
+	a.Equal(oldGroupData1, e.Groups[0].groupData.Data)
 	checkHoldings(t, e.Groups[0])
 
 	a.Equal(spec[0].start+basics.AssetIndex(e.Groups[0].DeltaMaxAssetIndex+uint64(gap)), e.Groups[1].MinAssetIndex)
 	a.Equal(uint32(MaxHoldingGroupSize/2+1), e.Groups[1].Count)
 	a.Equal(uint64(spec[0].end-e.Groups[1].MinAssetIndex), e.Groups[1].DeltaMaxAssetIndex)
-	a.Equal(int(e.Groups[1].Count), len(e.Groups[1].groupData.AssetOffsets))
-	a.Equal(int(e.Groups[1].Count), len(e.Groups[1].groupData.Amounts))
-	a.Equal(int(e.Groups[1].Count), len(e.Groups[1].groupData.Frozens))
-	a.Equal(basics.AssetIndex(0), e.Groups[1].groupData.AssetOffsets[0])
-	a.Equal(oldAssetOffsets2[1:len(oldAssetOffsets2)-1], e.Groups[1].groupData.AssetOffsets[1:e.Groups[1].Count-2])
-	a.Equal(oldAssetOffsets2[len(oldAssetOffsets2)-1]-1, e.Groups[1].groupData.AssetOffsets[e.Groups[1].Count-2])
-	a.Equal(basics.AssetIndex(1), e.Groups[1].groupData.AssetOffsets[e.Groups[1].Count-1])
+	a.Equal(int(e.Groups[1].Count), len(e.Groups[1].groupData.Data))
+	a.Equal(basics.AssetIndex(0), e.Groups[1].groupData.Data[0].AssetOffset)
+	a.Equal(oldGroupData2[1:len(oldGroupData2)-1], e.Groups[1].groupData.Data[1:e.Groups[1].Count-2])
+	a.Equal(oldGroupData2[len(oldGroupData2)-1].AssetOffset-1, e.Groups[1].groupData.Data[e.Groups[1].Count-2].AssetOffset)
+	a.Equal(basics.AssetIndex(1), e.Groups[1].groupData.Data[e.Groups[1].Count-1].AssetOffset)
 	checkHoldings(t, e.Groups[1])
 }
 
@@ -471,50 +455,42 @@ func TestAssetHoldingInsertGroup(t *testing.T) {
 	a.Equal(uint32(1), e.Groups[0].Count)
 	a.Equal(assets[0], e.Groups[0].MinAssetIndex)
 	a.Equal(uint64(0), e.Groups[0].DeltaMaxAssetIndex)
-	a.Equal(int(e.Groups[0].Count), len(e.Groups[0].groupData.AssetOffsets))
-	a.Equal(int(e.Groups[0].Count), len(e.Groups[0].groupData.Amounts))
-	a.Equal(int(e.Groups[0].Count), len(e.Groups[0].groupData.Frozens))
-	a.Equal(basics.AssetIndex(0), e.Groups[0].groupData.AssetOffsets[0])
+	a.Equal(int(e.Groups[0].Count), len(e.Groups[0].groupData.Data))
+	a.Equal(basics.AssetIndex(0), e.Groups[0].groupData.Data[0].AssetOffset)
 	checkHoldings(t, e.Groups[0])
 
 	// two cases below checked in splitInsert test
 	a.Equal(uint32(spec1[0].count/2+1), e.Groups[1].Count)
-	a.Equal(int(e.Groups[1].Count), len(e.Groups[1].groupData.AssetOffsets))
+	a.Equal(int(e.Groups[1].Count), len(e.Groups[1].groupData.Data))
 	checkHoldings(t, e.Groups[1])
 
 	a.Equal(uint32(spec1[0].count/2+1), e.Groups[2].Count)
-	a.Equal(int(e.Groups[2].Count), len(e.Groups[2].groupData.AssetOffsets))
+	a.Equal(int(e.Groups[2].Count), len(e.Groups[2].groupData.Data))
 	checkHoldings(t, e.Groups[2])
 
 	a.Equal(uint32(spec1[1].count+1), e.Groups[3].Count)
 	a.Equal(spec1[1].start, e.Groups[3].MinAssetIndex)
 	a.Equal(uint64(spec1[1].end-spec1[1].start), e.Groups[3].DeltaMaxAssetIndex)
-	a.Equal(int(e.Groups[3].Count), len(e.Groups[3].groupData.AssetOffsets))
-	a.Equal(int(e.Groups[3].Count), len(e.Groups[3].groupData.Amounts))
-	a.Equal(int(e.Groups[3].Count), len(e.Groups[3].groupData.Frozens))
+	a.Equal(int(e.Groups[3].Count), len(e.Groups[3].groupData.Data))
 	checkHoldings(t, e.Groups[3])
 
 	// checked in group insert test
 	a.Equal(uint32(spec1[2].count), e.Groups[4].Count)
-	a.Equal(int(e.Groups[4].Count), len(e.Groups[4].groupData.AssetOffsets))
+	a.Equal(int(e.Groups[4].Count), len(e.Groups[4].groupData.Data))
 	checkHoldings(t, e.Groups[4])
 
 	a.Equal(uint32(1), e.Groups[5].Count)
 	a.Equal(assets[4], e.Groups[5].MinAssetIndex)
 	a.Equal(uint64(0), e.Groups[5].DeltaMaxAssetIndex)
-	a.Equal(int(e.Groups[5].Count), len(e.Groups[5].groupData.AssetOffsets))
-	a.Equal(int(e.Groups[5].Count), len(e.Groups[5].groupData.Amounts))
-	a.Equal(int(e.Groups[5].Count), len(e.Groups[5].groupData.Frozens))
-	a.Equal(basics.AssetIndex(0), e.Groups[5].groupData.AssetOffsets[0])
+	a.Equal(int(e.Groups[5].Count), len(e.Groups[5].groupData.Data))
+	a.Equal(basics.AssetIndex(0), e.Groups[5].groupData.Data[0].AssetOffset)
 	checkHoldings(t, e.Groups[5])
 
 	a.Equal(uint32(1), e.Groups[7].Count)
 	a.Equal(assets[5], e.Groups[7].MinAssetIndex)
 	a.Equal(uint64(0), e.Groups[7].DeltaMaxAssetIndex)
-	a.Equal(int(e.Groups[7].Count), len(e.Groups[7].groupData.AssetOffsets))
-	a.Equal(int(e.Groups[7].Count), len(e.Groups[7].groupData.Amounts))
-	a.Equal(int(e.Groups[7].Count), len(e.Groups[7].groupData.Frozens))
-	a.Equal(basics.AssetIndex(0), e.Groups[7].groupData.AssetOffsets[0])
+	a.Equal(int(e.Groups[7].Count), len(e.Groups[7].groupData.Data))
+	a.Equal(basics.AssetIndex(0), e.Groups[7].groupData.Data[0].AssetOffset)
 	checkHoldings(t, e.Groups[7])
 
 	spec2 := []groupSpec{
@@ -617,22 +593,22 @@ func TestAssetHoldingDelete(t *testing.T) {
 	a.Equal(uint32(spec[1].count), e.Groups[1].Count)
 	a.Equal(spec[1].start, e.Groups[1].MinAssetIndex)
 	a.Equal(uint64(0), e.Groups[1].DeltaMaxAssetIndex)
-	a.Equal(basics.AssetIndex(0), e.Groups[1].groupData.AssetOffsets[0])
+	a.Equal(basics.AssetIndex(0), e.Groups[1].groupData.Data[0].AssetOffset)
 
 	oldAssets := make(map[basics.AssetIndex]basics.AssetHolding, spec[0].count)
 	aidx := e.Groups[0].MinAssetIndex
 	for i := 0; i < spec[0].count; i++ {
-		aidx += e.Groups[0].groupData.AssetOffsets[i]
-		oldAssets[aidx] = basics.AssetHolding{Amount: e.Groups[0].groupData.Amounts[i]}
+		aidx += e.Groups[0].groupData.Data[i].AssetOffset
+		oldAssets[aidx] = basics.AssetHolding{Amount: e.Groups[0].groupData.Data[i].Amount}
 	}
 
 	checkAssetMap := func(delAsset basics.AssetIndex, g AssetsHoldingGroup) {
 		newAssets := make(map[basics.AssetIndex]basics.AssetHolding, g.Count)
 		aidx := g.MinAssetIndex
 		for i := 0; i < int(g.Count); i++ {
-			aidx += g.groupData.AssetOffsets[i]
-			newAssets[aidx] = basics.AssetHolding{Amount: e.Groups[0].groupData.Amounts[i]}
-			a.Equal(uint64(aidx), g.groupData.Amounts[i])
+			aidx += g.groupData.Data[i].AssetOffset
+			newAssets[aidx] = basics.AssetHolding{Amount: e.Groups[0].groupData.Data[i].Amount}
+			a.Equal(uint64(aidx), g.groupData.Data[i].Amount)
 		}
 		a.Equal(int(g.Count), len(newAssets))
 		a.Contains(oldAssets, delAsset)
@@ -648,7 +624,7 @@ func TestAssetHoldingDelete(t *testing.T) {
 	assetByIndex := func(gi, ai int, e ExtendedAssetHolding) basics.AssetIndex {
 		aidx := e.Groups[gi].MinAssetIndex
 		for i := 0; i <= ai; i++ {
-			aidx += e.Groups[gi].groupData.AssetOffsets[i]
+			aidx += e.Groups[gi].groupData.Data[i].AssetOffset
 		}
 		return aidx
 	}
@@ -711,8 +687,8 @@ func TestAssetHoldingDeleteRepeat(t *testing.T) {
 	a.Equal(spec[1].start, e.Groups[1].MinAssetIndex)
 	a.Equal(spec[1].end, e.Groups[1].MinAssetIndex+basics.AssetIndex(e.Groups[1].DeltaMaxAssetIndex))
 	for i := 1; i < MaxHoldingGroupSize; i++ {
-		e.Groups[0].groupData.AssetOffsets[i] = basics.AssetIndex(1)
-		e.Groups[1].groupData.AssetOffsets[i] = basics.AssetIndex(1)
+		e.Groups[0].groupData.Data[i].AssetOffset = basics.AssetIndex(1)
+		e.Groups[1].groupData.Data[i].AssetOffset = basics.AssetIndex(1)
 	}
 	maxReps := rand.Intn(30)
 	for c := 0; c < maxReps; c++ {
@@ -729,8 +705,8 @@ func TestAssetHoldingDeleteRepeat(t *testing.T) {
 		maxAsset := g.MinAssetIndex + basics.AssetIndex(g.DeltaMaxAssetIndex)
 		a.Less(uint64(maxAsset), uint64(e.Groups[1].MinAssetIndex))
 		asset := g.MinAssetIndex
-		for _, offset := range g.groupData.AssetOffsets {
-			asset += offset
+		for _, d := range g.groupData.Data {
+			asset += d.AssetOffset
 		}
 		a.Equal(maxAsset, asset)
 
