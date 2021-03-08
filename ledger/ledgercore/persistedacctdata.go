@@ -507,44 +507,31 @@ func (e *ExtendedAssetHolding) ConvertToGroups(assets map[basics.AssetIndex]basi
 	}
 
 	e.Count = uint32(len(assets))
-	e.Groups = make([]AssetsHoldingGroup, numGroups)
+	e.Groups = make([]AssetsHoldingGroup, numGroups, numGroups)
 
-	size := min(MaxHoldingGroupSize, len(assets))
-	currentGroup := 0
-	e.Groups[currentGroup] = AssetsHoldingGroup{
-		Count:         uint32(size),
-		MinAssetIndex: flatten[0].aidx,
-		groupData: AssetsHoldingGroupData{
-			Data: make([]AssetsHoldingGroupDataElement, size, size),
-		},
-		loaded: true,
-	}
-	prevAssetIndex := e.Groups[currentGroup].MinAssetIndex
-	prevGroupIndex := currentGroup
-	for i, a := range flatten {
-		currentGroup = i / MaxHoldingGroupSize
-		if currentGroup != prevGroupIndex {
-			e.Groups[prevGroupIndex].DeltaMaxAssetIndex = uint64(flatten[i-1].aidx - e.Groups[prevGroupIndex].MinAssetIndex)
-			size := min(MaxHoldingGroupSize, len(assets)-i)
-			e.Groups[currentGroup] = AssetsHoldingGroup{
-				Count:         uint32(size),
-				MinAssetIndex: flatten[i].aidx,
-				groupData: AssetsHoldingGroupData{
-					Data: make([]AssetsHoldingGroupDataElement, size, size),
-				},
-				loaded: true,
+	for i := 0; i < numGroups; i++ {
+		start := i * MaxHoldingGroupSize
+		end := min((i+1)*MaxHoldingGroupSize, len(assets))
+		size := end - start
+		d := make([]AssetsHoldingGroupDataElement, size, size)
+		first := flatten[start].aidx
+		prev := first
+		for j, di := start, 0; j < end; j, di = j+1, di+1 {
+			d[di] = AssetsHoldingGroupDataElement{
+				AssetOffset: flatten[j].aidx - prev,
+				Amount:      flatten[j].holdings.Amount,
+				Frozen:      flatten[j].holdings.Frozen,
 			}
-			prevAssetIndex = e.Groups[currentGroup].MinAssetIndex
-			prevGroupIndex = currentGroup
+			prev = flatten[j].aidx
 		}
-		e.Groups[currentGroup].groupData.Data[i%MaxHoldingGroupSize] = AssetsHoldingGroupDataElement{
-			AssetOffset: a.aidx - prevAssetIndex,
-			Amount:      a.holdings.Amount,
-			Frozen:      a.holdings.Frozen,
+		e.Groups[i] = AssetsHoldingGroup{
+			Count:              uint32(size),
+			MinAssetIndex:      first,
+			DeltaMaxAssetIndex: uint64(prev - first),
+			groupData:          AssetsHoldingGroupData{Data: d},
+			loaded:             true,
 		}
-		prevAssetIndex = a.aidx
 	}
-	e.Groups[currentGroup].DeltaMaxAssetIndex = uint64(flatten[len(flatten)-1].aidx - e.Groups[currentGroup].MinAssetIndex)
 }
 
 // TestClear removes all the groups, used in tests only
