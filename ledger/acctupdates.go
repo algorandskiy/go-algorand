@@ -1892,7 +1892,8 @@ func (au *accountUpdates) lookupHoldingWithoutRewards(rnd basics.Round, addr bas
 			if gi != -1 {
 				// if matching group found but the group is not loaded then load it
 				if ai == -1 {
-					_, pad.ExtendedAssetHolding.Groups[gi], err = loadHoldingGroup(loadStmt, pad.ExtendedAssetHolding.Groups[gi], nil)
+					fetcher := makeAssetFetcher(loadStmt)
+					err = pad.ExtendedAssetHolding.Groups[gi].Fetch(fetcher, nil)
 					if err != nil {
 						return err
 					}
