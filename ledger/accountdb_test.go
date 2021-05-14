@@ -302,25 +302,25 @@ func randomDeltasImpl(niter int, base map[basics.Address]basics.AccountData, rew
 				for aidx := range new.Assets {
 					if _, ok := old.Assets[aidx]; !ok {
 						// if not in old => created
-						updates.SetAssetDelta(addr, aidx, ledgercore.ActionHoldingCreate)
+						updates.SetEntityDelta(addr, basics.CreatableIndex(aidx), ledgercore.ActionHoldingCreate)
 					}
 				}
 				for aidx := range new.AssetParams {
 					if _, ok := old.AssetParams[aidx]; !ok {
 						// if not in old => created
-						updates.SetAssetDelta(addr, aidx, ledgercore.ActionParamsCreate)
+						updates.SetEntityDelta(addr, basics.CreatableIndex(aidx), ledgercore.ActionParamsCreate)
 					}
 				}
 				for aidx := range old.Assets {
 					if _, ok := new.Assets[aidx]; !ok {
 						// if not in new => deleted
-						updates.SetAssetDelta(addr, aidx, ledgercore.ActionHoldingDelete)
+						updates.SetEntityDelta(addr, basics.CreatableIndex(aidx), ledgercore.ActionHoldingDelete)
 					}
 				}
 				for aidx := range old.AssetParams {
 					if _, ok := new.AssetParams[aidx]; !ok {
 						// if not in new => deleted
-						updates.SetAssetDelta(addr, aidx, ledgercore.ActionParamsDelete)
+						updates.SetEntityDelta(addr, basics.CreatableIndex(aidx), ledgercore.ActionParamsDelete)
 					}
 				}
 			}
@@ -418,10 +418,13 @@ func checkAccounts(t *testing.T, tx *sql.Tx, rnd basics.Round, accts map[basics.
 		ad := accts[a]
 		if pad.ExtendedAssetHolding.Count > 0 {
 			require.Equal(t, int(pad.ExtendedAssetHolding.Count), len(ad.Assets))
-		} else if pad.ExtendedAssetHolding.Count > 0 {
-			require.Equal(t, int(pad.ExtendedAssetParams.Count), len(ad.AssetParams))
 		} else {
 			require.Equal(t, pad.AccountData.Assets, ad.Assets)
+		}
+		if pad.ExtendedAssetParams.Count > 0 {
+			require.Equal(t, int(pad.ExtendedAssetParams.Count), len(ad.AssetParams))
+		} else {
+			require.Equal(t, pad.AccountData.AssetParams, ad.AssetParams)
 		}
 	}
 
@@ -520,8 +523,8 @@ func creatablesFromUpdates(base map[basics.Address]basics.AccountData, updates l
 		addr, update := updates.GetByIdx(i)
 		// no sets in Go, so iterate over
 		if ad, ok := base[addr]; ok {
-			for idx := range ad.Assets {
-				if _, ok := update.Assets[idx]; !ok {
+			for idx := range ad.AssetParams {
+				if _, ok := update.AssetParams[idx]; !ok {
 					creatables[basics.CreatableIndex(idx)] = ledgercore.ModifiedCreatable{
 						Ctype:   basics.AssetCreatable,
 						Created: false, // exists in base, not in new => deleted
@@ -539,13 +542,13 @@ func creatablesFromUpdates(base map[basics.Address]basics.AccountData, updates l
 				}
 			}
 		}
-		for idx := range update.Assets {
+		for idx := range update.AssetParams {
 			if seen[basics.CreatableIndex(idx)] {
 				continue
 			}
 			ad, found := base[addr]
 			if found {
-				if _, ok := ad.Assets[idx]; !ok {
+				if _, ok := ad.AssetParams[idx]; !ok {
 					found = false
 				}
 			}
@@ -582,7 +585,6 @@ func creatablesFromUpdates(base map[basics.Address]basics.AccountData, updates l
 }
 
 func TestAccountDBRound(t *testing.T) {
-	// fmt.Printf("seed = \n", crypto.Seed())
 	proto := config.Consensus[protocol.ConsensusCurrentVersion]
 
 	dbs, _ := dbOpenTest(t, true)
@@ -656,7 +658,7 @@ retry:
 		aq, err := accountsDbInit(tx, tx)
 		require.NoError(t, err)
 		for _, addr := range updates.ModifiedAccounts() {
-			hd := updates.GetAssetDeltas(addr)
+			hd := updates.GetEntityHoldingDeltas(addr)
 			ad := accts[addr]
 			dbad, err := lookupFull(dbs.Rdb, addr)
 			prevEnd := uint64(0)
@@ -678,10 +680,10 @@ retry:
 			require.NoError(t, err)
 			for aidx, action := range hd {
 				if action == ledgercore.ActionHoldingDelete {
-					_, ok := ad.Assets[aidx]
+					_, ok := ad.Assets[basics.AssetIndex(aidx)]
 					require.True(t, ok)
 					if len(ad.Assets) > assetsThreshold {
-						gi, ai := dbad.pad.ExtendedAssetHolding.FindAsset(aidx, 0)
+						gi, ai := dbad.pad.ExtendedAssetHolding.FindAsset(basics.AssetIndex(aidx), 0)
 						require.NotEqual(t, -1, gi)
 						require.NotEqual(t, -1, ai)
 					}
@@ -832,7 +834,7 @@ func TestAccountDBRoundAssetHoldings(t *testing.T) {
 	var updates ledgercore.AccountDeltas
 	updates.Upsert(addr, ledgercore.PersistedAccountData{AccountData: ad})
 	for aidx := range ad.Assets {
-		updates.SetAssetDelta(addr, aidx, ledgercore.ActionHoldingCreate)
+		updates.SetEntityDelta(addr, basics.CreatableIndex(aidx), ledgercore.ActionHoldingCreate)
 	}
 	u.update(updates)
 
@@ -851,7 +853,7 @@ func TestAccountDBRoundAssetHoldings(t *testing.T) {
 	updates.Upsert(addr, ledgercore.PersistedAccountData{AccountData: ad})
 	for aidx := range ad.Assets {
 		if _, ok := oldAssets[aidx]; !ok {
-			updates.SetAssetDelta(addr, aidx, ledgercore.ActionHoldingCreate)
+			updates.SetEntityDelta(addr, basics.CreatableIndex(aidx), ledgercore.ActionHoldingCreate)
 		} else {
 			newOwnedAssetsCount--
 		}
@@ -867,14 +869,13 @@ func TestAccountDBRoundAssetHoldings(t *testing.T) {
 	// remove all the assets first to make predictable assets distribution
 	updates = ledgercore.AccountDeltas{}
 	for aidx := range dbad.pad.Assets {
-		updates.SetAssetDelta(addr, aidx, ledgercore.ActionHoldingDelete)
+		updates.SetEntityDelta(addr, basics.CreatableIndex(aidx), ledgercore.ActionHoldingDelete)
 	}
 	ad.Assets = nil
 	updates.Upsert(addr, ledgercore.PersistedAccountData{AccountData: ad})
 	u.update(updates)
 
 	// verify removal
-	require.NoError(t, err)
 	dbad, err = lookupFull(dbs.Rdb, addr)
 	require.NoError(t, err)
 	require.Empty(t, dbad.pad.AccountData.Assets)
@@ -887,7 +888,7 @@ func TestAccountDBRoundAssetHoldings(t *testing.T) {
 	ad.Assets = make(map[basics.AssetIndex]basics.AssetHolding, holdingsNum)
 	for aidx := 1; aidx <= holdingsNum; aidx++ {
 		ad.Assets[basics.AssetIndex(aidx)] = basics.AssetHolding{Amount: uint64(aidx)}
-		updates.SetAssetDelta(addr, basics.AssetIndex(aidx), ledgercore.ActionHoldingCreate)
+		updates.SetEntityDelta(addr, basics.CreatableIndex(aidx), ledgercore.ActionHoldingCreate)
 	}
 	updates.Upsert(addr, ledgercore.PersistedAccountData{AccountData: ad})
 	u.update(updates)
@@ -904,7 +905,7 @@ func TestAccountDBRoundAssetHoldings(t *testing.T) {
 	ad = dbad.pad.AccountData
 	for aidx := ledgercore.MaxHoldingGroupSize + 1; aidx <= 2*ledgercore.MaxHoldingGroupSize; aidx++ {
 		delete(ad.Assets, basics.AssetIndex(aidx))
-		updates.SetAssetDelta(addr, basics.AssetIndex(aidx), ledgercore.ActionHoldingDelete)
+		updates.SetEntityDelta(addr, basics.CreatableIndex(aidx), ledgercore.ActionHoldingDelete)
 	}
 	updates.Upsert(addr, ledgercore.PersistedAccountData{AccountData: ad})
 	for _, gi := range []int{0, 2, 3, 4, 5} {
@@ -917,7 +918,7 @@ func TestAccountDBRoundAssetHoldings(t *testing.T) {
 		rand.Shuffle(ledgercore.MaxHoldingGroupSize, func(i, j int) { seq[i], seq[j] = seq[j], seq[i] })
 		for _, aidx := range seq[:32] {
 			delete(ad.Assets, basics.AssetIndex(aidx))
-			updates.SetAssetDelta(addr, basics.AssetIndex(aidx), ledgercore.ActionHoldingDelete)
+			updates.SetEntityDelta(addr, basics.CreatableIndex(aidx), ledgercore.ActionHoldingDelete)
 		}
 		for _, aidx := range seq[32:64] {
 			ad.Assets[basics.AssetIndex(aidx)] = basics.AssetHolding{Amount: uint64(aidx * 10)}
@@ -960,7 +961,7 @@ func TestAccountDBRoundAssetHoldings(t *testing.T) {
 	ad = dbad.pad.AccountData
 	ad.Assets = make(map[basics.AssetIndex]basics.AssetHolding, ledgercore.MaxHoldingGroupSize)
 	for aidx := 6*ledgercore.MaxHoldingGroupSize + 1; aidx <= 7*ledgercore.MaxHoldingGroupSize; aidx++ {
-		updates.SetAssetDelta(addr, basics.AssetIndex(aidx), ledgercore.ActionHoldingCreate)
+		updates.SetEntityDelta(addr, basics.CreatableIndex(aidx), ledgercore.ActionHoldingCreate)
 		ad.Assets[basics.AssetIndex(aidx)] = basics.AssetHolding{Amount: uint64(aidx)}
 	}
 	updates.Upsert(addr, ledgercore.PersistedAccountData{AccountData: ad})
@@ -1002,7 +1003,7 @@ func TestAccountDBRoundAssetHoldings(t *testing.T) {
 		end := (gi + 1) * ledgercore.MaxHoldingGroupSize
 		for aidx := start; aidx <= end; aidx++ {
 			delete(ad.Assets, basics.AssetIndex(aidx))
-			updates.SetAssetDelta(addr, basics.AssetIndex(aidx), ledgercore.ActionHoldingDelete)
+			updates.SetEntityDelta(addr, basics.CreatableIndex(aidx), ledgercore.ActionHoldingDelete)
 		}
 	}
 
@@ -1094,7 +1095,7 @@ func TestAccountDBRoundAssetParams(t *testing.T) {
 	var updates ledgercore.AccountDeltas
 	updates.Upsert(addr, ledgercore.PersistedAccountData{AccountData: ad})
 	for aidx := range ad.AssetParams {
-		updates.SetAssetDelta(addr, aidx, ledgercore.ActionParamsCreate)
+		updates.SetEntityDelta(addr, basics.CreatableIndex(aidx), ledgercore.ActionParamsCreate)
 	}
 	u.update(updates)
 
@@ -1113,7 +1114,7 @@ func TestAccountDBRoundAssetParams(t *testing.T) {
 	updates.Upsert(addr, ledgercore.PersistedAccountData{AccountData: ad})
 	for aidx := range ad.AssetParams {
 		if _, ok := oldAssets[aidx]; !ok {
-			updates.SetAssetDelta(addr, aidx, ledgercore.ActionParamsCreate)
+			updates.SetEntityDelta(addr, basics.CreatableIndex(aidx), ledgercore.ActionParamsCreate)
 		} else {
 			newOwnedAssetsCount--
 		}
@@ -1129,7 +1130,7 @@ func TestAccountDBRoundAssetParams(t *testing.T) {
 	// remove all the assets first to make predictable assets distribution
 	updates = ledgercore.AccountDeltas{}
 	for aidx := range dbad.pad.AssetParams {
-		updates.SetAssetDelta(addr, aidx, ledgercore.ActionParamsDelete)
+		updates.SetEntityDelta(addr, basics.CreatableIndex(aidx), ledgercore.ActionParamsDelete)
 	}
 	ad.AssetParams = nil
 	updates.Upsert(addr, ledgercore.PersistedAccountData{AccountData: ad})
@@ -1149,7 +1150,7 @@ func TestAccountDBRoundAssetParams(t *testing.T) {
 	ad.AssetParams = make(map[basics.AssetIndex]basics.AssetParams, holdingsNum)
 	for aidx := 1; aidx <= holdingsNum; aidx++ {
 		ad.AssetParams[basics.AssetIndex(aidx)] = basics.AssetParams{Total: uint64(aidx)}
-		updates.SetAssetDelta(addr, basics.AssetIndex(aidx), ledgercore.ActionParamsCreate)
+		updates.SetEntityDelta(addr, basics.CreatableIndex(aidx), ledgercore.ActionParamsCreate)
 	}
 	updates.Upsert(addr, ledgercore.PersistedAccountData{AccountData: ad})
 	u.update(updates)
@@ -1166,7 +1167,7 @@ func TestAccountDBRoundAssetParams(t *testing.T) {
 	ad = dbad.pad.AccountData
 	for aidx := ledgercore.MaxParamsGroupSize + 1; aidx <= 2*ledgercore.MaxParamsGroupSize; aidx++ {
 		delete(ad.AssetParams, basics.AssetIndex(aidx))
-		updates.SetAssetDelta(addr, basics.AssetIndex(aidx), ledgercore.ActionParamsDelete)
+		updates.SetEntityDelta(addr, basics.CreatableIndex(aidx), ledgercore.ActionParamsDelete)
 	}
 	updates.Upsert(addr, ledgercore.PersistedAccountData{AccountData: ad})
 	for _, gi := range []int{0, 2, 3, 4, 5} {
@@ -1179,7 +1180,7 @@ func TestAccountDBRoundAssetParams(t *testing.T) {
 		rand.Shuffle(ledgercore.MaxParamsGroupSize, func(i, j int) { seq[i], seq[j] = seq[j], seq[i] })
 		for _, aidx := range seq[:32] {
 			delete(ad.AssetParams, basics.AssetIndex(aidx))
-			updates.SetAssetDelta(addr, basics.AssetIndex(aidx), ledgercore.ActionParamsDelete)
+			updates.SetEntityDelta(addr, basics.CreatableIndex(aidx), ledgercore.ActionParamsDelete)
 		}
 		for _, aidx := range seq[32:64] {
 			ad.AssetParams[basics.AssetIndex(aidx)] = basics.AssetParams{Total: uint64(aidx * 10)}
@@ -1222,7 +1223,7 @@ func TestAccountDBRoundAssetParams(t *testing.T) {
 	ad = dbad.pad.AccountData
 	ad.AssetParams = make(map[basics.AssetIndex]basics.AssetParams, ledgercore.MaxParamsGroupSize)
 	for aidx := 6*ledgercore.MaxParamsGroupSize + 1; aidx <= 7*ledgercore.MaxParamsGroupSize; aidx++ {
-		updates.SetAssetDelta(addr, basics.AssetIndex(aidx), ledgercore.ActionParamsCreate)
+		updates.SetEntityDelta(addr, basics.CreatableIndex(aidx), ledgercore.ActionParamsCreate)
 		ad.AssetParams[basics.AssetIndex(aidx)] = basics.AssetParams{Total: uint64(aidx)}
 	}
 	updates.Upsert(addr, ledgercore.PersistedAccountData{AccountData: ad})
@@ -1264,7 +1265,7 @@ func TestAccountDBRoundAssetParams(t *testing.T) {
 		end := (gi + 1) * ledgercore.MaxParamsGroupSize
 		for aidx := start; aidx <= end; aidx++ {
 			delete(ad.AssetParams, basics.AssetIndex(aidx))
-			updates.SetAssetDelta(addr, basics.AssetIndex(aidx), ledgercore.ActionParamsDelete)
+			updates.SetEntityDelta(addr, basics.CreatableIndex(aidx), ledgercore.ActionParamsDelete)
 		}
 	}
 
@@ -1496,7 +1497,7 @@ func benchmarkInitBalances(b testing.TB, numAccounts int, dbs db.Pair, proto con
 			for _, aidx := range aidxs[:numHoldings] {
 				if _, ok := ad.Assets[aidx]; !ok {
 					ad.Assets[aidx] = basics.AssetHolding{Amount: uint64(aidx), Frozen: true}
-					updates.SetAssetDelta(addr, aidx, ledgercore.ActionHoldingCreate)
+					updates.SetEntityDelta(addr, basics.CreatableIndex(aidx), ledgercore.ActionHoldingCreate)
 				}
 			}
 			updates.Upsert(addr, ledgercore.PersistedAccountData{AccountData: ad})
@@ -2479,14 +2480,14 @@ func TestAccountsNewCRUD(t *testing.T) {
 		old.pad.Assets[aidx] = g.GetHolding(ai)
 	}
 
-	deltaHoldings := make(map[basics.AssetIndex]ledgercore.AssetAction, len(del)+len(crt))
+	deltaHoldings := make(ledgercore.EntityDelta, len(del)+len(crt))
 	for _, aidx := range del {
 		delete(savedAssets, aidx)
-		deltaHoldings[aidx] = ledgercore.ActionHoldingDelete
+		deltaHoldings[basics.CreatableIndex(aidx)] = ledgercore.ActionHoldingDelete
 	}
 	for _, aidx := range crt {
 		savedAssets[aidx] = true
-		deltaHoldings[aidx] = ledgercore.ActionHoldingCreate
+		deltaHoldings[basics.CreatableIndex(aidx)] = ledgercore.ActionHoldingCreate
 	}
 
 	updated = basics.AccountData{}
@@ -2499,9 +2500,9 @@ func TestAccountsNewCRUD(t *testing.T) {
 	}
 
 	delta = accountDelta{
-		old:    old,
-		new:    ledgercore.PersistedAccountData{AccountData: updated, ExtendedAssetHolding: old.pad.ExtendedAssetHolding},
-		assets: deltaHoldings,
+		old:                    old,
+		new:                    ledgercore.PersistedAccountData{AccountData: updated, ExtendedAssetHolding: old.pad.ExtendedAssetHolding},
+		createdDeletedHoldings: deltaHoldings,
 	}
 
 	updatedAccounts, err = accountsNewUpdate(
@@ -2606,22 +2607,22 @@ func TestAccountsNewCRUD(t *testing.T) {
 
 	updated = basics.AccountData{}
 	updated.Assets = make(map[basics.AssetIndex]basics.AssetHolding, len(upd)+len(crt))
-	deltaHoldings = make(map[basics.AssetIndex]ledgercore.AssetAction, len(del)+len(crt))
+	deltaHoldings = make(ledgercore.EntityDelta, len(del)+len(crt))
 	for _, aidx := range del {
-		deltaHoldings[aidx] = ledgercore.ActionHoldingDelete
+		deltaHoldings[basics.CreatableIndex(aidx)] = ledgercore.ActionHoldingDelete
 	}
 	for _, aidx := range upd {
 		updated.Assets[aidx] = old.pad.Assets[aidx]
 	}
 	for _, aidx := range crt {
 		updated.Assets[aidx] = basics.AssetHolding{Amount: uint64(aidx), Frozen: true}
-		deltaHoldings[aidx] = ledgercore.ActionHoldingCreate
+		deltaHoldings[basics.CreatableIndex(aidx)] = ledgercore.ActionHoldingCreate
 	}
 
 	delta = accountDelta{
-		old:    old,
-		new:    ledgercore.PersistedAccountData{AccountData: updated, ExtendedAssetHolding: old.pad.ExtendedAssetHolding},
-		assets: deltaHoldings,
+		old:                    old,
+		new:                    ledgercore.PersistedAccountData{AccountData: updated, ExtendedAssetHolding: old.pad.ExtendedAssetHolding},
+		createdDeletedHoldings: deltaHoldings,
 	}
 
 	updatedAccounts, err = accountsNewUpdate(
@@ -2661,4 +2662,104 @@ func TestAccountsNewCRUD(t *testing.T) {
 	for _, aidx := range append(upd, crt...) {
 		a.Contains(old.pad.AccountData.Assets, aidx)
 	}
+}
+
+func TestMakeCompactAccountDeltas(t *testing.T) {
+	a := require.New(t)
+	addr := randomAddress()
+
+	var baseAccounts lruAccounts
+	baseAccounts.init(nil, 100, 80)
+	baseAccounts.write(dbAccountData{
+		addr: addr,
+		pad: ledgercore.PersistedAccountData{
+			AccountData: basics.AccountData{
+				Assets: map[basics.AssetIndex]basics.AssetHolding{
+					1: {},
+					2: {},
+				},
+				AssetParams: map[basics.AssetIndex]basics.AssetParams{
+					10: {},
+					20: {},
+				},
+			},
+		},
+	})
+
+	var updates1 ledgercore.AccountDeltas
+	updates1.Upsert(addr, ledgercore.PersistedAccountData{
+		AccountData: basics.AccountData{
+			Assets: map[basics.AssetIndex]basics.AssetHolding{
+				1: {},
+				2: {},
+				3: {},
+			},
+			AssetParams: map[basics.AssetIndex]basics.AssetParams{
+				10: {},
+				20: {},
+				30: {},
+			},
+		},
+	})
+	updates1.SetEntityDelta(addr, 3, ledgercore.ActionHoldingCreate)
+	updates1.SetEntityDelta(addr, 30, ledgercore.ActionParamsCreate)
+
+	var updates2 ledgercore.AccountDeltas
+	updates2.Upsert(addr, ledgercore.PersistedAccountData{
+		AccountData: basics.AccountData{
+			Assets: map[basics.AssetIndex]basics.AssetHolding{
+				2: {},
+				3: {},
+				4: {},
+			},
+			AssetParams: map[basics.AssetIndex]basics.AssetParams{
+				20: {},
+				30: {},
+				40: {},
+			},
+		},
+	})
+	updates2.SetEntityDelta(addr, 4, ledgercore.ActionHoldingCreate)
+	updates2.SetEntityDelta(addr, 40, ledgercore.ActionParamsCreate)
+	updates2.SetEntityDelta(addr, 1, ledgercore.ActionHoldingDelete)
+	updates2.SetEntityDelta(addr, 10, ledgercore.ActionParamsDelete)
+
+	cd := makeCompactAccountDeltas([]ledgercore.AccountDeltas{updates1, updates2}, baseAccounts)
+
+	a.Equal(0, len(cd.misses))
+	a.Equal(1, len(cd.cache))
+	a.Contains(cd.cache, addr)
+	a.Equal(1, len(cd.addresses))
+	a.Equal(addr, cd.addresses[0])
+	a.Equal(1, len(cd.deltas))
+	d := cd.deltas[0]
+	a.Equal(addr, d.old.addr)
+
+	ad := basics.AccountData{
+		Assets: map[basics.AssetIndex]basics.AssetHolding{
+			2: {},
+			3: {},
+			4: {},
+		},
+		AssetParams: map[basics.AssetIndex]basics.AssetParams{
+			20: {},
+			30: {},
+			40: {},
+		},
+	}
+	a.Equal(ad, d.new.AccountData)
+
+	holdingsDelta := ledgercore.EntityDelta{
+		1: ledgercore.ActionHoldingDelete,
+		3: ledgercore.ActionHoldingCreate,
+		4: ledgercore.ActionHoldingCreate,
+	}
+	a.Equal(holdingsDelta, d.createdDeletedHoldings)
+
+	paramsDelta := ledgercore.EntityDelta{
+		10: ledgercore.ActionParamsDelete,
+		30: ledgercore.ActionParamsCreate,
+		40: ledgercore.ActionParamsCreate,
+	}
+	a.Equal(paramsDelta, d.createdDeletedParams)
 }
