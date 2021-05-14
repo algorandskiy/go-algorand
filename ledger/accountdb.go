@@ -1065,6 +1065,9 @@ func lookupFull(rdb db.Accessor, addr basics.Address) (data dbAccountData, err e
 		if data.pad.ExtendedAssetHolding.Count > 0 {
 			data.pad.Assets, data.pad.ExtendedAssetHolding, err = loadHoldings(loadStmt, data.pad.ExtendedAssetHolding)
 		}
+		if data.pad.ExtendedAssetParams.Count > 0 {
+			data.pad.AssetParams, data.pad.ExtendedAssetParams, err = loadParams(loadStmt, data.pad.ExtendedAssetParams)
+		}
 		return err
 	})
 	return
@@ -1204,6 +1207,14 @@ func (qs *accountsDbQueries) loadHoldings(eah ledgercore.ExtendedAssetHolding) (
 	return
 }
 
+func (qs *accountsDbQueries) loadParams(eap ledgercore.ExtendedAssetParams) (params map[basics.AssetIndex]basics.AssetParams, result ledgercore.ExtendedAssetParams, err error) {
+	err = db.Retry(func() error {
+		params, result, err = loadParams(qs.loadAccountGroupDataStmt, eap)
+		return err
+	})
+	return
+}
+
 // accountsOnlineTop returns the top n online accounts starting at position offset
 // (that is, the top offset'th account through the top offset+n-1'th account).
 //
@@ -1306,22 +1317,22 @@ func loadHoldings(stmt *sql.Stmt, eah ledgercore.ExtendedAssetHolding) (map[basi
 }
 
 // loadParams initiates all params mentioned in ExtendedAssetHolding groups.
-func loadParams(stmt *sql.Stmt, eah ledgercore.ExtendedAssetParams) (map[basics.AssetIndex]basics.AssetParams, ledgercore.ExtendedAssetParams, error) {
-	if len(eah.Groups) == 0 {
+func loadParams(stmt *sql.Stmt, eap ledgercore.ExtendedAssetParams) (map[basics.AssetIndex]basics.AssetParams, ledgercore.ExtendedAssetParams, error) {
+	if len(eap.Groups) == 0 {
 		return nil, ledgercore.ExtendedAssetParams{}, nil
 	}
-	params := make(map[basics.AssetIndex]basics.AssetParams, eah.Count)
-	groups := make([]ledgercore.AssetsParamsGroup, len(eah.Groups), len(eah.Groups))
+	params := make(map[basics.AssetIndex]basics.AssetParams, eap.Count)
+	groups := make([]ledgercore.AssetsParamsGroup, len(eap.Groups), len(eap.Groups))
 	fetcher := makeAssetFetcher(stmt)
-	for gi := range eah.Groups {
-		groups[gi] = eah.Groups[gi]
+	for gi := range eap.Groups {
+		groups[gi] = eap.Groups[gi]
 		err := groups[gi].Fetch(fetcher, params)
 		if err != nil {
 			return nil, ledgercore.ExtendedAssetParams{}, err
 		}
 	}
-	eah.Groups = groups
-	return params, eah, nil
+	eap.Groups = groups
+	return params, eap, nil
 }
 
 // loadGroupData loads a single holdings group data
@@ -1537,8 +1548,21 @@ func accountsNewUpdate(qabu, qabq, qaeu, qaei, qaed *sql.Stmt, addr basics.Addre
 
 	if delta.old.pad.NumAssetHoldings() <= assetsThreshold && len(delta.new.Assets) <= assetsThreshold {
 		// AccountData assigned above
+		// Do not use delta.assets map of deleted/created since entire Assets is being replaced
 	} else if delta.old.pad.NumAssetHoldings() <= assetsThreshold && len(delta.new.Assets) > assetsThreshold {
-		pad.ExtendedAssetHolding.ConvertToGroups(delta.new.Assets)
+		_, deleted := filterCreatedDeleted(delta.assets, ledgercore.ActionHoldingCreate, ledgercore.ActionHoldingDelete)
+		assets := make(map[basics.AssetIndex]basics.AssetHolding, len(delta.old.pad.Assets)+len(delta.new.Assets)-len(deleted))
+		for aidx, holding := range delta.old.pad.Assets {
+			assets[aidx] = holding
+		}
+		for _, aidx := range deleted {
+			delete(assets, aidx)
+		}
+		for aidx, holding := range delta.new.Assets {
+			assets[aidx] = holding
+		}
+
+		pad.ExtendedAssetHolding.ConvertToGroups(assets)
 		pad.AccountData.Assets = nil
 
 		// update group data DB table
@@ -1606,8 +1630,21 @@ func accountsNewUpdate(qabu, qabq, qaeu, qaei, qaed *sql.Stmt, addr basics.Addre
 	// same logic as above but for asset params
 	if delta.old.pad.NumAssetParams() <= assetsThreshold && len(delta.new.AssetParams) <= assetsThreshold {
 		// AccountData assigned above
+		// Do not use delta.assets map of deleted/created since entire AssetParams is being replaced
 	} else if delta.old.pad.NumAssetParams() <= assetsThreshold && len(delta.new.AssetParams) > assetsThreshold {
-		pad.ExtendedAssetParams.ConvertToGroups(delta.new.AssetParams)
+		_, deleted := filterCreatedDeleted(delta.assets, ledgercore.ActionParamsCreate, ledgercore.ActionParamsDelete)
+		assets := make(map[basics.AssetIndex]basics.AssetParams, len(delta.old.pad.AssetParams)+len(delta.new.AssetParams)-len(deleted))
+		for aidx, params := range delta.old.pad.AssetParams {
+			assets[aidx] = params
+		}
+		for _, aidx := range deleted {
+			delete(assets, aidx)
+		}
+		for aidx, params := range delta.new.AssetParams {
+			assets[aidx] = params
+		}
+
+		pad.ExtendedAssetParams.ConvertToGroups(assets)
 		pad.AccountData.AssetParams = nil
 
 		// update group data DB table
@@ -1668,7 +1705,7 @@ func accountsNewUpdate(qabu, qabq, qaeu, qaei, qaed *sql.Stmt, addr basics.Addre
 
 			// update DB
 			err = assetsUpdateGroupDataDB(qaei, qaeu, qaed, &pad.ExtendedAssetParams, loaded, deletedKeys)
-			pad.AccountData.Assets = nil
+			pad.AccountData.AssetParams = nil
 		}
 	}
 

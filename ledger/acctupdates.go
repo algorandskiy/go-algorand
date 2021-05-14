@@ -1816,6 +1816,15 @@ func (au *accountUpdates) lookupWithRewards(rnd basics.Round, addr basics.Addres
 			if offset == uint64(len(au.deltas)) {
 				if full && macct.data.ExtendedAssetHolding.Count != 0 {
 					macct.data.Assets, macct.data.ExtendedAssetHolding, err = au.accountsq.loadHoldings(macct.data.ExtendedAssetHolding)
+					if err != nil {
+						return ledgercore.PersistedAccountData{}, err
+					}
+				}
+				if full && macct.data.ExtendedAssetParams.Count != 0 {
+					macct.data.AssetParams, macct.data.ExtendedAssetParams, err = au.accountsq.loadParams(macct.data.ExtendedAssetParams)
+					if err != nil {
+						return ledgercore.PersistedAccountData{}, err
+					}
 				}
 				return macct.data, err
 			}
@@ -1829,6 +1838,15 @@ func (au *accountUpdates) lookupWithRewards(rnd basics.Round, addr basics.Addres
 				if ok {
 					if full && d.ExtendedAssetHolding.Count != 0 {
 						d.Assets, d.ExtendedAssetHolding, err = au.accountsq.loadHoldings(d.ExtendedAssetHolding)
+						if err != nil {
+							return ledgercore.PersistedAccountData{}, err
+						}
+					}
+					if full && macct.data.ExtendedAssetParams.Count != 0 {
+						d.AssetParams, d.ExtendedAssetParams, err = au.accountsq.loadParams(d.ExtendedAssetParams)
+						if err != nil {
+							return ledgercore.PersistedAccountData{}, err
+						}
 					}
 					return d, err
 				}
@@ -1842,6 +1860,12 @@ func (au *accountUpdates) lookupWithRewards(rnd basics.Round, addr basics.Addres
 			au.baseAccounts.writePending(macct)
 			if full && macct.pad.ExtendedAssetHolding.Count != 0 {
 				macct.pad.Assets, macct.pad.ExtendedAssetHolding, err = au.accountsq.loadHoldings(macct.pad.ExtendedAssetHolding)
+			}
+			if full && macct.pad.ExtendedAssetParams.Count != 0 {
+				macct.pad.AssetParams, macct.pad.ExtendedAssetParams, err = au.accountsq.loadParams(macct.pad.ExtendedAssetParams)
+				if err != nil {
+					return ledgercore.PersistedAccountData{}, err
+				}
 			}
 			return macct.pad, err
 		}
