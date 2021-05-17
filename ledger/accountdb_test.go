@@ -1261,7 +1261,7 @@ func BenchmarkStorageTableLayout1(b *testing.B) {
 		for p := 0; p < b.N; p++ {
 			for _, i := range entries {
 				sqlRow := readStmt.QueryRow(i)
-				sqlRow.Scan(&groupdata)
+				err := sqlRow.Scan(&groupdata)
 				require.NoError(b, err)
 				p++
 				if p == b.N {
@@ -1292,6 +1292,104 @@ func BenchmarkStorageTableLayout1(b *testing.B) {
 		for p := 0; p < b.N; p++ {
 			for _, i := range entries {
 				_, err = updateStmt.Exec(randomData, i)
+				require.NoError(b, err)
+				p++
+				if p == b.N {
+					break
+				}
+			}
+		}
+		b.StopTimer()
+		updateStmt.Close()
+
+		err = tx.Commit()
+		require.NoError(b, err)
+	})
+}
+
+func BenchmarkStorageTableLayout4(b *testing.B) {
+	genesisInitState, _ := testGenerateInitState(b, protocol.ConsensusCurrentVersion)
+	const inMem = false
+	log := logging.TestingLog(b)
+	cfg := config.GetDefaultLocal()
+	cfg.Archival = false
+	log.SetLevel(logging.Warn)
+	dbBaseFileName := strings.Replace(b.Name(), "/", "_", -1)
+	l, err := OpenLedger(log, dbBaseFileName, inMem, genesisInitState, cfg)
+	require.NoErrorf(b, err, "could not open ledger filename : %s", dbBaseFileName)
+	defer func() {
+		l.Close()
+		os.Remove(dbBaseFileName + ".block.sqlite")
+		os.Remove(dbBaseFileName + ".tracker.sqlite")
+	}()
+	_, err = l.trackerDBs.wdb.Handle.Exec("CREATE TABLE storage(address BLOB NOT NULL, asset integer NOT NULL, data BLOB, PRIMARY KEY(address, asset) ) WITHOUT ROWID")
+	require.NoError(b, err)
+	randomData := make([]byte, 3900)
+	crypto.RandBytes(randomData)
+	tx, err := l.trackerDBs.wdb.Handle.BeginTx(context.Background(), nil)
+	require.NoError(b, err)
+	insertStmt, err := tx.Prepare("INSERT INTO storage(address, asset, data) values(?, ?, ?)")
+	require.NoError(b, err)
+	dataSize := 1000000
+	addresses := make([][]byte, dataSize, dataSize)
+	for i := 0; i < dataSize; i++ {
+		addr := randomAddress()
+		addresses[i] = addr[:]
+		_, err = insertStmt.Exec(addr[:], i, randomData)
+		require.NoError(b, err)
+	}
+	insertStmt.Close()
+	err = tx.Commit()
+	require.NoError(b, err)
+
+	b.Run("RandomRead", func(b *testing.B) {
+		tx, err := l.trackerDBs.rdb.Handle.BeginTx(context.Background(), nil)
+		require.NoError(b, err)
+		readStmt, err := tx.Prepare("SELECT data FROM storage WHERE address=? and asset=?")
+		require.NoError(b, err)
+		entries := rand.Perm(dataSize)
+
+		if b.N < dataSize {
+			b.N = dataSize
+		}
+
+		b.ResetTimer()
+		var groupdata []byte
+		for p := 0; p < b.N; p++ {
+			for _, i := range entries {
+				addr := addresses[i]
+				sqlRow := readStmt.QueryRow(addr, i)
+				err := sqlRow.Scan(&groupdata)
+				require.NoError(b, err)
+				p++
+				if p == b.N {
+					break
+				}
+			}
+		}
+		b.StopTimer()
+		readStmt.Close()
+
+		err = tx.Commit()
+		require.NoError(b, err)
+	})
+
+	b.Run("RandomWrite", func(b *testing.B) {
+		tx, err := l.trackerDBs.wdb.Handle.BeginTx(context.Background(), nil)
+		require.NoError(b, err)
+		updateStmt, err := tx.Prepare("UPDATE storage SET data=? WHERE address=? and asset=?")
+		require.NoError(b, err)
+		entries := rand.Perm(dataSize)
+		crypto.RandBytes(randomData)
+
+		if b.N < dataSize {
+			b.N = dataSize
+		}
+
+		b.ResetTimer()
+		for p := 0; p < b.N; p++ {
+			for _, i := range entries {
+				_, err = updateStmt.Exec(randomData, addresses[i][:], i)
 				require.NoError(b, err)
 				p++
 				if p == b.N {
