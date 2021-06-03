@@ -19,11 +19,13 @@ package ledgercore
 import (
 	"fmt"
 	"math/rand"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/algorand/go-algorand/crypto"
 	"github.com/algorand/go-algorand/data/basics"
 )
 
@@ -1455,4 +1457,130 @@ func BenchmarkSliceVsInterface(b *testing.B) {
 			}
 		})
 	}
+}
+
+func TestEncodedAssetHoldingDataSize(t *testing.T) {
+	oneTimeSecrets := crypto.GenerateOneTimeSignatureSecrets(0, 1)
+	vrfSecrets := crypto.GenerateVRFSecrets()
+	maxStateSchema := basics.StateSchema{
+		NumUint:      0x1234123412341234,
+		NumByteSlice: 0x1234123412341234,
+	}
+	ad := basics.AccountData{
+		Status:             basics.NotParticipating,
+		MicroAlgos:         basics.MicroAlgos{},
+		RewardsBase:        0x1234123412341234,
+		RewardedMicroAlgos: basics.MicroAlgos{},
+		VoteID:             oneTimeSecrets.OneTimeSignatureVerifier,
+		SelectionID:        vrfSecrets.PK,
+		VoteFirstValid:     basics.Round(0x1234123412341234),
+		VoteLastValid:      basics.Round(0x1234123412341234),
+		VoteKeyDilution:    0x1234123412341234,
+		AssetParams:        make(map[basics.AssetIndex]basics.AssetParams),
+		Assets:             make(map[basics.AssetIndex]basics.AssetHolding),
+		AppLocalStates:     make(map[basics.AppIndex]basics.AppLocalState),
+		AppParams:          make(map[basics.AppIndex]basics.AppParams),
+		TotalAppSchema:     maxStateSchema,
+		AuthAddr:           basics.Address(crypto.Hash([]byte{1, 2, 3, 4})),
+	}
+	accountEncodedSize := func() int {
+		encodedBytes := ad.MarshalMsg(nil)
+		return len(encodedBytes)
+	}
+	noAssetsEncodedSize := accountEncodedSize()
+	for i := 1; i < 65536; i *= 2 {
+
+		// create asset holding data
+		for j := 0; j < i; j++ {
+			assetIdx := basics.AssetIndex(1000000 + j*7793)
+			ad.Assets[assetIdx] = basics.AssetHolding{
+				Amount: 0x1234123412341234,
+				Frozen: (assetIdx%2 == 1),
+			}
+		}
+
+		assetSize := accountEncodedSize() - noAssetsEncodedSize
+		fmt.Printf("asset size for holding %d items is %d ( %d pages )\n", i, assetSize, 1+assetSize/4096)
+	}
+	return
+}
+
+func TestEncodedAssetParamsProjectedDataSize(t *testing.T) {
+
+	// for i := 1; i < 65536; i *= 2 {
+	for i := 1; i < 64; i++ {
+		gds := []AssetsParamsGroupData{}
+		params := ExtendedAssetParams{Count: uint32(i), Groups: make([]AssetsParamsGroup, 1+i/256)}
+		// create asset holding data
+		lastGroupIdx := -1
+		prevAssetIdx := basics.AssetIndex(0)
+		for j := 0; j < i; j++ {
+			assetIdx := basics.AssetIndex(1000000 + j*7793)
+			groupIdx := j / 256
+			newGroup := lastGroupIdx != groupIdx
+			lastGroupIdx = groupIdx
+			params.Groups[groupIdx].Count++
+
+			if newGroup {
+				params.Groups[groupIdx].MinAssetIndex = assetIdx
+				params.Groups[groupIdx].AssetGroupKey = 0x1234123412341234
+			} else {
+				params.Groups[groupIdx].DeltaMaxAssetIndex = uint64(assetIdx - params.Groups[groupIdx].MinAssetIndex)
+			}
+
+			urllen := rand.Intn(94-32) + 32 // 32 to 94 chars
+			if newGroup {
+				gds = append(gds, AssetsParamsGroupData{
+					AssetsCommonGroupData: AssetsCommonGroupData{AssetOffsets: []basics.AssetIndex{0}},
+					Totals:                []uint64{0x1234123412341234},
+					Decimals:              []uint32{6},
+					DefaultFrozens:        []bool{true},
+					UnitNames:             []string{"test12"},
+					AssetNames:            []string{"test34"},
+					URLs:                  []string{strings.Repeat("a", urllen)},
+					MetadataHash:          [][32]byte{[32]byte{}},
+					Managers:              []basics.Address{randomAddress()},
+					Reserves:              []basics.Address{randomAddress()},
+					Freezes:               []basics.Address{randomAddress()},
+					Clawbacks:             []basics.Address{randomAddress()},
+				})
+				prevAssetIdx = assetIdx
+			} else {
+				gd := gds[len(gds)-1]
+				gd.AssetOffsets = append(gd.AssetOffsets, assetIdx-prevAssetIdx)
+				gd.Totals = append(gd.Totals, uint64(0x1234123412341234))
+				gd.Decimals = append(gd.Decimals, 6)
+				gd.AssetNames = append(gd.AssetNames, "test12")
+				gd.UnitNames = append(gd.UnitNames, "test12")
+				gd.URLs = append(gd.URLs, strings.Repeat("a", urllen))
+				gd.Managers = append(gd.Managers, randomAddress())
+				gd.Reserves = append(gd.Reserves, randomAddress())
+				gd.Freezes = append(gd.Freezes, randomAddress())
+				gd.Clawbacks = append(gd.Clawbacks, randomAddress())
+
+				if assetIdx%2 == 1 {
+					var md [32]byte
+					rand.Read(md[:])
+					gd.MetadataHash = append(gd.MetadataHash, md)
+					gd.DefaultFrozens = append(gd.DefaultFrozens, true)
+				} else {
+					gd.MetadataHash = append(gd.MetadataHash, [32]byte{})
+					gd.DefaultFrozens = append(gd.DefaultFrozens, false)
+				}
+				gds[len(gds)-1] = gd
+				prevAssetIdx = assetIdx
+			}
+		}
+
+		//fmt.Printf("group holding %#v\n", holding)
+		paramsBytes := params.MarshalMsg(nil)
+		totalGroup := 0
+		for _, gp := range gds {
+			// fmt.Printf("group params %#v\n", gp)
+			encoded := gp.MarshalMsg(nil)
+			totalGroup += len(encoded)
+		}
+		fmt.Printf("asset size for params %d items is %d+%d over %d blocks\n", i, len(paramsBytes), totalGroup, len(gds))
+	}
+	return
 }
