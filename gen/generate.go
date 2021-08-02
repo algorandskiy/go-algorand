@@ -319,14 +319,14 @@ func generateGenesisFiles(outDir string, protoVersion protocol.ConsensusVersion,
 		fmt.Fprintln(verboseOut, protoVersion, protoParams.MinBalance)
 	}
 
-	records["FeeSink"] = basics.AccountData{
+	records["FeeSink"] = basics.AccountData{MiniAccountData: basics.MiniAccountData{
 		Status:     basics.NotParticipating,
 		MicroAlgos: basics.MicroAlgos{Raw: protoParams.MinBalance},
-	}
-	records["RewardsPool"] = basics.AccountData{
+	}}
+	records["RewardsPool"] = basics.AccountData{MiniAccountData: basics.MiniAccountData{
 		Status:     basics.NotParticipating,
 		MicroAlgos: basics.MicroAlgos{Raw: defaultIncentivePoolBalanceAtInception},
-	}
+	}}
 
 	sinkAcct := genesisAllocation{
 		Name:   "FeeSink",

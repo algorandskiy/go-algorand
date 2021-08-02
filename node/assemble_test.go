@@ -66,17 +66,16 @@ func BenchmarkAssembleBlock(b *testing.B) {
 		addr := basics.Address(secret.SignatureVerifier)
 		secrets[i] = secret
 		addresses[i] = addr
-		genesis[addr] = basics.AccountData{
+		genesis[addr] = basics.AccountData{MiniAccountData: basics.MiniAccountData{
 			Status:     basics.Online,
 			MicroAlgos: basics.MicroAlgos{Raw: 10000000000000},
-		}
-		//b.Log(addr)
+		}}
 	}
 
-	genesis[poolAddr] = basics.AccountData{
+	genesis[poolAddr] = basics.AccountData{MiniAccountData: basics.MiniAccountData{
 		Status:     basics.NotParticipating,
 		MicroAlgos: basics.MicroAlgos{Raw: config.Consensus[protocol.ConsensusCurrentVersion].MinBalance},
-	}
+	}}
 
 	require.Equal(b, len(genesis), numUsers+1)
 	genBal := bookkeeping.MakeGenesisBalances(genesis, sinkAddr, poolAddr)
@@ -197,16 +196,16 @@ func TestAssembleBlockTransactionPoolBehind(t *testing.T) {
 		addr := basics.Address(secret.SignatureVerifier)
 		secrets[i] = secret
 		addresses[i] = addr
-		genesis[addr] = basics.AccountData{
+		genesis[addr] = basics.AccountData{MiniAccountData: basics.MiniAccountData{
 			Status:     basics.Online,
 			MicroAlgos: basics.MicroAlgos{Raw: 10000000000000},
-		}
+		}}
 	}
 
-	genesis[poolAddr] = basics.AccountData{
+	genesis[poolAddr] = basics.AccountData{MiniAccountData: basics.MiniAccountData{
 		Status:     basics.NotParticipating,
 		MicroAlgos: basics.MicroAlgos{Raw: config.Consensus[protocol.ConsensusCurrentVersion].MinBalance},
-	}
+	}}
 
 	require.Equal(t, len(genesis), numUsers+1)
 	genBal := bookkeeping.MakeGenesisBalances(genesis, sinkAddr, poolAddr)

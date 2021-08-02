@@ -50,25 +50,34 @@ func TestAssetTransfer(t *testing.T) {
 	// prepare data
 	var addrs = map[basics.Address]basics.AccountData{
 		src: {
-			MicroAlgos: basics.MicroAlgos{Raw: 10000000},
-			AssetParams: map[basics.AssetIndex]basics.AssetParams{
-				1: {Total: total},
+			MiniAccountData: basics.MiniAccountData{
+				MicroAlgos: basics.MicroAlgos{Raw: 10000000},
 			},
-			Assets: map[basics.AssetIndex]basics.AssetHolding{
-				1: {Amount: total - dstAmount},
-			},
-		},
+			AccountDataResources: basics.AccountDataResources{
+				AssetParams: map[basics.AssetIndex]basics.AssetParams{
+					1: {Total: total},
+				},
+				Assets: map[basics.AssetIndex]basics.AssetHolding{
+					1: {Amount: total - dstAmount},
+				},
+			}},
 		dst: {
-			MicroAlgos: basics.MicroAlgos{Raw: 10000000},
-			Assets: map[basics.AssetIndex]basics.AssetHolding{
-				1: {Amount: dstAmount},
+			MiniAccountData: basics.MiniAccountData{
+				MicroAlgos: basics.MicroAlgos{Raw: 10000000},
 			},
-		},
+			AccountDataResources: basics.AccountDataResources{
+				Assets: map[basics.AssetIndex]basics.AssetHolding{
+					1: {Amount: dstAmount},
+				},
+			}},
 		cls: {
-			MicroAlgos: basics.MicroAlgos{Raw: 10000000},
-			Assets: map[basics.AssetIndex]basics.AssetHolding{
-				1: {Amount: 0},
+			MiniAccountData: basics.MiniAccountData{
+				MicroAlgos: basics.MicroAlgos{Raw: 10000000},
 			},
+			AccountDataResources: basics.AccountDataResources{
+				Assets: map[basics.AssetIndex]basics.AssetHolding{
+					1: {Amount: 0},
+				}},
 		},
 	}
 

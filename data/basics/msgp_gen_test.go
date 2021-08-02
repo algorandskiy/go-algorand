@@ -72,6 +72,66 @@ func BenchmarkUnmarshalAccountData(b *testing.B) {
 	}
 }
 
+func TestMarshalUnmarshalAccountDataResources(t *testing.T) {
+	partitiontest.PartitionTest(t)
+	v := AccountDataResources{}
+	bts := v.MarshalMsg(nil)
+	left, err := v.UnmarshalMsg(bts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(left) > 0 {
+		t.Errorf("%d bytes left over after UnmarshalMsg(): %q", len(left), left)
+	}
+
+	left, err = msgp.Skip(bts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(left) > 0 {
+		t.Errorf("%d bytes left over after Skip(): %q", len(left), left)
+	}
+}
+
+func TestRandomizedEncodingAccountDataResources(t *testing.T) {
+	protocol.RunEncodingTest(t, &AccountDataResources{})
+}
+
+func BenchmarkMarshalMsgAccountDataResources(b *testing.B) {
+	v := AccountDataResources{}
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		v.MarshalMsg(nil)
+	}
+}
+
+func BenchmarkAppendMsgAccountDataResources(b *testing.B) {
+	v := AccountDataResources{}
+	bts := make([]byte, 0, v.Msgsize())
+	bts = v.MarshalMsg(bts[0:0])
+	b.SetBytes(int64(len(bts)))
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		bts = v.MarshalMsg(bts[0:0])
+	}
+}
+
+func BenchmarkUnmarshalAccountDataResources(b *testing.B) {
+	v := AccountDataResources{}
+	bts := v.MarshalMsg(nil)
+	b.ReportAllocs()
+	b.SetBytes(int64(len(bts)))
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := v.UnmarshalMsg(bts)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
 func TestMarshalUnmarshalAppLocalState(t *testing.T) {
 	partitiontest.PartitionTest(t)
 	v := AppLocalState{}
@@ -492,6 +552,66 @@ func BenchmarkUnmarshalLogItem(b *testing.B) {
 	}
 }
 
+func TestMarshalUnmarshalMiniAccountData(t *testing.T) {
+	partitiontest.PartitionTest(t)
+	v := MiniAccountData{}
+	bts := v.MarshalMsg(nil)
+	left, err := v.UnmarshalMsg(bts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(left) > 0 {
+		t.Errorf("%d bytes left over after UnmarshalMsg(): %q", len(left), left)
+	}
+
+	left, err = msgp.Skip(bts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(left) > 0 {
+		t.Errorf("%d bytes left over after Skip(): %q", len(left), left)
+	}
+}
+
+func TestRandomizedEncodingMiniAccountData(t *testing.T) {
+	protocol.RunEncodingTest(t, &MiniAccountData{})
+}
+
+func BenchmarkMarshalMsgMiniAccountData(b *testing.B) {
+	v := MiniAccountData{}
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		v.MarshalMsg(nil)
+	}
+}
+
+func BenchmarkAppendMsgMiniAccountData(b *testing.B) {
+	v := MiniAccountData{}
+	bts := make([]byte, 0, v.Msgsize())
+	bts = v.MarshalMsg(bts[0:0])
+	b.SetBytes(int64(len(bts)))
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		bts = v.MarshalMsg(bts[0:0])
+	}
+}
+
+func BenchmarkUnmarshalMiniAccountData(b *testing.B) {
+	v := MiniAccountData{}
+	bts := v.MarshalMsg(nil)
+	b.ReportAllocs()
+	b.SetBytes(int64(len(bts)))
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := v.UnmarshalMsg(bts)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
 func TestMarshalUnmarshalStateDelta(t *testing.T) {
 	partitiontest.PartitionTest(t)
 	v := StateDelta{}
@@ -840,6 +960,66 @@ func BenchmarkAppendMsgValueDelta(b *testing.B) {
 
 func BenchmarkUnmarshalValueDelta(b *testing.B) {
 	v := ValueDelta{}
+	bts := v.MarshalMsg(nil)
+	b.ReportAllocs()
+	b.SetBytes(int64(len(bts)))
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := v.UnmarshalMsg(bts)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func TestMarshalUnmarshalVotingData(t *testing.T) {
+	partitiontest.PartitionTest(t)
+	v := VotingData{}
+	bts := v.MarshalMsg(nil)
+	left, err := v.UnmarshalMsg(bts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(left) > 0 {
+		t.Errorf("%d bytes left over after UnmarshalMsg(): %q", len(left), left)
+	}
+
+	left, err = msgp.Skip(bts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(left) > 0 {
+		t.Errorf("%d bytes left over after Skip(): %q", len(left), left)
+	}
+}
+
+func TestRandomizedEncodingVotingData(t *testing.T) {
+	protocol.RunEncodingTest(t, &VotingData{})
+}
+
+func BenchmarkMarshalMsgVotingData(b *testing.B) {
+	v := VotingData{}
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		v.MarshalMsg(nil)
+	}
+}
+
+func BenchmarkAppendMsgVotingData(b *testing.B) {
+	v := VotingData{}
+	bts := make([]byte, 0, v.Msgsize())
+	bts = v.MarshalMsg(bts[0:0])
+	b.SetBytes(int64(len(bts)))
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		bts = v.MarshalMsg(bts[0:0])
+	}
+}
+
+func BenchmarkUnmarshalVotingData(b *testing.B) {
+	v := VotingData{}
 	bts := v.MarshalMsg(nil)
 	b.ReportAllocs()
 	b.SetBytes(int64(len(bts)))

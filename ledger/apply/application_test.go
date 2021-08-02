@@ -335,18 +335,18 @@ func TestAppCallGetParam(t *testing.T) {
 	a.Error(err)
 	a.True(exist)
 
-	b.balances[creator] = basics.AccountData{
+	b.balances[creator] = basics.AccountData{AccountDataResources: basics.AccountDataResources{
 		AppParams: map[basics.AppIndex]basics.AppParams{},
-	}
+	}}
 	_, _, exist, err = getAppParams(&b, appIdxOk)
 	a.Error(err)
 	a.True(exist)
 
-	b.balances[creator] = basics.AccountData{
+	b.balances[creator] = basics.AccountData{AccountDataResources: basics.AccountDataResources{
 		AppParams: map[basics.AppIndex]basics.AppParams{
 			appIdxOk: {},
 		},
-	}
+	}}
 	params, cr, exist, err := getAppParams(&b, appIdxOk)
 	a.NoError(err)
 	a.True(exist)
@@ -647,7 +647,7 @@ func TestAppCallOptIn(t *testing.T) {
 	a.NoError(err)
 	a.Equal(1, b.put)
 	br := b.putBalances[sender]
-	a.Equal(basics.AccountData{AppLocalStates: map[basics.AppIndex]basics.AppLocalState{appIdx: {}}}, br)
+	a.Equal(basics.AccountData{AccountDataResources: basics.AccountDataResources{AppLocalStates: map[basics.AppIndex]basics.AppLocalState{appIdx: {}}}}, br)
 
 	b.ResetWrites()
 
@@ -682,12 +682,15 @@ func TestAppCallOptIn(t *testing.T) {
 	br = b.putBalances[sender]
 	a.Equal(
 		basics.AccountData{
-			AppLocalStates: map[basics.AppIndex]basics.AppLocalState{
-				appIdx:     {Schema: basics.StateSchema{NumUint: 1}},
-				appIdx + 1: {Schema: basics.StateSchema{NumByteSlice: 1}},
+			AccountDataResources: basics.AccountDataResources{
+				AppLocalStates: map[basics.AppIndex]basics.AppLocalState{
+					appIdx:     {Schema: basics.StateSchema{NumUint: 1}},
+					appIdx + 1: {Schema: basics.StateSchema{NumByteSlice: 1}},
+				},
 			},
-			TotalAppSchema: basics.StateSchema{NumUint: 1, NumByteSlice: 1},
-		},
+			MiniAccountData: basics.MiniAccountData{
+				TotalAppSchema: basics.StateSchema{NumUint: 1, NumByteSlice: 1},
+			}},
 		br,
 	)
 }
@@ -726,9 +729,9 @@ func TestAppCallClearState(t *testing.T) {
 	}
 
 	b.balances = make(map[basics.Address]basics.AccountData)
-	cp := basics.AccountData{
+	cp := basics.AccountData{AccountDataResources: basics.AccountDataResources{
 		AppParams: map[basics.AppIndex]basics.AppParams{appIdx: params},
-	}
+	}}
 	b.balances[creator] = cp
 	b.appCreators = map[basics.AppIndex]basics.Address{appIdx: creator}
 
@@ -741,9 +744,9 @@ func TestAppCallClearState(t *testing.T) {
 	a.Equal(0, b.put)
 
 	// check non-existing app with empty opt-in
-	b.balances[sender] = basics.AccountData{
+	b.balances[sender] = basics.AccountData{AccountDataResources: basics.AccountDataResources{
 		AppLocalStates: map[basics.AppIndex]basics.AppLocalState{appIdx: {}},
-	}
+	}}
 	err = ApplicationCall(ac, h, &b, ad, &ep, txnCounter)
 	a.NoError(err)
 	a.Equal(1, b.put)
@@ -757,11 +760,11 @@ func TestAppCallClearState(t *testing.T) {
 	b.ResetWrites()
 
 	// check non-existing app with non-empty opt-in
-	b.balances[sender] = basics.AccountData{
+	b.balances[sender] = basics.AccountData{AccountDataResources: basics.AccountDataResources{
 		AppLocalStates: map[basics.AppIndex]basics.AppLocalState{
 			appIdx: {Schema: basics.StateSchema{NumUint: 10}},
 		},
-	}
+	}}
 	err = ApplicationCall(ac, h, &b, ad, &ep, txnCounter)
 	a.NoError(err)
 	a.Equal(1, b.put)
@@ -773,7 +776,7 @@ func TestAppCallClearState(t *testing.T) {
 	b.ResetWrites()
 
 	// check existing application with failing ClearStateProgram
-	b.balances[creator] = basics.AccountData{
+	b.balances[creator] = basics.AccountData{AccountDataResources: basics.AccountDataResources{
 		AppParams: map[basics.AppIndex]basics.AppParams{
 			appIdx: {
 				ClearStateProgram: []byte{1},
@@ -782,7 +785,7 @@ func TestAppCallClearState(t *testing.T) {
 				},
 			},
 		},
-	}
+	}}
 	b.appCreators[appIdx] = creator
 
 	// one put: to opt out
@@ -879,12 +882,12 @@ func TestAppCallApplyCloseOut(t *testing.T) {
 	var b testBalances
 
 	b.balances = make(map[basics.Address]basics.AccountData)
-	cbr := basics.AccountData{
+	cbr := basics.AccountData{AccountDataResources: basics.AccountDataResources{
 		AppParams: map[basics.AppIndex]basics.AppParams{appIdx: params},
-	}
-	cp := basics.AccountData{
+	}}
+	cp := basics.AccountData{AccountDataResources: basics.AccountDataResources{
 		AppParams: map[basics.AppIndex]basics.AppParams{appIdx: params},
-	}
+	}}
 	b.balances[creator] = cp
 	b.appCreators = map[basics.AppIndex]basics.Address{appIdx: creator}
 
@@ -917,9 +920,9 @@ func TestAppCallApplyCloseOut(t *testing.T) {
 	// check a happy case
 	gd := map[string]basics.ValueDelta{"uint": {Action: basics.SetUintAction, Uint: 1}}
 	b.delta = basics.EvalDelta{GlobalDelta: gd}
-	b.balances[sender] = basics.AccountData{
+	b.balances[sender] = basics.AccountData{AccountDataResources: basics.AccountDataResources{
 		AppLocalStates: map[basics.AppIndex]basics.AppLocalState{appIdx: {}},
-	}
+	}}
 	err = ApplicationCall(ac, h, &b, ad, &ep, txnCounter)
 	a.NoError(err)
 	a.Equal(1, b.put)
@@ -968,12 +971,12 @@ func TestAppCallApplyUpdate(t *testing.T) {
 	var b testBalances
 
 	b.balances = make(map[basics.Address]basics.AccountData)
-	cbr := basics.AccountData{
+	cbr := basics.AccountData{AccountDataResources: basics.AccountDataResources{
 		AppParams: map[basics.AppIndex]basics.AppParams{appIdx: params},
-	}
-	cp := basics.AccountData{
+	}}
+	cp := basics.AccountData{AccountDataResources: basics.AccountDataResources{
 		AppParams: map[basics.AppIndex]basics.AppParams{appIdx: params},
-	}
+	}}
 	b.balances[creator] = cp
 	b.appCreators = map[basics.AppIndex]basics.Address{appIdx: creator}
 
@@ -1021,12 +1024,12 @@ func TestAppCallApplyUpdate(t *testing.T) {
 	}
 
 	b.balances = make(map[basics.Address]basics.AccountData)
-	cbr = basics.AccountData{
+	cbr = basics.AccountData{AccountDataResources: basics.AccountDataResources{
 		AppParams: map[basics.AppIndex]basics.AppParams{appIdx: params},
-	}
-	cp = basics.AccountData{
+	}}
+	cp = basics.AccountData{AccountDataResources: basics.AccountDataResources{
 		AppParams: map[basics.AppIndex]basics.AppParams{appIdx: params},
-	}
+	}}
 	b.balances[creator] = cp
 	b.appCreators = map[basics.AppIndex]basics.Address{appIdx: creator}
 
@@ -1120,13 +1123,19 @@ func TestAppCallApplyDelete(t *testing.T) {
 	b.balances = make(map[basics.Address]basics.AccountData)
 	// cbr is to ensure the original balance record is not modified but copied when updated in apply
 	cbr := basics.AccountData{
-		AppParams:          map[basics.AppIndex]basics.AppParams{appIdx: params},
-		TotalExtraAppPages: 1,
-	}
+		MiniAccountData: basics.MiniAccountData{
+			TotalExtraAppPages: 1,
+		},
+		AccountDataResources: basics.AccountDataResources{
+			AppParams: map[basics.AppIndex]basics.AppParams{appIdx: params},
+		}}
 	cp := basics.AccountData{
-		AppParams:          map[basics.AppIndex]basics.AppParams{appIdx: params},
-		TotalExtraAppPages: 1,
-	}
+		MiniAccountData: basics.MiniAccountData{
+			TotalExtraAppPages: 1,
+		},
+		AccountDataResources: basics.AccountDataResources{
+			AppParams: map[basics.AppIndex]basics.AppParams{appIdx: params},
+		}}
 	b.balances[creator] = cp
 	b.appCreators = map[basics.AppIndex]basics.Address{appIdx: creator}
 
@@ -1171,12 +1180,20 @@ func TestAppCallApplyDelete(t *testing.T) {
 	// check deletion
 	for initTotalExtraPages := uint32(0); initTotalExtraPages < 3; initTotalExtraPages++ {
 		cbr = basics.AccountData{
-			AppParams:          map[basics.AppIndex]basics.AppParams{appIdx: params},
-			TotalExtraAppPages: initTotalExtraPages,
+			MiniAccountData: basics.MiniAccountData{
+				TotalExtraAppPages: initTotalExtraPages,
+			},
+			AccountDataResources: basics.AccountDataResources{
+				AppParams: map[basics.AppIndex]basics.AppParams{appIdx: params},
+			},
 		}
 		cp := basics.AccountData{
-			AppParams:          map[basics.AppIndex]basics.AppParams{appIdx: params},
-			TotalExtraAppPages: initTotalExtraPages,
+			MiniAccountData: basics.MiniAccountData{
+				TotalExtraAppPages: initTotalExtraPages,
+			},
+			AccountDataResources: basics.AccountDataResources{
+				AppParams: map[basics.AppIndex]basics.AppParams{appIdx: params},
+			},
 		}
 		b.balances[creator] = cp
 		b.pass = true

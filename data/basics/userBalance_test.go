@@ -42,12 +42,12 @@ func TestRewards(t *testing.T) {
 	proto := config.Consensus[protocol.ConsensusCurrentVersion]
 	accountAlgos := []MicroAlgos{{Raw: 0}, {Raw: 8000}, {Raw: 13000}, {Raw: 83000}}
 	for _, accountAlgo := range accountAlgos {
-		ad := AccountData{
+		ad := AccountData{MiniAccountData: MiniAccountData{
 			Status:             Online,
 			MicroAlgos:         accountAlgo,
 			RewardsBase:        100,
 			RewardedMicroAlgos: MicroAlgos{Raw: 25},
-		}
+		}}
 
 		levels := []uint64{uint64(0), uint64(1), uint64(30), uint64(3000)}
 		for _, level := range levels {
@@ -74,24 +74,24 @@ func TestWithUpdatedRewardsPanics(t *testing.T) {
 					}
 				}
 			}()
-			a := AccountData{
+			a := AccountData{MiniAccountData: MiniAccountData{
 				Status:             Online,
 				MicroAlgos:         MicroAlgos{Raw: ^uint64(0)},
 				RewardedMicroAlgos: MicroAlgos{Raw: 0},
 				RewardsBase:        0,
-			}
+			}}
 			a.WithUpdatedRewards(proto, 100)
 		}()
 		require.Equal(t, true, paniced)
 	})
 
 	t.Run("RewardsOverflow", func(t *testing.T) {
-		a := AccountData{
+		a := AccountData{MiniAccountData: MiniAccountData{
 			Status:             Online,
 			MicroAlgos:         MicroAlgos{Raw: 80000000},
 			RewardedMicroAlgos: MicroAlgos{Raw: ^uint64(0)},
 			RewardsBase:        0,
-		}
+		}}
 		b := a.WithUpdatedRewards(proto, 100)
 		require.Equal(t, 100*a.MicroAlgos.RewardUnits(proto)-1, b.RewardedMicroAlgos.Raw)
 	})
@@ -115,21 +115,27 @@ func TestEncodedAccountDataSize(t *testing.T) {
 		NumByteSlice: 0x1234123412341234,
 	}
 	ad := AccountData{
-		Status:             NotParticipating,
-		MicroAlgos:         MicroAlgos{},
-		RewardsBase:        0x1234123412341234,
-		RewardedMicroAlgos: MicroAlgos{},
-		VoteID:             oneTimeSecrets.OneTimeSignatureVerifier,
-		SelectionID:        vrfSecrets.PK,
-		VoteFirstValid:     Round(0x1234123412341234),
-		VoteLastValid:      Round(0x1234123412341234),
-		VoteKeyDilution:    0x1234123412341234,
-		AssetParams:        make(map[AssetIndex]AssetParams),
-		Assets:             make(map[AssetIndex]AssetHolding),
-		AppLocalStates:     make(map[AppIndex]AppLocalState),
-		AppParams:          make(map[AppIndex]AppParams),
-		TotalAppSchema:     maxStateSchema,
-		AuthAddr:           Address(crypto.Hash([]byte{1, 2, 3, 4})),
+		MiniAccountData: MiniAccountData{
+			Status:             NotParticipating,
+			MicroAlgos:         MicroAlgos{},
+			RewardsBase:        0x1234123412341234,
+			RewardedMicroAlgos: MicroAlgos{},
+			TotalAppSchema:     maxStateSchema,
+			AuthAddr:           Address(crypto.Hash([]byte{1, 2, 3, 4})),
+		},
+		VotingData: VotingData{
+			VoteID:          oneTimeSecrets.OneTimeSignatureVerifier,
+			SelectionID:     vrfSecrets.PK,
+			VoteFirstValid:  Round(0x1234123412341234),
+			VoteLastValid:   Round(0x1234123412341234),
+			VoteKeyDilution: 0x1234123412341234,
+		},
+		AccountDataResources: AccountDataResources{
+			AssetParams:    make(map[AssetIndex]AssetParams),
+			Assets:         make(map[AssetIndex]AssetHolding),
+			AppLocalStates: make(map[AppIndex]AppLocalState),
+			AppParams:      make(map[AppIndex]AppParams),
+		},
 	}
 
 	// TODO after applications enabled: change back to protocol.ConsensusCurrentVersion

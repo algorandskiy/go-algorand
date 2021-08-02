@@ -701,37 +701,42 @@ func generateRandomTestingAccountBalances(numAccounts int) (updates map[basics.A
 	for i := 0; i < numAccounts; i++ {
 		addr := randomAddress()
 		updates[addr] = basics.AccountData{
-			MicroAlgos:         basics.MicroAlgos{Raw: 0x000ffffffffffffff / uint64(numAccounts)},
-			Status:             basics.NotParticipating,
-			RewardsBase:        uint64(i),
-			RewardedMicroAlgos: basics.MicroAlgos{Raw: 0x000ffffffffffffff / uint64(numAccounts)},
-			VoteID:             secrets.OneTimeSignatureVerifier,
-			SelectionID:        pubVrfKey,
-			VoteFirstValid:     basics.Round(0x000ffffffffffffff),
-			VoteLastValid:      basics.Round(0x000ffffffffffffff),
-			VoteKeyDilution:    0x000ffffffffffffff,
-			AssetParams: map[basics.AssetIndex]basics.AssetParams{
-				0x000ffffffffffffff: {
-					Total:         0x000ffffffffffffff,
-					Decimals:      0x2ffffff,
-					DefaultFrozen: true,
-					UnitName:      "12345678",
-					AssetName:     "12345678901234567890123456789012",
-					URL:           "12345678901234567890123456789012",
-					MetadataHash:  pubVrfKey,
-					Manager:       addr,
-					Reserve:       addr,
-					Freeze:        addr,
-					Clawback:      addr,
-				},
+			MiniAccountData: basics.MiniAccountData{
+				MicroAlgos:         basics.MicroAlgos{Raw: 0x000ffffffffffffff / uint64(numAccounts)},
+				Status:             basics.NotParticipating,
+				RewardsBase:        uint64(i),
+				RewardedMicroAlgos: basics.MicroAlgos{Raw: 0x000ffffffffffffff / uint64(numAccounts)},
 			},
-			Assets: map[basics.AssetIndex]basics.AssetHolding{
-				0x000ffffffffffffff: {
-					Amount: 0x000ffffffffffffff,
-					Frozen: true,
-				},
+			VotingData: basics.VotingData{
+				VoteID:          secrets.OneTimeSignatureVerifier,
+				SelectionID:     pubVrfKey,
+				VoteFirstValid:  basics.Round(0x000ffffffffffffff),
+				VoteLastValid:   basics.Round(0x000ffffffffffffff),
+				VoteKeyDilution: 0x000ffffffffffffff,
 			},
-		}
+			AccountDataResources: basics.AccountDataResources{
+				AssetParams: map[basics.AssetIndex]basics.AssetParams{
+					0x000ffffffffffffff: {
+						Total:         0x000ffffffffffffff,
+						Decimals:      0x2ffffff,
+						DefaultFrozen: true,
+						UnitName:      "12345678",
+						AssetName:     "12345678901234567890123456789012",
+						URL:           "12345678901234567890123456789012",
+						MetadataHash:  pubVrfKey,
+						Manager:       addr,
+						Reserve:       addr,
+						Freeze:        addr,
+						Clawback:      addr,
+					},
+				},
+				Assets: map[basics.AssetIndex]basics.AssetHolding{
+					0x000ffffffffffffff: {
+						Amount: 0x000ffffffffffffff,
+						Frozen: true,
+					},
+				},
+			}}
 	}
 	return
 }
@@ -980,37 +985,42 @@ func TestAccountsReencoding(t *testing.T) {
 		for i := 0; i < 100; i++ {
 			addr := randomAddress()
 			accData := basics.AccountData{
-				MicroAlgos:         basics.MicroAlgos{Raw: 0x000ffffffffffffff},
-				Status:             basics.NotParticipating,
-				RewardsBase:        uint64(i),
-				RewardedMicroAlgos: basics.MicroAlgos{Raw: 0x000ffffffffffffff},
-				VoteID:             secrets.OneTimeSignatureVerifier,
-				SelectionID:        pubVrfKey,
-				VoteFirstValid:     basics.Round(0x000ffffffffffffff),
-				VoteLastValid:      basics.Round(0x000ffffffffffffff),
-				VoteKeyDilution:    0x000ffffffffffffff,
-				AssetParams: map[basics.AssetIndex]basics.AssetParams{
-					0x000ffffffffffffff: {
-						Total:         0x000ffffffffffffff,
-						Decimals:      0x2ffffff,
-						DefaultFrozen: true,
-						UnitName:      "12345678",
-						AssetName:     "12345678901234567890123456789012",
-						URL:           "12345678901234567890123456789012",
-						MetadataHash:  pubVrfKey,
-						Manager:       addr,
-						Reserve:       addr,
-						Freeze:        addr,
-						Clawback:      addr,
-					},
+				MiniAccountData: basics.MiniAccountData{
+					MicroAlgos:         basics.MicroAlgos{Raw: 0x000ffffffffffffff},
+					Status:             basics.NotParticipating,
+					RewardsBase:        uint64(i),
+					RewardedMicroAlgos: basics.MicroAlgos{Raw: 0x000ffffffffffffff},
 				},
-				Assets: map[basics.AssetIndex]basics.AssetHolding{
-					0x000ffffffffffffff: {
-						Amount: 0x000ffffffffffffff,
-						Frozen: true,
-					},
+				VotingData: basics.VotingData{
+					VoteID:          secrets.OneTimeSignatureVerifier,
+					SelectionID:     pubVrfKey,
+					VoteFirstValid:  basics.Round(0x000ffffffffffffff),
+					VoteLastValid:   basics.Round(0x000ffffffffffffff),
+					VoteKeyDilution: 0x000ffffffffffffff,
 				},
-			}
+				AccountDataResources: basics.AccountDataResources{
+					AssetParams: map[basics.AssetIndex]basics.AssetParams{
+						0x000ffffffffffffff: {
+							Total:         0x000ffffffffffffff,
+							Decimals:      0x2ffffff,
+							DefaultFrozen: true,
+							UnitName:      "12345678",
+							AssetName:     "12345678901234567890123456789012",
+							URL:           "12345678901234567890123456789012",
+							MetadataHash:  pubVrfKey,
+							Manager:       addr,
+							Reserve:       addr,
+							Freeze:        addr,
+							Clawback:      addr,
+						},
+					},
+					Assets: map[basics.AssetIndex]basics.AssetHolding{
+						0x000ffffffffffffff: {
+							Amount: 0x000ffffffffffffff,
+							Frozen: true,
+						},
+					},
+				}}
 
 			_, err = tx.ExecContext(ctx, "INSERT INTO accountbase (address, data) VALUES (?, ?)", addr[:], protocol.Encode(&accData))
 			if err != nil {
@@ -1105,7 +1115,7 @@ func benchmarkWriteCatchpointStagingBalancesSub(b *testing.B, ascendingOrder boo
 		balances.Balances = make([]encodedBalanceRecord, chunkSize)
 		for i := uint64(0); i < chunkSize; i++ {
 			var randomAccount encodedBalanceRecord
-			accountData := basics.AccountData{RewardsBase: accountsLoaded + i}
+			accountData := basics.AccountData{MiniAccountData: basics.MiniAccountData{RewardsBase: accountsLoaded + i}}
 			accountData.MicroAlgos.Raw = crypto.RandUint63()
 			randomAccount.AccountData = protocol.Encode(&accountData)
 			crypto.RandBytes(randomAccount.Address[:])
@@ -1172,7 +1182,7 @@ func TestCompactAccountDeltas(t *testing.T) {
 	a.Equal(0, ad.len())
 	a.Panics(func() { ad.getByIdx(0) })
 
-	sample1 := accountDelta{new: basics.AccountData{MicroAlgos: basics.MicroAlgos{Raw: 123}}}
+	sample1 := accountDelta{new: basics.AccountData{MiniAccountData: basics.MiniAccountData{MicroAlgos: basics.MicroAlgos{Raw: 123}}}}
 	ad.upsert(addr, sample1)
 	data, idx = ad.get(addr)
 	a.NotEqual(-1, idx)
@@ -1183,7 +1193,7 @@ func TestCompactAccountDeltas(t *testing.T) {
 	a.Equal(addr, address)
 	a.Equal(sample1, data)
 
-	sample2 := accountDelta{new: basics.AccountData{MicroAlgos: basics.MicroAlgos{Raw: 456}}}
+	sample2 := accountDelta{new: basics.AccountData{MiniAccountData: basics.MiniAccountData{MicroAlgos: basics.MicroAlgos{Raw: 456}}}}
 	ad.upsert(addr, sample2)
 	data, idx = ad.get(addr)
 	a.NotEqual(-1, idx)
@@ -1204,7 +1214,7 @@ func TestCompactAccountDeltas(t *testing.T) {
 	a.Equal(addr, address)
 	a.Equal(sample2, data)
 
-	old1 := persistedAccountData{addr: addr, accountData: basics.AccountData{MicroAlgos: basics.MicroAlgos{Raw: 789}}}
+	old1 := persistedAccountData{addr: addr, accountData: basics.AccountData{MiniAccountData: basics.MiniAccountData{MicroAlgos: basics.MicroAlgos{Raw: 789}}}}
 	ad.upsertOld(old1)
 	a.Equal(1, ad.len())
 	address, data = ad.getByIdx(0)
@@ -1212,7 +1222,7 @@ func TestCompactAccountDeltas(t *testing.T) {
 	a.Equal(accountDelta{new: sample2.new, old: old1}, data)
 
 	addr1 := randomAddress()
-	old2 := persistedAccountData{addr: addr1, accountData: basics.AccountData{MicroAlgos: basics.MicroAlgos{Raw: 789}}}
+	old2 := persistedAccountData{addr: addr1, accountData: basics.AccountData{MiniAccountData: basics.MiniAccountData{MicroAlgos: basics.MicroAlgos{Raw: 789}}}}
 	ad.upsertOld(old2)
 	a.Equal(2, ad.len())
 	address, data = ad.getByIdx(0)

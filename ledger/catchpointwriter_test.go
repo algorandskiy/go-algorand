@@ -53,18 +53,24 @@ func makeTestEncodedBalanceRecord(t *testing.T) encodedBalanceRecord {
 	oneTimeSecrets := crypto.GenerateOneTimeSignatureSecrets(0, 1)
 	vrfSecrets := crypto.GenerateVRFSecrets()
 	ad := basics.AccountData{
-		Status:             basics.NotParticipating,
-		MicroAlgos:         basics.MicroAlgos{},
-		RewardsBase:        0x1234123412341234,
-		RewardedMicroAlgos: basics.MicroAlgos{},
-		VoteID:             oneTimeSecrets.OneTimeSignatureVerifier,
-		SelectionID:        vrfSecrets.PK,
-		VoteFirstValid:     basics.Round(0x1234123412341234),
-		VoteLastValid:      basics.Round(0x1234123412341234),
-		VoteKeyDilution:    0x1234123412341234,
-		AssetParams:        make(map[basics.AssetIndex]basics.AssetParams),
-		Assets:             make(map[basics.AssetIndex]basics.AssetHolding),
-		AuthAddr:           basics.Address(crypto.Hash([]byte{1, 2, 3, 4})),
+		MiniAccountData: basics.MiniAccountData{
+			Status:             basics.NotParticipating,
+			MicroAlgos:         basics.MicroAlgos{},
+			RewardsBase:        0x1234123412341234,
+			RewardedMicroAlgos: basics.MicroAlgos{},
+			AuthAddr:           basics.Address(crypto.Hash([]byte{1, 2, 3, 4})),
+		},
+		VotingData: basics.VotingData{
+			VoteID:          oneTimeSecrets.OneTimeSignatureVerifier,
+			SelectionID:     vrfSecrets.PK,
+			VoteFirstValid:  basics.Round(0x1234123412341234),
+			VoteLastValid:   basics.Round(0x1234123412341234),
+			VoteKeyDilution: 0x1234123412341234,
+		},
+		AccountDataResources: basics.AccountDataResources{
+			AssetParams: make(map[basics.AssetIndex]basics.AssetParams),
+			Assets:      make(map[basics.AssetIndex]basics.AssetHolding),
+		},
 	}
 	currentConsensusParams := config.Consensus[protocol.ConsensusCurrentVersion]
 

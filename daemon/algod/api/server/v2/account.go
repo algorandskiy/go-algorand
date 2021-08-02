@@ -325,20 +325,26 @@ func AccountToAccountData(a *generated.Account) (basics.AccountData, error) {
 	}
 
 	ad := basics.AccountData{
-		Status:             status,
-		MicroAlgos:         basics.MicroAlgos{Raw: a.Amount},
-		RewardsBase:        rewardsBase,
-		RewardedMicroAlgos: basics.MicroAlgos{Raw: a.Rewards},
-		VoteID:             voteID,
-		SelectionID:        selID,
-		VoteFirstValid:     voteFirstValid,
-		VoteLastValid:      voteLastValid,
-		VoteKeyDilution:    voteKeyDilution,
-		Assets:             assets,
-		AppLocalStates:     appLocalStates,
-		AppParams:          appParams,
-		TotalAppSchema:     totalSchema,
-		TotalExtraAppPages: totalExtraPages,
+		MiniAccountData: basics.MiniAccountData{
+			Status:             status,
+			MicroAlgos:         basics.MicroAlgos{Raw: a.Amount},
+			RewardsBase:        rewardsBase,
+			RewardedMicroAlgos: basics.MicroAlgos{Raw: a.Rewards},
+			TotalAppSchema:     totalSchema,
+			TotalExtraAppPages: totalExtraPages,
+		},
+		VotingData: basics.VotingData{
+			VoteID:          voteID,
+			SelectionID:     selID,
+			VoteFirstValid:  voteFirstValid,
+			VoteLastValid:   voteLastValid,
+			VoteKeyDilution: voteKeyDilution,
+		},
+		AccountDataResources: basics.AccountDataResources{
+			Assets:         assets,
+			AppLocalStates: appLocalStates,
+			AppParams:      appParams,
+		},
 	}
 
 	if a.AuthAddr != nil {

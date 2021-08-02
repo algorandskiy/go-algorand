@@ -72,30 +72,34 @@ func TestAccount(t *testing.T) {
 	}
 	copy(assetParams2.MetadataHash[:], []byte("test2"))
 	a := basics.AccountData{
-		Status:             basics.Online,
-		MicroAlgos:         basics.MicroAlgos{Raw: 80000000},
-		RewardedMicroAlgos: basics.MicroAlgos{Raw: ^uint64(0)},
-		RewardsBase:        0,
-		AppParams:          map[basics.AppIndex]basics.AppParams{appIdx1: appParams1, appIdx2: appParams2},
-		TotalAppSchema:     totalAppSchema,
-		TotalExtraAppPages: totalAppExtraPages,
-		AppLocalStates: map[basics.AppIndex]basics.AppLocalState{
-			appIdx1: {
-				Schema: basics.StateSchema{NumUint: 10},
-				KeyValue: basics.TealKeyValue{
-					"uint":  basics.TealValue{Type: basics.TealUintType, Uint: 1},
-					"bytes": basics.TealValue{Type: basics.TealBytesType, Bytes: "value1"},
-				},
-			},
-			appIdx2: {
-				Schema: basics.StateSchema{NumUint: 10},
-				KeyValue: basics.TealKeyValue{
-					"uint":  basics.TealValue{Type: basics.TealUintType, Uint: 2},
-					"bytes": basics.TealValue{Type: basics.TealBytesType, Bytes: "value2"},
-				},
-			},
+		MiniAccountData: basics.MiniAccountData{
+			Status:             basics.Online,
+			MicroAlgos:         basics.MicroAlgos{Raw: 80000000},
+			RewardedMicroAlgos: basics.MicroAlgos{Raw: ^uint64(0)},
+			RewardsBase:        0,
+			TotalAppSchema:     totalAppSchema,
+			TotalExtraAppPages: totalAppExtraPages,
 		},
-		AssetParams: map[basics.AssetIndex]basics.AssetParams{assetIdx1: assetParams1, assetIdx2: assetParams2},
+		AccountDataResources: basics.AccountDataResources{
+			AppParams: map[basics.AppIndex]basics.AppParams{appIdx1: appParams1, appIdx2: appParams2},
+			AppLocalStates: map[basics.AppIndex]basics.AppLocalState{
+				appIdx1: {
+					Schema: basics.StateSchema{NumUint: 10},
+					KeyValue: basics.TealKeyValue{
+						"uint":  basics.TealValue{Type: basics.TealUintType, Uint: 1},
+						"bytes": basics.TealValue{Type: basics.TealBytesType, Bytes: "value1"},
+					},
+				},
+				appIdx2: {
+					Schema: basics.StateSchema{NumUint: 10},
+					KeyValue: basics.TealKeyValue{
+						"uint":  basics.TealValue{Type: basics.TealUintType, Uint: 2},
+						"bytes": basics.TealValue{Type: basics.TealBytesType, Bytes: "value2"},
+					},
+				},
+			},
+			AssetParams: map[basics.AssetIndex]basics.AssetParams{assetIdx1: assetParams1, assetIdx2: assetParams2},
+		},
 	}
 	b := a.WithUpdatedRewards(proto, 100)
 

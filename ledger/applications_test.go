@@ -184,7 +184,7 @@ func TestLogicLedgerBalances(t *testing.T) {
 
 	addr1 := getRandomAddress(a)
 	ble := basics.MicroAlgos{Raw: 100}
-	c.brs = map[basics.Address]basics.AccountData{addr1: {MicroAlgos: ble}}
+	c.brs = map[basics.Address]basics.AccountData{addr1: {MiniAccountData: basics.MiniAccountData{MicroAlgos: ble}}}
 	bla, err := l.Balance(addr1)
 	a.NoError(err)
 	a.Equal(ble, bla)
@@ -240,7 +240,7 @@ func TestLogicLedgerAsset(t *testing.T) {
 	a.Contains(err.Error(), fmt.Sprintf("asset %d does not exist", aidx))
 
 	c.brs = map[basics.Address]basics.AccountData{
-		addr1: {AssetParams: map[basics.AssetIndex]basics.AssetParams{assetIdx: {Total: 1000}}},
+		addr1: {AccountDataResources: basics.AccountDataResources{AssetParams: map[basics.AssetIndex]basics.AssetParams{assetIdx: {Total: 1000}}}},
 	}
 	ap, creator, err := l.AssetParams(assetIdx)
 	a.NoError(err)
@@ -253,8 +253,10 @@ func TestLogicLedgerAsset(t *testing.T) {
 
 	c.brs = map[basics.Address]basics.AccountData{
 		addr1: {
-			AssetParams: map[basics.AssetIndex]basics.AssetParams{assetIdx: {Total: 1000}},
-			Assets:      map[basics.AssetIndex]basics.AssetHolding{assetIdx: {Amount: 99}},
+			AccountDataResources: basics.AccountDataResources{
+				AssetParams: map[basics.AssetIndex]basics.AssetParams{assetIdx: {Total: 1000}},
+				Assets:      map[basics.AssetIndex]basics.AssetHolding{assetIdx: {Amount: 99}},
+			},
 		},
 	}
 

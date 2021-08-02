@@ -366,7 +366,7 @@ func RunEncodingTest(t *testing.T, template msgpMarshalUnmarshal) {
 	for i := 0; i < 1000; i++ {
 		err := EncodingTest(template)
 		if err == errSkipRawMsgpTesting {
-			// we want to skip the serilization test in this case.
+			// we want to skip the serialization test in this case.
 			t.Skip()
 			return
 		}

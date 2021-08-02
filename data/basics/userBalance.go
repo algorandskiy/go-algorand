@@ -95,11 +95,18 @@ func UnmarshalStatus(value string) (s Status, err error) {
 	return
 }
 
-// AccountData contains the data associated with a given address.
-//
-// This includes the account balance, cryptographic public keys,
-// consensus delegation status, asset data, and application data.
-type AccountData struct {
+type VotingData struct {
+	_struct struct{} `codec:",omitempty,omitemptyarray"`
+
+	VoteID      crypto.OneTimeSignatureVerifier `codec:"vote"`
+	SelectionID crypto.VRFVerifier              `codec:"sel"`
+
+	VoteFirstValid  Round  `codec:"voteFst"`
+	VoteLastValid   Round  `codec:"voteLst"`
+	VoteKeyDilution uint64 `codec:"voteKD"`
+}
+
+type MiniAccountData struct {
 	_struct struct{} `codec:",omitempty,omitemptyarray"`
 
 	Status     Status     `codec:"onl"`
@@ -146,25 +153,26 @@ type AccountData struct {
 	// the past week".
 	RewardedMicroAlgos MicroAlgos `codec:"ern"`
 
-	VoteID      crypto.OneTimeSignatureVerifier `codec:"vote"`
-	SelectionID crypto.VRFVerifier              `codec:"sel"`
+	// AuthAddr is the address against which signatures/multisigs/logicsigs should be checked.
+	// If empty, the address of the account whose AccountData this is is used.
+	// A transaction may change an account's AuthAddr to "re-key" the account.
+	// This allows key rotation, changing the members in a multisig, etc.
+	AuthAddr Address `codec:"spend"`
 
-	VoteFirstValid  Round  `codec:"voteFst"`
-	VoteLastValid   Round  `codec:"voteLst"`
-	VoteKeyDilution uint64 `codec:"voteKD"`
+	// TotalAppSchema stores the sum of all of the LocalStateSchemas
+	// and GlobalStateSchemas in this account (global for applications
+	// we created local for applications we opted in to), so that we don't
+	// have to iterate over all of them to compute MinBalance.
+	TotalAppSchema StateSchema `codec:"tsch"`
 
-	// If this account created an asset, AssetParams stores
-	// the parameters defining that asset.  The params are indexed
-	// by the Index of the AssetID; the Creator is this account's address.
-	//
-	// An account with any asset in AssetParams cannot be
-	// closed, until the asset is destroyed.  An asset can
-	// be destroyed if this account holds AssetParams.Total units
-	// of that asset (in the Assets array below).
-	//
-	// NOTE: do not modify this value in-place in existing AccountData
-	// structs; allocate a copy and modify that instead.  AccountData
-	// is expected to have copy-by-value semantics.
+	// TotalExtraAppPages stores the extra length in pages (MaxAppProgramLen bytes per page)
+	// requested for app program by this account
+	TotalExtraAppPages uint32 `codec:"teap"`
+}
+
+type AccountDataResources struct {
+	_struct struct{} `codec:",omitempty,omitemptyarray"`
+
 	AssetParams map[AssetIndex]AssetParams `codec:"apar,allocbound=encodedMaxAssetsPerAccount"`
 
 	// Assets is the set of assets that can be held by this
@@ -184,12 +192,6 @@ type AccountData struct {
 	// is expected to have copy-by-value semantics.
 	Assets map[AssetIndex]AssetHolding `codec:"asset,allocbound=encodedMaxAssetsPerAccount"`
 
-	// AuthAddr is the address against which signatures/multisigs/logicsigs should be checked.
-	// If empty, the address of the account whose AccountData this is is used.
-	// A transaction may change an account's AuthAddr to "re-key" the account.
-	// This allows key rotation, changing the members in a multisig, etc.
-	AuthAddr Address `codec:"spend"`
-
 	// AppLocalStates stores the local states associated with any applications
 	// that this account has opted in to.
 	AppLocalStates map[AppIndex]AppLocalState `codec:"appl,allocbound=EncodedMaxAppLocalStates"`
@@ -197,16 +199,18 @@ type AccountData struct {
 	// AppParams stores the global parameters and state associated with any
 	// applications that this account has created.
 	AppParams map[AppIndex]AppParams `codec:"appp,allocbound=EncodedMaxAppParams"`
+}
 
-	// TotalAppSchema stores the sum of all of the LocalStateSchemas
-	// and GlobalStateSchemas in this account (global for applications
-	// we created local for applications we opted in to), so that we don't
-	// have to iterate over all of them to compute MinBalance.
-	TotalAppSchema StateSchema `codec:"tsch"`
+// AccountData contains the data associated with a given address.
+//
+// This includes the account balance, cryptographic public keys,
+// consensus delegation status, asset data, and application data.
+type AccountData struct {
+	_struct struct{} `codec:",omitempty,omitemptyarray"`
 
-	// TotalExtraAppPages stores the extra length in pages (MaxAppProgramLen bytes per page)
-	// requested for app program by this account
-	TotalExtraAppPages uint32 `codec:"teap"`
+	MiniAccountData
+	VotingData
+	AccountDataResources
 }
 
 // AppLocalState stores the LocalState associated with an application. It also
@@ -381,7 +385,7 @@ type AssetParams struct {
 
 // MakeAccountData returns a UserToken
 func MakeAccountData(status Status, algos MicroAlgos) AccountData {
-	return AccountData{Status: status, MicroAlgos: algos}
+	return AccountData{MiniAccountData: MiniAccountData{Status: status, MicroAlgos: algos}}
 }
 
 // Money returns the amount of MicroAlgos associated with the user's account

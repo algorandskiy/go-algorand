@@ -147,22 +147,22 @@ func makeBalancesAdapter(
 				if err != nil {
 					return nil, AppState{}, err
 				}
-				ad := basics.AccountData{
+				ad := basics.AccountData{AccountDataResources: basics.AccountDataResources{
 					AppParams: map[basics.AppIndex]basics.AppParams{
 						aid: {
 							StateSchemas: makeSchemas(),
 							GlobalState:  make(basics.TealKeyValue),
 						},
 					},
-				}
+				}}
 				balances[addr] = ad
 			}
 			for _, addr := range accounts {
 				ad, ok := balances[addr]
 				if !ok {
-					ad = basics.AccountData{
+					ad = basics.AccountData{AccountDataResources: basics.AccountDataResources{
 						AppLocalStates: map[basics.AppIndex]basics.AppLocalState{},
-					}
+					}}
 					balances[addr] = ad
 				}
 				if ad.AppLocalStates == nil {
