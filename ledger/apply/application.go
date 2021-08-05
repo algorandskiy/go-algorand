@@ -118,7 +118,7 @@ func createApplication(ac *transactions.ApplicationCallTxnFields, balances Balan
 	// Update the cached TotalExtraAppPages for this account, used
 	// when computing MinBalance
 	totalExtraPages := record.TotalExtraAppPages
-	totalExtraPages += ac.ExtraProgramPages
+	totalExtraPages = basics.AddSaturate32(totalExtraPages, ac.ExtraProgramPages)
 	record.TotalExtraAppPages = totalExtraPages
 
 	// Write back to the creator's balance record
@@ -143,6 +143,8 @@ func deleteApplication(balances Balances, creator basics.Address, appIdx basics.
 		return err
 	}
 
+	record.AppParams = cloneAppParams(record.AppParams)
+
 	// Update the TotalAppSchema used for MinBalance calculation,
 	// since the creator no longer has to store the GlobalState
 	totalSchema := record.TotalAppSchema
@@ -150,17 +152,19 @@ func deleteApplication(balances Balances, creator basics.Address, appIdx basics.
 	totalSchema = totalSchema.SubSchema(globalSchema)
 	record.TotalAppSchema = totalSchema
 
-	// Delete the AppParams
-	record.AppParams = cloneAppParams(record.AppParams)
-	delete(record.AppParams, appIdx)
-
 	// Delete app's extra program pages
 	totalExtraPages := record.TotalExtraAppPages
 	if totalExtraPages > 0 {
-		extraPages := record.AppParams[appIdx].ExtraProgramPages
-		totalExtraPages -= extraPages
+		proto := balances.ConsensusParams()
+		if proto.EnableExtraPagesOnAppUpdate {
+			extraPages := record.AppParams[appIdx].ExtraProgramPages
+			totalExtraPages = basics.SubSaturate32(totalExtraPages, extraPages)
+		}
 		record.TotalExtraAppPages = totalExtraPages
 	}
+
+	// Delete the AppParams
+	delete(record.AppParams, appIdx)
 
 	err = balances.Put(creator, record)
 	if err != nil {
