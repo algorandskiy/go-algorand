@@ -72,9 +72,9 @@ func BenchmarkUnmarshalAccountData(b *testing.B) {
 	}
 }
 
-func TestMarshalUnmarshalAccountDataResources(t *testing.T) {
+func TestMarshalUnmarshalAccountDataResourceMap(t *testing.T) {
 	partitiontest.PartitionTest(t)
-	v := AccountDataResources{}
+	v := AccountDataResourceMap{}
 	bts := v.MarshalMsg(nil)
 	left, err := v.UnmarshalMsg(bts)
 	if err != nil {
@@ -93,12 +93,12 @@ func TestMarshalUnmarshalAccountDataResources(t *testing.T) {
 	}
 }
 
-func TestRandomizedEncodingAccountDataResources(t *testing.T) {
-	protocol.RunEncodingTest(t, &AccountDataResources{})
+func TestRandomizedEncodingAccountDataResourceMap(t *testing.T) {
+	protocol.RunEncodingTest(t, &AccountDataResourceMap{})
 }
 
-func BenchmarkMarshalMsgAccountDataResources(b *testing.B) {
-	v := AccountDataResources{}
+func BenchmarkMarshalMsgAccountDataResourceMap(b *testing.B) {
+	v := AccountDataResourceMap{}
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -106,8 +106,8 @@ func BenchmarkMarshalMsgAccountDataResources(b *testing.B) {
 	}
 }
 
-func BenchmarkAppendMsgAccountDataResources(b *testing.B) {
-	v := AccountDataResources{}
+func BenchmarkAppendMsgAccountDataResourceMap(b *testing.B) {
+	v := AccountDataResourceMap{}
 	bts := make([]byte, 0, v.Msgsize())
 	bts = v.MarshalMsg(bts[0:0])
 	b.SetBytes(int64(len(bts)))
@@ -118,8 +118,8 @@ func BenchmarkAppendMsgAccountDataResources(b *testing.B) {
 	}
 }
 
-func BenchmarkUnmarshalAccountDataResources(b *testing.B) {
-	v := AccountDataResources{}
+func BenchmarkUnmarshalAccountDataResourceMap(b *testing.B) {
+	v := AccountDataResourceMap{}
 	bts := v.MarshalMsg(nil)
 	b.ReportAllocs()
 	b.SetBytes(int64(len(bts)))

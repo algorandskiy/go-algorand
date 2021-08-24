@@ -53,7 +53,7 @@ func TestAssetTransfer(t *testing.T) {
 			MiniAccountData: basics.MiniAccountData{
 				MicroAlgos: basics.MicroAlgos{Raw: 10000000},
 			},
-			AccountDataResources: basics.AccountDataResources{
+			AccountDataResourceMap: basics.AccountDataResourceMap{
 				AssetParams: map[basics.AssetIndex]basics.AssetParams{
 					1: {Total: total},
 				},
@@ -65,7 +65,7 @@ func TestAssetTransfer(t *testing.T) {
 			MiniAccountData: basics.MiniAccountData{
 				MicroAlgos: basics.MicroAlgos{Raw: 10000000},
 			},
-			AccountDataResources: basics.AccountDataResources{
+			AccountDataResourceMap: basics.AccountDataResourceMap{
 				Assets: map[basics.AssetIndex]basics.AssetHolding{
 					1: {Amount: dstAmount},
 				},
@@ -74,7 +74,7 @@ func TestAssetTransfer(t *testing.T) {
 			MiniAccountData: basics.MiniAccountData{
 				MicroAlgos: basics.MicroAlgos{Raw: 10000000},
 			},
-			AccountDataResources: basics.AccountDataResources{
+			AccountDataResourceMap: basics.AccountDataResourceMap{
 				Assets: map[basics.AssetIndex]basics.AssetHolding{
 					1: {Amount: 0},
 				}},

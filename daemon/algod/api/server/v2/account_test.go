@@ -80,7 +80,7 @@ func TestAccount(t *testing.T) {
 			TotalAppSchema:     totalAppSchema,
 			TotalExtraAppPages: totalAppExtraPages,
 		},
-		AccountDataResources: basics.AccountDataResources{
+		AccountDataResourceMap: basics.AccountDataResourceMap{
 			AppParams: map[basics.AppIndex]basics.AppParams{appIdx1: appParams1, appIdx2: appParams2},
 			AppLocalStates: map[basics.AppIndex]basics.AppLocalState{
 				appIdx1: {

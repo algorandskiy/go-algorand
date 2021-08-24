@@ -240,7 +240,7 @@ func TestLogicLedgerAsset(t *testing.T) {
 	a.Contains(err.Error(), fmt.Sprintf("asset %d does not exist", aidx))
 
 	c.brs = map[basics.Address]basics.AccountData{
-		addr1: {AccountDataResources: basics.AccountDataResources{AssetParams: map[basics.AssetIndex]basics.AssetParams{assetIdx: {Total: 1000}}}},
+		addr1: {AccountDataResourceMap: basics.AccountDataResourceMap{AssetParams: map[basics.AssetIndex]basics.AssetParams{assetIdx: {Total: 1000}}}},
 	}
 	ap, creator, err := l.AssetParams(assetIdx)
 	a.NoError(err)
@@ -253,7 +253,7 @@ func TestLogicLedgerAsset(t *testing.T) {
 
 	c.brs = map[basics.Address]basics.AccountData{
 		addr1: {
-			AccountDataResources: basics.AccountDataResources{
+			AccountDataResourceMap: basics.AccountDataResourceMap{
 				AssetParams: map[basics.AssetIndex]basics.AssetParams{assetIdx: {Total: 1000}},
 				Assets:      map[basics.AssetIndex]basics.AssetHolding{assetIdx: {Amount: 99}},
 			},

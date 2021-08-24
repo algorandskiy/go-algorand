@@ -130,7 +130,7 @@ func TestEncodedAccountDataSize(t *testing.T) {
 			VoteLastValid:   Round(0x1234123412341234),
 			VoteKeyDilution: 0x1234123412341234,
 		},
-		AccountDataResources: AccountDataResources{
+		AccountDataResourceMap: AccountDataResourceMap{
 			AssetParams:    make(map[AssetIndex]AssetParams),
 			Assets:         make(map[AssetIndex]AssetHolding),
 			AppLocalStates: make(map[AppIndex]AppLocalState),

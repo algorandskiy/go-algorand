@@ -67,7 +67,7 @@ func makeTestEncodedBalanceRecord(t *testing.T) encodedBalanceRecord {
 			VoteLastValid:   basics.Round(0x1234123412341234),
 			VoteKeyDilution: 0x1234123412341234,
 		},
-		AccountDataResources: basics.AccountDataResources{
+		AccountDataResourceMap: basics.AccountDataResourceMap{
 			AssetParams: make(map[basics.AssetIndex]basics.AssetParams),
 			Assets:      make(map[basics.AssetIndex]basics.AssetHolding),
 		},

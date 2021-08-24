@@ -714,7 +714,7 @@ func generateRandomTestingAccountBalances(numAccounts int) (updates map[basics.A
 				VoteLastValid:   basics.Round(0x000ffffffffffffff),
 				VoteKeyDilution: 0x000ffffffffffffff,
 			},
-			AccountDataResources: basics.AccountDataResources{
+			AccountDataResourceMap: basics.AccountDataResourceMap{
 				AssetParams: map[basics.AssetIndex]basics.AssetParams{
 					0x000ffffffffffffff: {
 						Total:         0x000ffffffffffffff,
@@ -998,7 +998,7 @@ func TestAccountsReencoding(t *testing.T) {
 					VoteLastValid:   basics.Round(0x000ffffffffffffff),
 					VoteKeyDilution: 0x000ffffffffffffff,
 				},
-				AccountDataResources: basics.AccountDataResources{
+				AccountDataResourceMap: basics.AccountDataResourceMap{
 					AssetParams: map[basics.AssetIndex]basics.AssetParams{
 						0x000ffffffffffffff: {
 							Total:         0x000ffffffffffffff,

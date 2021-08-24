@@ -19,13 +19,13 @@ import (
 //      |-----> (*) Msgsize
 //      |-----> (*) MsgIsZero
 //
-// AccountDataResources
-//           |-----> (*) MarshalMsg
-//           |-----> (*) CanMarshalMsg
-//           |-----> (*) UnmarshalMsg
-//           |-----> (*) CanUnmarshalMsg
-//           |-----> (*) Msgsize
-//           |-----> (*) MsgIsZero
+// AccountDataResourceMap
+//            |-----> (*) MarshalMsg
+//            |-----> (*) CanMarshalMsg
+//            |-----> (*) UnmarshalMsg
+//            |-----> (*) CanUnmarshalMsg
+//            |-----> (*) Msgsize
+//            |-----> (*) MsgIsZero
 //
 // Address
 //    |-----> (*) MarshalMsg
@@ -238,19 +238,19 @@ func (z *AccountData) MarshalMsg(b []byte) (o []byte) {
 		zb0009Len--
 		zb0009Mask |= 0x10
 	}
-	if len((*z).AccountDataResources.AssetParams) == 0 {
+	if len((*z).AccountDataResourceMap.AssetParams) == 0 {
 		zb0009Len--
 		zb0009Mask |= 0x20
 	}
-	if len((*z).AccountDataResources.AppLocalStates) == 0 {
+	if len((*z).AccountDataResourceMap.AppLocalStates) == 0 {
 		zb0009Len--
 		zb0009Mask |= 0x40
 	}
-	if len((*z).AccountDataResources.AppParams) == 0 {
+	if len((*z).AccountDataResourceMap.AppParams) == 0 {
 		zb0009Len--
 		zb0009Mask |= 0x80
 	}
-	if len((*z).AccountDataResources.Assets) == 0 {
+	if len((*z).AccountDataResourceMap.Assets) == 0 {
 		zb0009Len--
 		zb0009Mask |= 0x100
 	}
@@ -309,18 +309,18 @@ func (z *AccountData) MarshalMsg(b []byte) (o []byte) {
 		if (zb0009Mask & 0x20) == 0 { // if not empty
 			// string "apar"
 			o = append(o, 0xa4, 0x61, 0x70, 0x61, 0x72)
-			if (*z).AccountDataResources.AssetParams == nil {
+			if (*z).AccountDataResourceMap.AssetParams == nil {
 				o = msgp.AppendNil(o)
 			} else {
-				o = msgp.AppendMapHeader(o, uint32(len((*z).AccountDataResources.AssetParams)))
+				o = msgp.AppendMapHeader(o, uint32(len((*z).AccountDataResourceMap.AssetParams)))
 			}
-			zb0001_keys := make([]AssetIndex, 0, len((*z).AccountDataResources.AssetParams))
-			for zb0001 := range (*z).AccountDataResources.AssetParams {
+			zb0001_keys := make([]AssetIndex, 0, len((*z).AccountDataResourceMap.AssetParams))
+			for zb0001 := range (*z).AccountDataResourceMap.AssetParams {
 				zb0001_keys = append(zb0001_keys, zb0001)
 			}
 			sort.Sort(SortAssetIndex(zb0001_keys))
 			for _, zb0001 := range zb0001_keys {
-				zb0002 := (*z).AccountDataResources.AssetParams[zb0001]
+				zb0002 := (*z).AccountDataResourceMap.AssetParams[zb0001]
 				_ = zb0002
 				o = zb0001.MarshalMsg(o)
 				o = zb0002.MarshalMsg(o)
@@ -329,18 +329,18 @@ func (z *AccountData) MarshalMsg(b []byte) (o []byte) {
 		if (zb0009Mask & 0x40) == 0 { // if not empty
 			// string "appl"
 			o = append(o, 0xa4, 0x61, 0x70, 0x70, 0x6c)
-			if (*z).AccountDataResources.AppLocalStates == nil {
+			if (*z).AccountDataResourceMap.AppLocalStates == nil {
 				o = msgp.AppendNil(o)
 			} else {
-				o = msgp.AppendMapHeader(o, uint32(len((*z).AccountDataResources.AppLocalStates)))
+				o = msgp.AppendMapHeader(o, uint32(len((*z).AccountDataResourceMap.AppLocalStates)))
 			}
-			zb0005_keys := make([]AppIndex, 0, len((*z).AccountDataResources.AppLocalStates))
-			for zb0005 := range (*z).AccountDataResources.AppLocalStates {
+			zb0005_keys := make([]AppIndex, 0, len((*z).AccountDataResourceMap.AppLocalStates))
+			for zb0005 := range (*z).AccountDataResourceMap.AppLocalStates {
 				zb0005_keys = append(zb0005_keys, zb0005)
 			}
 			sort.Sort(SortAppIndex(zb0005_keys))
 			for _, zb0005 := range zb0005_keys {
-				zb0006 := (*z).AccountDataResources.AppLocalStates[zb0005]
+				zb0006 := (*z).AccountDataResourceMap.AppLocalStates[zb0005]
 				_ = zb0006
 				o = zb0005.MarshalMsg(o)
 				o = zb0006.MarshalMsg(o)
@@ -349,18 +349,18 @@ func (z *AccountData) MarshalMsg(b []byte) (o []byte) {
 		if (zb0009Mask & 0x80) == 0 { // if not empty
 			// string "appp"
 			o = append(o, 0xa4, 0x61, 0x70, 0x70, 0x70)
-			if (*z).AccountDataResources.AppParams == nil {
+			if (*z).AccountDataResourceMap.AppParams == nil {
 				o = msgp.AppendNil(o)
 			} else {
-				o = msgp.AppendMapHeader(o, uint32(len((*z).AccountDataResources.AppParams)))
+				o = msgp.AppendMapHeader(o, uint32(len((*z).AccountDataResourceMap.AppParams)))
 			}
-			zb0007_keys := make([]AppIndex, 0, len((*z).AccountDataResources.AppParams))
-			for zb0007 := range (*z).AccountDataResources.AppParams {
+			zb0007_keys := make([]AppIndex, 0, len((*z).AccountDataResourceMap.AppParams))
+			for zb0007 := range (*z).AccountDataResourceMap.AppParams {
 				zb0007_keys = append(zb0007_keys, zb0007)
 			}
 			sort.Sort(SortAppIndex(zb0007_keys))
 			for _, zb0007 := range zb0007_keys {
-				zb0008 := (*z).AccountDataResources.AppParams[zb0007]
+				zb0008 := (*z).AccountDataResourceMap.AppParams[zb0007]
 				_ = zb0008
 				o = zb0007.MarshalMsg(o)
 				o = zb0008.MarshalMsg(o)
@@ -369,18 +369,18 @@ func (z *AccountData) MarshalMsg(b []byte) (o []byte) {
 		if (zb0009Mask & 0x100) == 0 { // if not empty
 			// string "asset"
 			o = append(o, 0xa5, 0x61, 0x73, 0x73, 0x65, 0x74)
-			if (*z).AccountDataResources.Assets == nil {
+			if (*z).AccountDataResourceMap.Assets == nil {
 				o = msgp.AppendNil(o)
 			} else {
-				o = msgp.AppendMapHeader(o, uint32(len((*z).AccountDataResources.Assets)))
+				o = msgp.AppendMapHeader(o, uint32(len((*z).AccountDataResourceMap.Assets)))
 			}
-			zb0003_keys := make([]AssetIndex, 0, len((*z).AccountDataResources.Assets))
-			for zb0003 := range (*z).AccountDataResources.Assets {
+			zb0003_keys := make([]AssetIndex, 0, len((*z).AccountDataResourceMap.Assets))
+			for zb0003 := range (*z).AccountDataResourceMap.Assets {
 				zb0003_keys = append(zb0003_keys, zb0003)
 			}
 			sort.Sort(SortAssetIndex(zb0003_keys))
 			for _, zb0003 := range zb0003_keys {
-				zb0004 := (*z).AccountDataResources.Assets[zb0003]
+				zb0004 := (*z).AccountDataResourceMap.Assets[zb0003]
 				_ = zb0004
 				o = zb0003.MarshalMsg(o)
 				// omitempty: check for empty values
@@ -696,9 +696,9 @@ func (z *AccountData) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				return
 			}
 			if zb0017 {
-				(*z).AccountDataResources.AssetParams = nil
-			} else if (*z).AccountDataResources.AssetParams == nil {
-				(*z).AccountDataResources.AssetParams = make(map[AssetIndex]AssetParams, zb0016)
+				(*z).AccountDataResourceMap.AssetParams = nil
+			} else if (*z).AccountDataResourceMap.AssetParams == nil {
+				(*z).AccountDataResourceMap.AssetParams = make(map[AssetIndex]AssetParams, zb0016)
 			}
 			for zb0016 > 0 {
 				var zb0001 AssetIndex
@@ -714,7 +714,7 @@ func (z *AccountData) UnmarshalMsg(bts []byte) (o []byte, err error) {
 					err = msgp.WrapError(err, "struct-from-array", "AssetParams", zb0001)
 					return
 				}
-				(*z).AccountDataResources.AssetParams[zb0001] = zb0002
+				(*z).AccountDataResourceMap.AssetParams[zb0001] = zb0002
 			}
 		}
 		if zb0009 > 0 {
@@ -732,9 +732,9 @@ func (z *AccountData) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				return
 			}
 			if zb0019 {
-				(*z).AccountDataResources.Assets = nil
-			} else if (*z).AccountDataResources.Assets == nil {
-				(*z).AccountDataResources.Assets = make(map[AssetIndex]AssetHolding, zb0018)
+				(*z).AccountDataResourceMap.Assets = nil
+			} else if (*z).AccountDataResourceMap.Assets == nil {
+				(*z).AccountDataResourceMap.Assets = make(map[AssetIndex]AssetHolding, zb0018)
 			}
 			for zb0018 > 0 {
 				var zb0003 AssetIndex
@@ -814,7 +814,7 @@ func (z *AccountData) UnmarshalMsg(bts []byte) (o []byte, err error) {
 						}
 					}
 				}
-				(*z).AccountDataResources.Assets[zb0003] = zb0004
+				(*z).AccountDataResourceMap.Assets[zb0003] = zb0004
 			}
 		}
 		if zb0009 > 0 {
@@ -832,9 +832,9 @@ func (z *AccountData) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				return
 			}
 			if zb0023 {
-				(*z).AccountDataResources.AppLocalStates = nil
-			} else if (*z).AccountDataResources.AppLocalStates == nil {
-				(*z).AccountDataResources.AppLocalStates = make(map[AppIndex]AppLocalState, zb0022)
+				(*z).AccountDataResourceMap.AppLocalStates = nil
+			} else if (*z).AccountDataResourceMap.AppLocalStates == nil {
+				(*z).AccountDataResourceMap.AppLocalStates = make(map[AppIndex]AppLocalState, zb0022)
 			}
 			for zb0022 > 0 {
 				var zb0005 AppIndex
@@ -850,7 +850,7 @@ func (z *AccountData) UnmarshalMsg(bts []byte) (o []byte, err error) {
 					err = msgp.WrapError(err, "struct-from-array", "AppLocalStates", zb0005)
 					return
 				}
-				(*z).AccountDataResources.AppLocalStates[zb0005] = zb0006
+				(*z).AccountDataResourceMap.AppLocalStates[zb0005] = zb0006
 			}
 		}
 		if zb0009 > 0 {
@@ -868,9 +868,9 @@ func (z *AccountData) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				return
 			}
 			if zb0025 {
-				(*z).AccountDataResources.AppParams = nil
-			} else if (*z).AccountDataResources.AppParams == nil {
-				(*z).AccountDataResources.AppParams = make(map[AppIndex]AppParams, zb0024)
+				(*z).AccountDataResourceMap.AppParams = nil
+			} else if (*z).AccountDataResourceMap.AppParams == nil {
+				(*z).AccountDataResourceMap.AppParams = make(map[AppIndex]AppParams, zb0024)
 			}
 			for zb0024 > 0 {
 				var zb0007 AppIndex
@@ -886,7 +886,7 @@ func (z *AccountData) UnmarshalMsg(bts []byte) (o []byte, err error) {
 					err = msgp.WrapError(err, "struct-from-array", "AppParams", zb0007)
 					return
 				}
-				(*z).AccountDataResources.AppParams[zb0007] = zb0008
+				(*z).AccountDataResourceMap.AppParams[zb0007] = zb0008
 			}
 		}
 		if zb0009 > 0 {
@@ -1074,9 +1074,9 @@ func (z *AccountData) UnmarshalMsg(bts []byte) (o []byte, err error) {
 					return
 				}
 				if zb0032 {
-					(*z).AccountDataResources.AssetParams = nil
-				} else if (*z).AccountDataResources.AssetParams == nil {
-					(*z).AccountDataResources.AssetParams = make(map[AssetIndex]AssetParams, zb0031)
+					(*z).AccountDataResourceMap.AssetParams = nil
+				} else if (*z).AccountDataResourceMap.AssetParams == nil {
+					(*z).AccountDataResourceMap.AssetParams = make(map[AssetIndex]AssetParams, zb0031)
 				}
 				for zb0031 > 0 {
 					var zb0001 AssetIndex
@@ -1092,7 +1092,7 @@ func (z *AccountData) UnmarshalMsg(bts []byte) (o []byte, err error) {
 						err = msgp.WrapError(err, "AssetParams", zb0001)
 						return
 					}
-					(*z).AccountDataResources.AssetParams[zb0001] = zb0002
+					(*z).AccountDataResourceMap.AssetParams[zb0001] = zb0002
 				}
 			case "asset":
 				var zb0033 int
@@ -1108,9 +1108,9 @@ func (z *AccountData) UnmarshalMsg(bts []byte) (o []byte, err error) {
 					return
 				}
 				if zb0034 {
-					(*z).AccountDataResources.Assets = nil
-				} else if (*z).AccountDataResources.Assets == nil {
-					(*z).AccountDataResources.Assets = make(map[AssetIndex]AssetHolding, zb0033)
+					(*z).AccountDataResourceMap.Assets = nil
+				} else if (*z).AccountDataResourceMap.Assets == nil {
+					(*z).AccountDataResourceMap.Assets = make(map[AssetIndex]AssetHolding, zb0033)
 				}
 				for zb0033 > 0 {
 					var zb0003 AssetIndex
@@ -1190,7 +1190,7 @@ func (z *AccountData) UnmarshalMsg(bts []byte) (o []byte, err error) {
 							}
 						}
 					}
-					(*z).AccountDataResources.Assets[zb0003] = zb0004
+					(*z).AccountDataResourceMap.Assets[zb0003] = zb0004
 				}
 			case "appl":
 				var zb0037 int
@@ -1206,9 +1206,9 @@ func (z *AccountData) UnmarshalMsg(bts []byte) (o []byte, err error) {
 					return
 				}
 				if zb0038 {
-					(*z).AccountDataResources.AppLocalStates = nil
-				} else if (*z).AccountDataResources.AppLocalStates == nil {
-					(*z).AccountDataResources.AppLocalStates = make(map[AppIndex]AppLocalState, zb0037)
+					(*z).AccountDataResourceMap.AppLocalStates = nil
+				} else if (*z).AccountDataResourceMap.AppLocalStates == nil {
+					(*z).AccountDataResourceMap.AppLocalStates = make(map[AppIndex]AppLocalState, zb0037)
 				}
 				for zb0037 > 0 {
 					var zb0005 AppIndex
@@ -1224,7 +1224,7 @@ func (z *AccountData) UnmarshalMsg(bts []byte) (o []byte, err error) {
 						err = msgp.WrapError(err, "AppLocalStates", zb0005)
 						return
 					}
-					(*z).AccountDataResources.AppLocalStates[zb0005] = zb0006
+					(*z).AccountDataResourceMap.AppLocalStates[zb0005] = zb0006
 				}
 			case "appp":
 				var zb0039 int
@@ -1240,9 +1240,9 @@ func (z *AccountData) UnmarshalMsg(bts []byte) (o []byte, err error) {
 					return
 				}
 				if zb0040 {
-					(*z).AccountDataResources.AppParams = nil
-				} else if (*z).AccountDataResources.AppParams == nil {
-					(*z).AccountDataResources.AppParams = make(map[AppIndex]AppParams, zb0039)
+					(*z).AccountDataResourceMap.AppParams = nil
+				} else if (*z).AccountDataResourceMap.AppParams == nil {
+					(*z).AccountDataResourceMap.AppParams = make(map[AppIndex]AppParams, zb0039)
 				}
 				for zb0039 > 0 {
 					var zb0007 AppIndex
@@ -1258,7 +1258,7 @@ func (z *AccountData) UnmarshalMsg(bts []byte) (o []byte, err error) {
 						err = msgp.WrapError(err, "AppParams", zb0007)
 						return
 					}
-					(*z).AccountDataResources.AppParams[zb0007] = zb0008
+					(*z).AccountDataResourceMap.AppParams[zb0007] = zb0008
 				}
 			default:
 				err = msgp.ErrNoField(string(field))
@@ -1281,32 +1281,32 @@ func (_ *AccountData) CanUnmarshalMsg(z interface{}) bool {
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *AccountData) Msgsize() (s int) {
 	s = 3 + 4 + msgp.ByteSize + 5 + (*z).MiniAccountData.MicroAlgos.Msgsize() + 6 + msgp.Uint64Size + 4 + (*z).MiniAccountData.RewardedMicroAlgos.Msgsize() + 6 + (*z).MiniAccountData.AuthAddr.Msgsize() + 5 + 1 + 4 + msgp.Uint64Size + 4 + msgp.Uint64Size + 5 + msgp.Uint32Size + 5 + (*z).VotingData.VoteID.Msgsize() + 4 + (*z).VotingData.SelectionID.Msgsize() + 8 + msgp.Uint64Size + 8 + msgp.Uint64Size + 7 + msgp.Uint64Size + 5 + msgp.MapHeaderSize
-	if (*z).AccountDataResources.AssetParams != nil {
-		for zb0001, zb0002 := range (*z).AccountDataResources.AssetParams {
+	if (*z).AccountDataResourceMap.AssetParams != nil {
+		for zb0001, zb0002 := range (*z).AccountDataResourceMap.AssetParams {
 			_ = zb0001
 			_ = zb0002
 			s += 0 + zb0001.Msgsize() + zb0002.Msgsize()
 		}
 	}
 	s += 6 + msgp.MapHeaderSize
-	if (*z).AccountDataResources.Assets != nil {
-		for zb0003, zb0004 := range (*z).AccountDataResources.Assets {
+	if (*z).AccountDataResourceMap.Assets != nil {
+		for zb0003, zb0004 := range (*z).AccountDataResourceMap.Assets {
 			_ = zb0003
 			_ = zb0004
 			s += 0 + zb0003.Msgsize() + 1 + 2 + msgp.Uint64Size + 2 + msgp.BoolSize
 		}
 	}
 	s += 5 + msgp.MapHeaderSize
-	if (*z).AccountDataResources.AppLocalStates != nil {
-		for zb0005, zb0006 := range (*z).AccountDataResources.AppLocalStates {
+	if (*z).AccountDataResourceMap.AppLocalStates != nil {
+		for zb0005, zb0006 := range (*z).AccountDataResourceMap.AppLocalStates {
 			_ = zb0005
 			_ = zb0006
 			s += 0 + zb0005.Msgsize() + zb0006.Msgsize()
 		}
 	}
 	s += 5 + msgp.MapHeaderSize
-	if (*z).AccountDataResources.AppParams != nil {
-		for zb0007, zb0008 := range (*z).AccountDataResources.AppParams {
+	if (*z).AccountDataResourceMap.AppParams != nil {
+		for zb0007, zb0008 := range (*z).AccountDataResourceMap.AppParams {
 			_ = zb0007
 			_ = zb0008
 			s += 0 + zb0007.Msgsize() + zb0008.Msgsize()
@@ -1317,11 +1317,11 @@ func (z *AccountData) Msgsize() (s int) {
 
 // MsgIsZero returns whether this is a zero value
 func (z *AccountData) MsgIsZero() bool {
-	return ((*z).MiniAccountData.Status == 0) && ((*z).MiniAccountData.MicroAlgos.MsgIsZero()) && ((*z).MiniAccountData.RewardsBase == 0) && ((*z).MiniAccountData.RewardedMicroAlgos.MsgIsZero()) && ((*z).MiniAccountData.AuthAddr.MsgIsZero()) && (((*z).MiniAccountData.TotalAppSchema.NumUint == 0) && ((*z).MiniAccountData.TotalAppSchema.NumByteSlice == 0)) && ((*z).MiniAccountData.TotalExtraAppPages == 0) && ((*z).VotingData.VoteID.MsgIsZero()) && ((*z).VotingData.SelectionID.MsgIsZero()) && ((*z).VotingData.VoteFirstValid == 0) && ((*z).VotingData.VoteLastValid == 0) && ((*z).VotingData.VoteKeyDilution == 0) && (len((*z).AccountDataResources.AssetParams) == 0) && (len((*z).AccountDataResources.Assets) == 0) && (len((*z).AccountDataResources.AppLocalStates) == 0) && (len((*z).AccountDataResources.AppParams) == 0)
+	return ((*z).MiniAccountData.Status == 0) && ((*z).MiniAccountData.MicroAlgos.MsgIsZero()) && ((*z).MiniAccountData.RewardsBase == 0) && ((*z).MiniAccountData.RewardedMicroAlgos.MsgIsZero()) && ((*z).MiniAccountData.AuthAddr.MsgIsZero()) && (((*z).MiniAccountData.TotalAppSchema.NumUint == 0) && ((*z).MiniAccountData.TotalAppSchema.NumByteSlice == 0)) && ((*z).MiniAccountData.TotalExtraAppPages == 0) && ((*z).VotingData.VoteID.MsgIsZero()) && ((*z).VotingData.SelectionID.MsgIsZero()) && ((*z).VotingData.VoteFirstValid == 0) && ((*z).VotingData.VoteLastValid == 0) && ((*z).VotingData.VoteKeyDilution == 0) && (len((*z).AccountDataResourceMap.AssetParams) == 0) && (len((*z).AccountDataResourceMap.Assets) == 0) && (len((*z).AccountDataResourceMap.AppLocalStates) == 0) && (len((*z).AccountDataResourceMap.AppParams) == 0)
 }
 
 // MarshalMsg implements msgp.Marshaler
-func (z *AccountDataResources) MarshalMsg(b []byte) (o []byte) {
+func (z *AccountDataResourceMap) MarshalMsg(b []byte) (o []byte) {
 	o = msgp.Require(b, z.Msgsize())
 	// omitempty: check for empty values
 	zb0009Len := uint32(4)
@@ -1453,13 +1453,13 @@ func (z *AccountDataResources) MarshalMsg(b []byte) (o []byte) {
 	return
 }
 
-func (_ *AccountDataResources) CanMarshalMsg(z interface{}) bool {
-	_, ok := (z).(*AccountDataResources)
+func (_ *AccountDataResourceMap) CanMarshalMsg(z interface{}) bool {
+	_, ok := (z).(*AccountDataResourceMap)
 	return ok
 }
 
 // UnmarshalMsg implements msgp.Unmarshaler
-func (z *AccountDataResources) UnmarshalMsg(bts []byte) (o []byte, err error) {
+func (z *AccountDataResourceMap) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	var field []byte
 	_ = field
 	var zb0009 int
@@ -1692,7 +1692,7 @@ func (z *AccountDataResources) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			return
 		}
 		if zb0010 {
-			(*z) = AccountDataResources{}
+			(*z) = AccountDataResourceMap{}
 		}
 		for zb0009 > 0 {
 			zb0009--
@@ -1915,13 +1915,13 @@ func (z *AccountDataResources) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	return
 }
 
-func (_ *AccountDataResources) CanUnmarshalMsg(z interface{}) bool {
-	_, ok := (z).(*AccountDataResources)
+func (_ *AccountDataResourceMap) CanUnmarshalMsg(z interface{}) bool {
+	_, ok := (z).(*AccountDataResourceMap)
 	return ok
 }
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
-func (z *AccountDataResources) Msgsize() (s int) {
+func (z *AccountDataResourceMap) Msgsize() (s int) {
 	s = 1 + 5 + msgp.MapHeaderSize
 	if (*z).AssetParams != nil {
 		for zb0001, zb0002 := range (*z).AssetParams {
@@ -1958,7 +1958,7 @@ func (z *AccountDataResources) Msgsize() (s int) {
 }
 
 // MsgIsZero returns whether this is a zero value
-func (z *AccountDataResources) MsgIsZero() bool {
+func (z *AccountDataResourceMap) MsgIsZero() bool {
 	return (len((*z).AssetParams) == 0) && (len((*z).Assets) == 0) && (len((*z).AppLocalStates) == 0) && (len((*z).AppParams) == 0)
 }
 
@@ -3558,19 +3558,19 @@ func (z *BalanceRecord) MarshalMsg(b []byte) (o []byte) {
 		zb0009Len--
 		zb0009Mask |= 0x40
 	}
-	if len((*z).AccountData.AccountDataResources.AssetParams) == 0 {
+	if len((*z).AccountData.AccountDataResourceMap.AssetParams) == 0 {
 		zb0009Len--
 		zb0009Mask |= 0x80
 	}
-	if len((*z).AccountData.AccountDataResources.AppLocalStates) == 0 {
+	if len((*z).AccountData.AccountDataResourceMap.AppLocalStates) == 0 {
 		zb0009Len--
 		zb0009Mask |= 0x100
 	}
-	if len((*z).AccountData.AccountDataResources.AppParams) == 0 {
+	if len((*z).AccountData.AccountDataResourceMap.AppParams) == 0 {
 		zb0009Len--
 		zb0009Mask |= 0x200
 	}
-	if len((*z).AccountData.AccountDataResources.Assets) == 0 {
+	if len((*z).AccountData.AccountDataResourceMap.Assets) == 0 {
 		zb0009Len--
 		zb0009Mask |= 0x400
 	}
@@ -3634,18 +3634,18 @@ func (z *BalanceRecord) MarshalMsg(b []byte) (o []byte) {
 		if (zb0009Mask & 0x80) == 0 { // if not empty
 			// string "apar"
 			o = append(o, 0xa4, 0x61, 0x70, 0x61, 0x72)
-			if (*z).AccountData.AccountDataResources.AssetParams == nil {
+			if (*z).AccountData.AccountDataResourceMap.AssetParams == nil {
 				o = msgp.AppendNil(o)
 			} else {
-				o = msgp.AppendMapHeader(o, uint32(len((*z).AccountData.AccountDataResources.AssetParams)))
+				o = msgp.AppendMapHeader(o, uint32(len((*z).AccountData.AccountDataResourceMap.AssetParams)))
 			}
-			zb0001_keys := make([]AssetIndex, 0, len((*z).AccountData.AccountDataResources.AssetParams))
-			for zb0001 := range (*z).AccountData.AccountDataResources.AssetParams {
+			zb0001_keys := make([]AssetIndex, 0, len((*z).AccountData.AccountDataResourceMap.AssetParams))
+			for zb0001 := range (*z).AccountData.AccountDataResourceMap.AssetParams {
 				zb0001_keys = append(zb0001_keys, zb0001)
 			}
 			sort.Sort(SortAssetIndex(zb0001_keys))
 			for _, zb0001 := range zb0001_keys {
-				zb0002 := (*z).AccountData.AccountDataResources.AssetParams[zb0001]
+				zb0002 := (*z).AccountData.AccountDataResourceMap.AssetParams[zb0001]
 				_ = zb0002
 				o = zb0001.MarshalMsg(o)
 				o = zb0002.MarshalMsg(o)
@@ -3654,18 +3654,18 @@ func (z *BalanceRecord) MarshalMsg(b []byte) (o []byte) {
 		if (zb0009Mask & 0x100) == 0 { // if not empty
 			// string "appl"
 			o = append(o, 0xa4, 0x61, 0x70, 0x70, 0x6c)
-			if (*z).AccountData.AccountDataResources.AppLocalStates == nil {
+			if (*z).AccountData.AccountDataResourceMap.AppLocalStates == nil {
 				o = msgp.AppendNil(o)
 			} else {
-				o = msgp.AppendMapHeader(o, uint32(len((*z).AccountData.AccountDataResources.AppLocalStates)))
+				o = msgp.AppendMapHeader(o, uint32(len((*z).AccountData.AccountDataResourceMap.AppLocalStates)))
 			}
-			zb0005_keys := make([]AppIndex, 0, len((*z).AccountData.AccountDataResources.AppLocalStates))
-			for zb0005 := range (*z).AccountData.AccountDataResources.AppLocalStates {
+			zb0005_keys := make([]AppIndex, 0, len((*z).AccountData.AccountDataResourceMap.AppLocalStates))
+			for zb0005 := range (*z).AccountData.AccountDataResourceMap.AppLocalStates {
 				zb0005_keys = append(zb0005_keys, zb0005)
 			}
 			sort.Sort(SortAppIndex(zb0005_keys))
 			for _, zb0005 := range zb0005_keys {
-				zb0006 := (*z).AccountData.AccountDataResources.AppLocalStates[zb0005]
+				zb0006 := (*z).AccountData.AccountDataResourceMap.AppLocalStates[zb0005]
 				_ = zb0006
 				o = zb0005.MarshalMsg(o)
 				o = zb0006.MarshalMsg(o)
@@ -3674,18 +3674,18 @@ func (z *BalanceRecord) MarshalMsg(b []byte) (o []byte) {
 		if (zb0009Mask & 0x200) == 0 { // if not empty
 			// string "appp"
 			o = append(o, 0xa4, 0x61, 0x70, 0x70, 0x70)
-			if (*z).AccountData.AccountDataResources.AppParams == nil {
+			if (*z).AccountData.AccountDataResourceMap.AppParams == nil {
 				o = msgp.AppendNil(o)
 			} else {
-				o = msgp.AppendMapHeader(o, uint32(len((*z).AccountData.AccountDataResources.AppParams)))
+				o = msgp.AppendMapHeader(o, uint32(len((*z).AccountData.AccountDataResourceMap.AppParams)))
 			}
-			zb0007_keys := make([]AppIndex, 0, len((*z).AccountData.AccountDataResources.AppParams))
-			for zb0007 := range (*z).AccountData.AccountDataResources.AppParams {
+			zb0007_keys := make([]AppIndex, 0, len((*z).AccountData.AccountDataResourceMap.AppParams))
+			for zb0007 := range (*z).AccountData.AccountDataResourceMap.AppParams {
 				zb0007_keys = append(zb0007_keys, zb0007)
 			}
 			sort.Sort(SortAppIndex(zb0007_keys))
 			for _, zb0007 := range zb0007_keys {
-				zb0008 := (*z).AccountData.AccountDataResources.AppParams[zb0007]
+				zb0008 := (*z).AccountData.AccountDataResourceMap.AppParams[zb0007]
 				_ = zb0008
 				o = zb0007.MarshalMsg(o)
 				o = zb0008.MarshalMsg(o)
@@ -3694,18 +3694,18 @@ func (z *BalanceRecord) MarshalMsg(b []byte) (o []byte) {
 		if (zb0009Mask & 0x400) == 0 { // if not empty
 			// string "asset"
 			o = append(o, 0xa5, 0x61, 0x73, 0x73, 0x65, 0x74)
-			if (*z).AccountData.AccountDataResources.Assets == nil {
+			if (*z).AccountData.AccountDataResourceMap.Assets == nil {
 				o = msgp.AppendNil(o)
 			} else {
-				o = msgp.AppendMapHeader(o, uint32(len((*z).AccountData.AccountDataResources.Assets)))
+				o = msgp.AppendMapHeader(o, uint32(len((*z).AccountData.AccountDataResourceMap.Assets)))
 			}
-			zb0003_keys := make([]AssetIndex, 0, len((*z).AccountData.AccountDataResources.Assets))
-			for zb0003 := range (*z).AccountData.AccountDataResources.Assets {
+			zb0003_keys := make([]AssetIndex, 0, len((*z).AccountData.AccountDataResourceMap.Assets))
+			for zb0003 := range (*z).AccountData.AccountDataResourceMap.Assets {
 				zb0003_keys = append(zb0003_keys, zb0003)
 			}
 			sort.Sort(SortAssetIndex(zb0003_keys))
 			for _, zb0003 := range zb0003_keys {
-				zb0004 := (*z).AccountData.AccountDataResources.Assets[zb0003]
+				zb0004 := (*z).AccountData.AccountDataResourceMap.Assets[zb0003]
 				_ = zb0004
 				o = zb0003.MarshalMsg(o)
 				// omitempty: check for empty values
@@ -4029,9 +4029,9 @@ func (z *BalanceRecord) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				return
 			}
 			if zb0017 {
-				(*z).AccountData.AccountDataResources.AssetParams = nil
-			} else if (*z).AccountData.AccountDataResources.AssetParams == nil {
-				(*z).AccountData.AccountDataResources.AssetParams = make(map[AssetIndex]AssetParams, zb0016)
+				(*z).AccountData.AccountDataResourceMap.AssetParams = nil
+			} else if (*z).AccountData.AccountDataResourceMap.AssetParams == nil {
+				(*z).AccountData.AccountDataResourceMap.AssetParams = make(map[AssetIndex]AssetParams, zb0016)
 			}
 			for zb0016 > 0 {
 				var zb0001 AssetIndex
@@ -4047,7 +4047,7 @@ func (z *BalanceRecord) UnmarshalMsg(bts []byte) (o []byte, err error) {
 					err = msgp.WrapError(err, "struct-from-array", "AssetParams", zb0001)
 					return
 				}
-				(*z).AccountData.AccountDataResources.AssetParams[zb0001] = zb0002
+				(*z).AccountData.AccountDataResourceMap.AssetParams[zb0001] = zb0002
 			}
 		}
 		if zb0009 > 0 {
@@ -4065,9 +4065,9 @@ func (z *BalanceRecord) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				return
 			}
 			if zb0019 {
-				(*z).AccountData.AccountDataResources.Assets = nil
-			} else if (*z).AccountData.AccountDataResources.Assets == nil {
-				(*z).AccountData.AccountDataResources.Assets = make(map[AssetIndex]AssetHolding, zb0018)
+				(*z).AccountData.AccountDataResourceMap.Assets = nil
+			} else if (*z).AccountData.AccountDataResourceMap.Assets == nil {
+				(*z).AccountData.AccountDataResourceMap.Assets = make(map[AssetIndex]AssetHolding, zb0018)
 			}
 			for zb0018 > 0 {
 				var zb0003 AssetIndex
@@ -4147,7 +4147,7 @@ func (z *BalanceRecord) UnmarshalMsg(bts []byte) (o []byte, err error) {
 						}
 					}
 				}
-				(*z).AccountData.AccountDataResources.Assets[zb0003] = zb0004
+				(*z).AccountData.AccountDataResourceMap.Assets[zb0003] = zb0004
 			}
 		}
 		if zb0009 > 0 {
@@ -4165,9 +4165,9 @@ func (z *BalanceRecord) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				return
 			}
 			if zb0023 {
-				(*z).AccountData.AccountDataResources.AppLocalStates = nil
-			} else if (*z).AccountData.AccountDataResources.AppLocalStates == nil {
-				(*z).AccountData.AccountDataResources.AppLocalStates = make(map[AppIndex]AppLocalState, zb0022)
+				(*z).AccountData.AccountDataResourceMap.AppLocalStates = nil
+			} else if (*z).AccountData.AccountDataResourceMap.AppLocalStates == nil {
+				(*z).AccountData.AccountDataResourceMap.AppLocalStates = make(map[AppIndex]AppLocalState, zb0022)
 			}
 			for zb0022 > 0 {
 				var zb0005 AppIndex
@@ -4183,7 +4183,7 @@ func (z *BalanceRecord) UnmarshalMsg(bts []byte) (o []byte, err error) {
 					err = msgp.WrapError(err, "struct-from-array", "AppLocalStates", zb0005)
 					return
 				}
-				(*z).AccountData.AccountDataResources.AppLocalStates[zb0005] = zb0006
+				(*z).AccountData.AccountDataResourceMap.AppLocalStates[zb0005] = zb0006
 			}
 		}
 		if zb0009 > 0 {
@@ -4201,9 +4201,9 @@ func (z *BalanceRecord) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				return
 			}
 			if zb0025 {
-				(*z).AccountData.AccountDataResources.AppParams = nil
-			} else if (*z).AccountData.AccountDataResources.AppParams == nil {
-				(*z).AccountData.AccountDataResources.AppParams = make(map[AppIndex]AppParams, zb0024)
+				(*z).AccountData.AccountDataResourceMap.AppParams = nil
+			} else if (*z).AccountData.AccountDataResourceMap.AppParams == nil {
+				(*z).AccountData.AccountDataResourceMap.AppParams = make(map[AppIndex]AppParams, zb0024)
 			}
 			for zb0024 > 0 {
 				var zb0007 AppIndex
@@ -4219,7 +4219,7 @@ func (z *BalanceRecord) UnmarshalMsg(bts []byte) (o []byte, err error) {
 					err = msgp.WrapError(err, "struct-from-array", "AppParams", zb0007)
 					return
 				}
-				(*z).AccountData.AccountDataResources.AppParams[zb0007] = zb0008
+				(*z).AccountData.AccountDataResourceMap.AppParams[zb0007] = zb0008
 			}
 		}
 		if zb0009 > 0 {
@@ -4413,9 +4413,9 @@ func (z *BalanceRecord) UnmarshalMsg(bts []byte) (o []byte, err error) {
 					return
 				}
 				if zb0032 {
-					(*z).AccountData.AccountDataResources.AssetParams = nil
-				} else if (*z).AccountData.AccountDataResources.AssetParams == nil {
-					(*z).AccountData.AccountDataResources.AssetParams = make(map[AssetIndex]AssetParams, zb0031)
+					(*z).AccountData.AccountDataResourceMap.AssetParams = nil
+				} else if (*z).AccountData.AccountDataResourceMap.AssetParams == nil {
+					(*z).AccountData.AccountDataResourceMap.AssetParams = make(map[AssetIndex]AssetParams, zb0031)
 				}
 				for zb0031 > 0 {
 					var zb0001 AssetIndex
@@ -4431,7 +4431,7 @@ func (z *BalanceRecord) UnmarshalMsg(bts []byte) (o []byte, err error) {
 						err = msgp.WrapError(err, "AssetParams", zb0001)
 						return
 					}
-					(*z).AccountData.AccountDataResources.AssetParams[zb0001] = zb0002
+					(*z).AccountData.AccountDataResourceMap.AssetParams[zb0001] = zb0002
 				}
 			case "asset":
 				var zb0033 int
@@ -4447,9 +4447,9 @@ func (z *BalanceRecord) UnmarshalMsg(bts []byte) (o []byte, err error) {
 					return
 				}
 				if zb0034 {
-					(*z).AccountData.AccountDataResources.Assets = nil
-				} else if (*z).AccountData.AccountDataResources.Assets == nil {
-					(*z).AccountData.AccountDataResources.Assets = make(map[AssetIndex]AssetHolding, zb0033)
+					(*z).AccountData.AccountDataResourceMap.Assets = nil
+				} else if (*z).AccountData.AccountDataResourceMap.Assets == nil {
+					(*z).AccountData.AccountDataResourceMap.Assets = make(map[AssetIndex]AssetHolding, zb0033)
 				}
 				for zb0033 > 0 {
 					var zb0003 AssetIndex
@@ -4529,7 +4529,7 @@ func (z *BalanceRecord) UnmarshalMsg(bts []byte) (o []byte, err error) {
 							}
 						}
 					}
-					(*z).AccountData.AccountDataResources.Assets[zb0003] = zb0004
+					(*z).AccountData.AccountDataResourceMap.Assets[zb0003] = zb0004
 				}
 			case "appl":
 				var zb0037 int
@@ -4545,9 +4545,9 @@ func (z *BalanceRecord) UnmarshalMsg(bts []byte) (o []byte, err error) {
 					return
 				}
 				if zb0038 {
-					(*z).AccountData.AccountDataResources.AppLocalStates = nil
-				} else if (*z).AccountData.AccountDataResources.AppLocalStates == nil {
-					(*z).AccountData.AccountDataResources.AppLocalStates = make(map[AppIndex]AppLocalState, zb0037)
+					(*z).AccountData.AccountDataResourceMap.AppLocalStates = nil
+				} else if (*z).AccountData.AccountDataResourceMap.AppLocalStates == nil {
+					(*z).AccountData.AccountDataResourceMap.AppLocalStates = make(map[AppIndex]AppLocalState, zb0037)
 				}
 				for zb0037 > 0 {
 					var zb0005 AppIndex
@@ -4563,7 +4563,7 @@ func (z *BalanceRecord) UnmarshalMsg(bts []byte) (o []byte, err error) {
 						err = msgp.WrapError(err, "AppLocalStates", zb0005)
 						return
 					}
-					(*z).AccountData.AccountDataResources.AppLocalStates[zb0005] = zb0006
+					(*z).AccountData.AccountDataResourceMap.AppLocalStates[zb0005] = zb0006
 				}
 			case "appp":
 				var zb0039 int
@@ -4579,9 +4579,9 @@ func (z *BalanceRecord) UnmarshalMsg(bts []byte) (o []byte, err error) {
 					return
 				}
 				if zb0040 {
-					(*z).AccountData.AccountDataResources.AppParams = nil
-				} else if (*z).AccountData.AccountDataResources.AppParams == nil {
-					(*z).AccountData.AccountDataResources.AppParams = make(map[AppIndex]AppParams, zb0039)
+					(*z).AccountData.AccountDataResourceMap.AppParams = nil
+				} else if (*z).AccountData.AccountDataResourceMap.AppParams == nil {
+					(*z).AccountData.AccountDataResourceMap.AppParams = make(map[AppIndex]AppParams, zb0039)
 				}
 				for zb0039 > 0 {
 					var zb0007 AppIndex
@@ -4597,7 +4597,7 @@ func (z *BalanceRecord) UnmarshalMsg(bts []byte) (o []byte, err error) {
 						err = msgp.WrapError(err, "AppParams", zb0007)
 						return
 					}
-					(*z).AccountData.AccountDataResources.AppParams[zb0007] = zb0008
+					(*z).AccountData.AccountDataResourceMap.AppParams[zb0007] = zb0008
 				}
 			default:
 				err = msgp.ErrNoField(string(field))
@@ -4620,32 +4620,32 @@ func (_ *BalanceRecord) CanUnmarshalMsg(z interface{}) bool {
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *BalanceRecord) Msgsize() (s int) {
 	s = 3 + 5 + (*z).Addr.Msgsize() + 4 + msgp.ByteSize + 5 + (*z).AccountData.MiniAccountData.MicroAlgos.Msgsize() + 6 + msgp.Uint64Size + 4 + (*z).AccountData.MiniAccountData.RewardedMicroAlgos.Msgsize() + 6 + (*z).AccountData.MiniAccountData.AuthAddr.Msgsize() + 5 + 1 + 4 + msgp.Uint64Size + 4 + msgp.Uint64Size + 5 + msgp.Uint32Size + 5 + (*z).AccountData.VotingData.VoteID.Msgsize() + 4 + (*z).AccountData.VotingData.SelectionID.Msgsize() + 8 + msgp.Uint64Size + 8 + msgp.Uint64Size + 7 + msgp.Uint64Size + 5 + msgp.MapHeaderSize
-	if (*z).AccountData.AccountDataResources.AssetParams != nil {
-		for zb0001, zb0002 := range (*z).AccountData.AccountDataResources.AssetParams {
+	if (*z).AccountData.AccountDataResourceMap.AssetParams != nil {
+		for zb0001, zb0002 := range (*z).AccountData.AccountDataResourceMap.AssetParams {
 			_ = zb0001
 			_ = zb0002
 			s += 0 + zb0001.Msgsize() + zb0002.Msgsize()
 		}
 	}
 	s += 6 + msgp.MapHeaderSize
-	if (*z).AccountData.AccountDataResources.Assets != nil {
-		for zb0003, zb0004 := range (*z).AccountData.AccountDataResources.Assets {
+	if (*z).AccountData.AccountDataResourceMap.Assets != nil {
+		for zb0003, zb0004 := range (*z).AccountData.AccountDataResourceMap.Assets {
 			_ = zb0003
 			_ = zb0004
 			s += 0 + zb0003.Msgsize() + 1 + 2 + msgp.Uint64Size + 2 + msgp.BoolSize
 		}
 	}
 	s += 5 + msgp.MapHeaderSize
-	if (*z).AccountData.AccountDataResources.AppLocalStates != nil {
-		for zb0005, zb0006 := range (*z).AccountData.AccountDataResources.AppLocalStates {
+	if (*z).AccountData.AccountDataResourceMap.AppLocalStates != nil {
+		for zb0005, zb0006 := range (*z).AccountData.AccountDataResourceMap.AppLocalStates {
 			_ = zb0005
 			_ = zb0006
 			s += 0 + zb0005.Msgsize() + zb0006.Msgsize()
 		}
 	}
 	s += 5 + msgp.MapHeaderSize
-	if (*z).AccountData.AccountDataResources.AppParams != nil {
-		for zb0007, zb0008 := range (*z).AccountData.AccountDataResources.AppParams {
+	if (*z).AccountData.AccountDataResourceMap.AppParams != nil {
+		for zb0007, zb0008 := range (*z).AccountData.AccountDataResourceMap.AppParams {
 			_ = zb0007
 			_ = zb0008
 			s += 0 + zb0007.Msgsize() + zb0008.Msgsize()
@@ -4656,7 +4656,7 @@ func (z *BalanceRecord) Msgsize() (s int) {
 
 // MsgIsZero returns whether this is a zero value
 func (z *BalanceRecord) MsgIsZero() bool {
-	return ((*z).Addr.MsgIsZero()) && ((*z).AccountData.MiniAccountData.Status == 0) && ((*z).AccountData.MiniAccountData.MicroAlgos.MsgIsZero()) && ((*z).AccountData.MiniAccountData.RewardsBase == 0) && ((*z).AccountData.MiniAccountData.RewardedMicroAlgos.MsgIsZero()) && ((*z).AccountData.MiniAccountData.AuthAddr.MsgIsZero()) && (((*z).AccountData.MiniAccountData.TotalAppSchema.NumUint == 0) && ((*z).AccountData.MiniAccountData.TotalAppSchema.NumByteSlice == 0)) && ((*z).AccountData.MiniAccountData.TotalExtraAppPages == 0) && ((*z).AccountData.VotingData.VoteID.MsgIsZero()) && ((*z).AccountData.VotingData.SelectionID.MsgIsZero()) && ((*z).AccountData.VotingData.VoteFirstValid == 0) && ((*z).AccountData.VotingData.VoteLastValid == 0) && ((*z).AccountData.VotingData.VoteKeyDilution == 0) && (len((*z).AccountData.AccountDataResources.AssetParams) == 0) && (len((*z).AccountData.AccountDataResources.Assets) == 0) && (len((*z).AccountData.AccountDataResources.AppLocalStates) == 0) && (len((*z).AccountData.AccountDataResources.AppParams) == 0)
+	return ((*z).Addr.MsgIsZero()) && ((*z).AccountData.MiniAccountData.Status == 0) && ((*z).AccountData.MiniAccountData.MicroAlgos.MsgIsZero()) && ((*z).AccountData.MiniAccountData.RewardsBase == 0) && ((*z).AccountData.MiniAccountData.RewardedMicroAlgos.MsgIsZero()) && ((*z).AccountData.MiniAccountData.AuthAddr.MsgIsZero()) && (((*z).AccountData.MiniAccountData.TotalAppSchema.NumUint == 0) && ((*z).AccountData.MiniAccountData.TotalAppSchema.NumByteSlice == 0)) && ((*z).AccountData.MiniAccountData.TotalExtraAppPages == 0) && ((*z).AccountData.VotingData.VoteID.MsgIsZero()) && ((*z).AccountData.VotingData.SelectionID.MsgIsZero()) && ((*z).AccountData.VotingData.VoteFirstValid == 0) && ((*z).AccountData.VotingData.VoteLastValid == 0) && ((*z).AccountData.VotingData.VoteKeyDilution == 0) && (len((*z).AccountData.AccountDataResourceMap.AssetParams) == 0) && (len((*z).AccountData.AccountDataResourceMap.Assets) == 0) && (len((*z).AccountData.AccountDataResourceMap.AppLocalStates) == 0) && (len((*z).AccountData.AccountDataResourceMap.AppParams) == 0)
 }
 
 // MarshalMsg implements msgp.Marshaler

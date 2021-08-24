@@ -170,7 +170,8 @@ type MiniAccountData struct {
 	TotalExtraAppPages uint32 `codec:"teap"`
 }
 
-type AccountDataResources struct {
+// AccountDataResourceMap groups old-style maps of assets and apps
+type AccountDataResourceMap struct {
 	_struct struct{} `codec:",omitempty,omitemptyarray"`
 
 	AssetParams map[AssetIndex]AssetParams `codec:"apar,allocbound=encodedMaxAssetsPerAccount"`
@@ -210,7 +211,7 @@ type AccountData struct {
 
 	MiniAccountData
 	VotingData
-	AccountDataResources
+	AccountDataResourceMap
 }
 
 // AppLocalState stores the LocalState associated with an application. It also

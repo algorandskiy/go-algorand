@@ -340,7 +340,7 @@ func AccountToAccountData(a *generated.Account) (basics.AccountData, error) {
 			VoteLastValid:   voteLastValid,
 			VoteKeyDilution: voteKeyDilution,
 		},
-		AccountDataResources: basics.AccountDataResources{
+		AccountDataResourceMap: basics.AccountDataResourceMap{
 			Assets:         assets,
 			AppLocalStates: appLocalStates,
 			AppParams:      appParams,
