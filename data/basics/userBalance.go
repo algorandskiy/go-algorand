@@ -168,6 +168,30 @@ type MiniAccountData struct {
 	// TotalExtraAppPages stores the extra length in pages (MaxAppProgramLen bytes per page)
 	// requested for app program by this account
 	TotalExtraAppPages uint32 `codec:"teap"`
+
+	// TotalAssets stores number of assets the account has (former len(Assets))
+	TotalAssets uint32 `codec:"tas"`
+
+	// TotalAssets stores number of application the account created (former len(AppParams))
+	TotalAppParams uint32 `codec:"tap"`
+
+	// TotalAppLocalStates stores number of application the account opted in (former len(AppLocalStates))
+	TotalAppLocalStates uint32 `codec:"tal"`
+}
+
+// AccountDataResource aggregates assets and apps
+type AccountDataResource struct {
+	_struct struct{} `codec:",omitempty,omitemptyarray"`
+
+	AssetData
+	AppParams
+}
+
+type AssetData struct {
+	_struct struct{} `codec:",omitempty,omitemptyarray"`
+
+	AssetParams
+	AssetHolding
 }
 
 // AccountDataResourceMap groups old-style maps of assets and apps
@@ -427,22 +451,22 @@ func (u AccountData) WithUpdatedRewards(proto config.ConsensusParams, rewardsLev
 // MinBalance computes the minimum balance requirements for an account based on
 // some consensus parameters. MinBalance should correspond roughly to how much
 // storage the account is allowed to store on disk.
-func (u AccountData) MinBalance(proto *config.ConsensusParams) (res MicroAlgos) {
+func (u MiniAccountData) MinBalance(proto *config.ConsensusParams) (res MicroAlgos) {
 	var min uint64
 
 	// First, base MinBalance
 	min = proto.MinBalance
 
 	// MinBalance for each Asset
-	assetCost := MulSaturate(proto.MinBalance, uint64(len(u.Assets)))
+	assetCost := MulSaturate(proto.MinBalance, uint64(u.TotalAssets))
 	min = AddSaturate(min, assetCost)
 
 	// Base MinBalance for each created application
-	appCreationCost := MulSaturate(proto.AppFlatParamsMinBalance, uint64(len(u.AppParams)))
+	appCreationCost := MulSaturate(proto.AppFlatParamsMinBalance, uint64(u.TotalAppParams))
 	min = AddSaturate(min, appCreationCost)
 
 	// Base MinBalance for each opted in application
-	appOptInCost := MulSaturate(proto.AppFlatOptInMinBalance, uint64(len(u.AppLocalStates)))
+	appOptInCost := MulSaturate(proto.AppFlatOptInMinBalance, uint64(u.TotalAppLocalStates))
 	min = AddSaturate(min, appOptInCost)
 
 	// MinBalance for state usage measured by LocalStateSchemas and

@@ -22,6 +22,20 @@ import (
 	"github.com/algorand/go-algorand/data/transactions/logic"
 )
 
+type AssetInfo struct {
+	HasParams  bool
+	HasHolding bool
+	Params     basics.AssetParams
+	Holding    basics.AssetHolding
+}
+
+type AppInfo struct {
+	HasParams bool
+	HasLocal  bool
+	Params    basics.AppParams
+	Holding   basics.AppLocalState
+}
+
 // Balances allow to move MicroAlgos from one address to another and to update balance records, or to access and modify individual balance records
 // After a call to Put (or Move), future calls to Get or Move will reflect the updated balance record(s)
 type Balances interface {
@@ -29,12 +43,14 @@ type Balances interface {
 	// If the account is known to be empty, then err should be nil and the returned balance record should have the given address and empty AccountData
 	// withPendingRewards specifies whether pending rewards should be applied.
 	// A non-nil error means the lookup is impossible (e.g., if the database doesn't have necessary state anymore)
-	Get(addr basics.Address, withPendingRewards bool) (basics.AccountData, error)
+	Get(addr basics.Address, withPendingRewards bool) (basics.MiniAccountData, error)
 
-	Put(basics.Address, basics.AccountData) error
+	Put(basics.Address, basics.MiniAccountData) error
 
 	// GetCreator gets the address of the account that created a given creatable
 	GetCreator(cidx basics.CreatableIndex, ctype basics.CreatableType) (basics.Address, bool, error)
+
+	GetParams(basics.Address, basics.CreatableIndex) (basics.AccountDataResource, bool, error)
 
 	// Allocate or deallocate either global or address-local app storage.
 	//
@@ -43,12 +59,12 @@ type Balances interface {
 	//
 	// Put(...) and then {AllocateApp/DeallocateApp}(..., ..., global=false)
 	// opts into/closes out of an application.
-	AllocateApp(addr basics.Address, aidx basics.AppIndex, global bool, space basics.StateSchema) error
-	DeallocateApp(addr basics.Address, aidx basics.AppIndex, global bool) error
+	AllocateApp(addr basics.Address, aidx basics.AppIndex, info AppInfo) error
+	DeallocateApp(addr basics.Address, aidx basics.AppIndex, info AppInfo) error
 
 	// Similar to above, notify COW that global/local asset state was created.
-	AllocateAsset(addr basics.Address, index basics.AssetIndex, global bool) error
-	DeallocateAsset(addr basics.Address, index basics.AssetIndex, global bool) error
+	AllocateAsset(addr basics.Address, index basics.AssetIndex, info AssetInfo) error
+	DeallocateAsset(addr basics.Address, index basics.AssetIndex, info AssetInfo) error
 
 	// StatefulEval executes a TEAL program in stateful mode on the balances.
 	// It returns whether the program passed and its error.  It alo returns

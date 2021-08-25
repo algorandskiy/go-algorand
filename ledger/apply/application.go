@@ -61,13 +61,12 @@ func getAppParams(balances Balances, aidx basics.AppIndex) (params basics.AppPar
 		return
 	}
 
-	record, err := balances.Get(creator, false)
+	params, found, err := balances.GetAppParams(creator, aidx)
 	if err != nil {
 		return
 	}
 
-	params, ok := record.AppParams[aidx]
-	if !ok {
+	if !found {
 		// This should never happen. If app exists then we should have
 		// found the creator successfully.
 		err = fmt.Errorf("app %d not found in account %s", aidx, creator.String())
@@ -88,17 +87,15 @@ func createApplication(ac *transactions.ApplicationCallTxnFields, balances Balan
 
 	// Make sure the creator isn't already at the app creation max
 	maxAppsCreated := balances.ConsensusParams().MaxAppsCreated
-	if len(record.AppParams) >= maxAppsCreated {
+	if int(record.TotalAppParams) >= maxAppsCreated {
 		err = fmt.Errorf("cannot create app for %s: max created apps per acct is %d", creator.String(), maxAppsCreated)
 		return
 	}
 
-	// Clone app params, so that we have a copy that is safe to modify
-	record.AppParams = cloneAppParams(record.AppParams)
-
 	// Allocate the new app params (+ 1 to match Assets Idx namespace)
 	appIdx = basics.AppIndex(txnCounter + 1)
-	record.AppParams[appIdx] = basics.AppParams{
+
+	params := basics.AppParams{
 		ApprovalProgram:   ac.ApprovalProgram,
 		ClearStateProgram: ac.ClearStateProgram,
 		StateSchemas: basics.StateSchemas{
@@ -121,19 +118,27 @@ func createApplication(ac *transactions.ApplicationCallTxnFields, balances Balan
 	totalExtraPages = basics.AddSaturate32(totalExtraPages, ac.ExtraProgramPages)
 	record.TotalExtraAppPages = totalExtraPages
 
+	// Update the cached TotalAppParams for this account, used
+	// when computing MinBalance
+	record.TotalAppParams++
+
+	info := AppInfo{
+		HasParams: true,
+		Params:    params,
+	}
+
+	// Allocate global storage
+	err = balances.AllocateApp(creator, appIdx, info)
+	if err != nil {
+		return 0, err
+	}
+
 	// Write back to the creator's balance record
 	err = balances.Put(creator, record)
 	if err != nil {
 		return 0, err
 	}
-
-	// Allocate global storage
-	err = balances.AllocateApp(creator, appIdx, true, ac.GlobalStateSchema)
-	if err != nil {
-		return 0, err
-	}
-
-	return
+	return appIdx, err
 }
 
 func deleteApplication(balances Balances, creator basics.Address, appIdx basics.AppIndex) error {
@@ -163,26 +168,27 @@ func deleteApplication(balances Balances, creator basics.Address, appIdx basics.
 		record.TotalExtraAppPages = totalExtraPages
 	}
 
-	// Delete the AppParams
+	record.TotalAppParams--
 	delete(record.AppParams, appIdx)
 
-	err = balances.Put(creator, record)
-	if err != nil {
-		return err
-	}
-
 	// Deallocate global storage
-	err = balances.DeallocateApp(creator, appIdx, true)
+	info := AppInfo{HasParams: true}
+	err = balances.DeallocateApp(creator, appIdx, info)
 	if err != nil {
 		return err
 	}
 
-	return nil
+	return balances.Put(creator, record)
 }
 
 func updateApplication(ac *transactions.ApplicationCallTxnFields, balances Balances, creator basics.Address, appIdx basics.AppIndex) error {
 	// Updating the application. Fetch the creator's balance record
 	record, err := balances.Get(creator, false)
+	if err != nil {
+		return err
+	}
+
+	params, found, err := balances.GetAppParams(creator, appIdx)
 	if err != nil {
 		return err
 	}

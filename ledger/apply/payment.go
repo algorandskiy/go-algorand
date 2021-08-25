@@ -80,29 +80,22 @@ func Payment(payment transactions.PaymentTxnFields, header transactions.Header, 
 		}
 
 		// Confirm that there is no asset-related state in the account
-		if len(rec.Assets) > 0 {
-			return fmt.Errorf("cannot close: %d outstanding assets", len(rec.Assets))
-		}
-
-		if len(rec.AssetParams) > 0 {
-			// This should be impossible because every asset created
-			// by an account (in AssetParams) must also appear in Assets,
-			// which we checked above.
-			return fmt.Errorf("cannot close: %d outstanding created assets", len(rec.AssetParams))
+		if rec.TotalAssets > 0 {
+			return fmt.Errorf("cannot close: %d outstanding assets", rec.TotalAssets)
 		}
 
 		// Confirm that there is no application-related state remaining
-		if len(rec.AppLocalStates) > 0 {
-			return fmt.Errorf("cannot close: %d outstanding applications opted in. Please opt out or clear them", len(rec.AppLocalStates))
+		if rec.TotalAppLocalStates > 0 {
+			return fmt.Errorf("cannot close: %d outstanding applications opted in. Please opt out or clear them", rec.TotalAppLocalStates)
 		}
 
 		// Can't have created apps remaining either
-		if len(rec.AppParams) > 0 {
-			return fmt.Errorf("cannot close: %d outstanding created applications", len(rec.AppParams))
+		if rec.TotalAppParams > 0 {
+			return fmt.Errorf("cannot close: %d outstanding created applications", rec.TotalAppParams)
 		}
 
 		// Clear out entire account record, to allow the DB to GC it
-		rec = basics.AccountData{}
+		rec = basics.MiniAccountData{}
 		err = balances.Put(header.Sender, rec)
 		if err != nil {
 			return err

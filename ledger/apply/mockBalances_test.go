@@ -25,20 +25,20 @@ import (
 
 type mockBalances struct {
 	protocol.ConsensusVersion
-	b map[basics.Address]basics.AccountData
+	b map[basics.Address]basics.MiniAccountData
 }
 
 // makeMockBalances takes a ConsensusVersion and returns a mocked balances with an Address to AccountData map
 func makeMockBalances(cv protocol.ConsensusVersion) *mockBalances {
 	return &mockBalances{
 		ConsensusVersion: cv,
-		b:                map[basics.Address]basics.AccountData{},
+		b:                map[basics.Address]basics.MiniAccountData{},
 	}
 }
 
 // makeMockBalancesWithAccounts takes a ConsensusVersion and a map of Address to AccountData and returns a mocked
 // balances.
-func makeMockBalancesWithAccounts(cv protocol.ConsensusVersion, b map[basics.Address]basics.AccountData) *mockBalances {
+func makeMockBalancesWithAccounts(cv protocol.ConsensusVersion, b map[basics.Address]basics.MiniAccountData) *mockBalances {
 	return &mockBalances{
 		ConsensusVersion: cv,
 		b:                b,
@@ -69,7 +69,7 @@ func (balances mockBalances) StatefulEval(logic.EvalParams, basics.AppIndex, []b
 	return false, basics.EvalDelta{}, nil
 }
 
-func (balances mockBalances) Get(addr basics.Address, withPendingRewards bool) (basics.AccountData, error) {
+func (balances mockBalances) Get(addr basics.Address, withPendingRewards bool) (basics.MiniAccountData, error) {
 	return balances.b[addr], nil
 }
 
@@ -77,7 +77,7 @@ func (balances mockBalances) GetCreator(idx basics.CreatableIndex, ctype basics.
 	return basics.Address{}, true, nil
 }
 
-func (balances mockBalances) Put(addr basics.Address, ad basics.AccountData) error {
+func (balances mockBalances) Put(addr basics.Address, ad basics.MiniAccountData) error {
 	balances.b[addr] = ad
 	return nil
 }
