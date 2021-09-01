@@ -347,7 +347,7 @@ func TestPrepareEvalParams(t *testing.T) {
 	}
 
 	params := []config.ConsensusParams{
-		config.ConsensusParams{Application: true, MaxAppProgramCost: 700},
+		{Application: true, MaxAppProgramCost: 700},
 		config.Consensus[protocol.ConsensusV29],
 		config.Consensus[protocol.ConsensusFuture],
 	}

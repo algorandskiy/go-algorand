@@ -27,11 +27,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/algorand/msgp/msgp"
-
 	"github.com/algorand/go-algorand/crypto"
 	"github.com/algorand/go-algorand/data/basics"
 	"github.com/algorand/go-algorand/ledger/ledgercore"
+	"github.com/algorand/go-algorand/ledger/store"
 	"github.com/algorand/go-algorand/protocol"
 )
 
@@ -66,14 +65,7 @@ type catchpointWriter struct {
 	blocksRound       basics.Round
 	blockHeaderDigest crypto.Digest
 	label             string
-	accountsIterator  encodedAccountsBatchIter
-}
-
-type encodedBalanceRecord struct {
-	_struct struct{} `codec:",omitempty,omitemptyarray"`
-
-	Address     basics.Address `codec:"pk,allocbound=crypto.DigestSize"`
-	AccountData msgp.Raw       `codec:"ad,allocbound=basics.MaxEncodedAccountDataSize"`
+	accountsIterator  store.EncodedAccountsBatchIter
 }
 
 // CatchpointFileHeader is the content we would have in the "content.msgpack" file in the catchpoint tar archive.
@@ -92,8 +84,8 @@ type CatchpointFileHeader struct {
 }
 
 type catchpointFileBalancesChunk struct {
-	_struct  struct{}               `codec:",omitempty,omitemptyarray"`
-	Balances []encodedBalanceRecord `codec:"bl,allocbound=BalancesPerCatchpointFileChunk"`
+	_struct  struct{}                     `codec:",omitempty,omitemptyarray"`
+	Balances []store.EncodedBalanceRecord `codec:"bl,allocbound=BalancesPerCatchpointFileChunk"`
 }
 
 func makeCatchpointWriter(ctx context.Context, filePath string, tx *sql.Tx, blocksRound basics.Round, blockHeaderDigest crypto.Digest, label string) *catchpointWriter {

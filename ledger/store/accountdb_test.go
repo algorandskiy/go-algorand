@@ -14,18 +14,16 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with go-algorand.  If not, see <https://www.gnu.org/licenses/>.
 
-package ledger
+package store
 
 import (
 	"bytes"
 	"context"
 	"database/sql"
-	"encoding/binary"
 	"fmt"
 	"math/rand"
 	"os"
 	"sort"
-	"strings"
 	"testing"
 	"time"
 
@@ -35,11 +33,12 @@ import (
 	"github.com/algorand/go-algorand/crypto"
 	"github.com/algorand/go-algorand/data/basics"
 	"github.com/algorand/go-algorand/ledger/ledgercore"
-	"github.com/algorand/go-algorand/logging"
 	"github.com/algorand/go-algorand/protocol"
 	"github.com/algorand/go-algorand/test/partitiontest"
 	"github.com/algorand/go-algorand/util/db"
 )
+
+var testPoolAddr = basics.Address{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}
 
 func randomAddress() basics.Address {
 	var addr basics.Address
@@ -387,10 +386,10 @@ func checkAccounts(t *testing.T, tx *sql.Tx, rnd basics.Round, accts map[basics.
 	require.Equal(t, rnd, d.round)
 	require.Equal(t, d.accountData, basics.AccountData{})
 
-	onlineAccounts := make(map[basics.Address]*onlineAccount)
+	onlineAccounts := make(map[basics.Address]*ledgercore.OnlineAccount)
 	for addr, data := range accts {
 		if data.Status == basics.Online {
-			onlineAccounts[addr] = accountDataToOnline(addr, &data, proto)
+			onlineAccounts[addr] = ledgercore.AccountDataToOnline(addr, &data, proto)
 		}
 	}
 
@@ -400,7 +399,7 @@ func checkAccounts(t *testing.T, tx *sql.Tx, rnd basics.Round, accts map[basics.
 		require.Equal(t, i, len(dbtop))
 
 		// Compute the top-N accounts ourselves
-		var testtop []onlineAccount
+		var testtop []ledgercore.OnlineAccount
 		for _, data := range onlineAccounts {
 			testtop = append(testtop, *data)
 		}
@@ -1061,105 +1060,12 @@ func TestAccountsDbQueriesCreateClose(t *testing.T) {
 	require.Nil(t, qs.listCreatablesStmt)
 }
 
-func benchmarkWriteCatchpointStagingBalancesSub(b *testing.B, ascendingOrder bool) {
-	proto := config.Consensus[protocol.ConsensusCurrentVersion]
-	genesisInitState, _ := testGenerateInitState(b, protocol.ConsensusCurrentVersion, 100)
-	const inMem = false
-	log := logging.TestingLog(b)
-	cfg := config.GetDefaultLocal()
-	cfg.Archival = false
-	log.SetLevel(logging.Warn)
-	dbBaseFileName := strings.Replace(b.Name(), "/", "_", -1)
-	l, err := OpenLedger(log, dbBaseFileName, inMem, genesisInitState, cfg)
-	require.NoError(b, err, "could not open ledger")
-	defer func() {
-		l.Close()
-		os.Remove(dbBaseFileName + ".block.sqlite")
-		os.Remove(dbBaseFileName + ".tracker.sqlite")
-	}()
-	catchpointAccessor := MakeCatchpointCatchupAccessor(l, log)
-	catchpointAccessor.ResetStagingBalances(context.Background(), true)
-	targetAccountsCount := uint64(b.N)
-	accountsLoaded := uint64(0)
-	var last64KStart time.Time
-	last64KSize := uint64(0)
-	last64KAccountCreationTime := time.Duration(0)
-	accountsWritingStarted := time.Now()
-	accountsGenerationDuration := time.Duration(0)
-	b.ResetTimer()
-	for accountsLoaded < targetAccountsCount {
-		b.StopTimer()
-		balancesLoopStart := time.Now()
-		// generate a chunk;
-		chunkSize := targetAccountsCount - accountsLoaded
-		if chunkSize > BalancesPerCatchpointFileChunk {
-			chunkSize = BalancesPerCatchpointFileChunk
-		}
-		last64KSize += chunkSize
-		if accountsLoaded >= targetAccountsCount-64*1024 && last64KStart.IsZero() {
-			last64KStart = time.Now()
-			last64KSize = chunkSize
-			last64KAccountCreationTime = time.Duration(0)
-		}
-		var balances catchpointFileBalancesChunk
-		balances.Balances = make([]encodedBalanceRecord, chunkSize)
-		for i := uint64(0); i < chunkSize; i++ {
-			var randomAccount encodedBalanceRecord
-			accountData := basics.AccountData{RewardsBase: accountsLoaded + i}
-			accountData.MicroAlgos.Raw = crypto.RandUint63()
-			randomAccount.AccountData = protocol.Encode(&accountData)
-			crypto.RandBytes(randomAccount.Address[:])
-			if ascendingOrder {
-				binary.LittleEndian.PutUint64(randomAccount.Address[:], accountsLoaded+i)
-			}
-			balances.Balances[i] = randomAccount
-		}
-		balanceLoopDuration := time.Now().Sub(balancesLoopStart)
-		last64KAccountCreationTime += balanceLoopDuration
-		accountsGenerationDuration += balanceLoopDuration
-
-		normalizedAccountBalances, err := prepareNormalizedBalances(balances.Balances, proto)
-		b.StartTimer()
-		err = l.trackerDBs.Wdb.Atomic(func(ctx context.Context, tx *sql.Tx) (err error) {
-			err = writeCatchpointStagingBalances(ctx, tx, normalizedAccountBalances)
-			return
-		})
-
-		require.NoError(b, err)
-		accountsLoaded += chunkSize
-	}
-	if !last64KStart.IsZero() {
-		last64KDuration := time.Now().Sub(last64KStart) - last64KAccountCreationTime
-		fmt.Printf("%-82s%-7d (last 64k) %-6d ns/account       %d accounts/sec\n", b.Name(), last64KSize, (last64KDuration / time.Duration(last64KSize)).Nanoseconds(), int(float64(last64KSize)/float64(last64KDuration.Seconds())))
-	}
-	stats, err := l.trackerDBs.Wdb.Vacuum(context.Background())
-	require.NoError(b, err)
-	fmt.Printf("%-82sdb fragmentation   %.1f%%\n", b.Name(), float32(stats.PagesBefore-stats.PagesAfter)*100/float32(stats.PagesBefore))
-	b.ReportMetric(float64(b.N)/float64((time.Now().Sub(accountsWritingStarted)-accountsGenerationDuration).Seconds()), "accounts/sec")
-}
-
-func BenchmarkWriteCatchpointStagingBalances(b *testing.B) {
-	benchSizes := []int{1024 * 100, 1024 * 200, 1024 * 400}
-	for _, size := range benchSizes {
-		b.Run(fmt.Sprintf("RandomInsertOrder-%d", size), func(b *testing.B) {
-			b.N = size
-			benchmarkWriteCatchpointStagingBalancesSub(b, false)
-		})
-	}
-	for _, size := range benchSizes {
-		b.Run(fmt.Sprintf("AscendingInsertOrder-%d", size), func(b *testing.B) {
-			b.N = size
-			benchmarkWriteCatchpointStagingBalancesSub(b, true)
-		})
-	}
-}
-
 func TestCompactAccountDeltas(t *testing.T) {
 	partitiontest.PartitionTest(t)
 
 	a := require.New(t)
 
-	ad := compactAccountDeltas{}
+	ad := CompactAccountDeltas{}
 	data, idx := ad.get(basics.Address{})
 	a.Equal(-1, idx)
 	a.Equal(accountDelta{}, data)

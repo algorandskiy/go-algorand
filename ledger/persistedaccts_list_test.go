@@ -17,8 +17,10 @@
 package ledger
 
 import (
-	"github.com/algorand/go-algorand/data/basics"
 	"testing"
+
+	"github.com/algorand/go-algorand/data/basics"
+	"github.com/algorand/go-algorand/ledger/store"
 )
 
 func checkLen(list *persistedAccountDataList) int {
@@ -37,9 +39,9 @@ func countListSize(head *persistedAccountDataListNode) (counter int) {
 
 func TestRemoveFromList(t *testing.T) {
 	l := newPersistedAccountList()
-	e1 := l.pushFront(&persistedAccountData{addr: basics.Address{1}})
-	e2 := l.pushFront(&persistedAccountData{addr: basics.Address{2}})
-	e3 := l.pushFront(&persistedAccountData{addr: basics.Address{3}})
+	e1 := l.pushFront(&store.PersistedAccountData{Addr: basics.Address{1}})
+	e2 := l.pushFront(&store.PersistedAccountData{Addr: basics.Address{2}})
+	e3 := l.pushFront(&store.PersistedAccountData{Addr: basics.Address{3}})
 	checkListPointers(t, l, []*persistedAccountDataListNode{e3, e2, e1})
 
 	l.remove(e2)
@@ -56,7 +58,7 @@ func TestAddingNewNodeWithAllocatedFreeList(t *testing.T) {
 		return
 	}
 	// test elements
-	e1 := l.pushFront(&persistedAccountData{addr: basics.Address{1}})
+	e1 := l.pushFront(&store.PersistedAccountData{Addr: basics.Address{1}})
 	checkListPointers(t, l, []*persistedAccountDataListNode{e1})
 
 	if countListSize(l.freeList) != 9 {
@@ -125,11 +127,11 @@ func TestMultielementListPositioning(t *testing.T) {
 	l := newPersistedAccountList()
 	checkListPointers(t, l, []*persistedAccountDataListNode{})
 	// test elements
-	e2 := l.pushFront(&persistedAccountData{addr: basics.Address{2}})
-	e1 := l.pushFront(&persistedAccountData{addr: basics.Address{1}})
-	e3 := l.pushFront(&persistedAccountData{addr: basics.Address{3}})
-	e4 := l.pushFront(&persistedAccountData{addr: basics.Address{4}})
-	e5 := l.pushFront(&persistedAccountData{addr: basics.Address{5}})
+	e2 := l.pushFront(&store.PersistedAccountData{Addr: basics.Address{2}})
+	e1 := l.pushFront(&store.PersistedAccountData{Addr: basics.Address{1}})
+	e3 := l.pushFront(&store.PersistedAccountData{Addr: basics.Address{3}})
+	e4 := l.pushFront(&store.PersistedAccountData{Addr: basics.Address{4}})
+	e5 := l.pushFront(&store.PersistedAccountData{Addr: basics.Address{5}})
 
 	checkListPointers(t, l, []*persistedAccountDataListNode{e5, e4, e3, e1, e2})
 
@@ -157,7 +159,7 @@ func TestMultielementListPositioning(t *testing.T) {
 	l.moveToFront(e1) // no movement
 	checkListPointers(t, l, []*persistedAccountDataListNode{e1, e3, e4})
 
-	e2 = l.pushFront(&persistedAccountData{addr: basics.Address{2}})
+	e2 = l.pushFront(&store.PersistedAccountData{Addr: basics.Address{2}})
 	checkListPointers(t, l, []*persistedAccountDataListNode{e2, e1, e3, e4})
 
 	l.remove(e3) // removing from middle
@@ -182,7 +184,7 @@ func TestMultielementListPositioning(t *testing.T) {
 func TestSingleElementListPositioning(t *testing.T) {
 	l := newPersistedAccountList()
 	checkListPointers(t, l, []*persistedAccountDataListNode{})
-	e := l.pushFront(&persistedAccountData{addr: basics.Address{1}})
+	e := l.pushFront(&store.PersistedAccountData{Addr: basics.Address{1}})
 	checkListPointers(t, l, []*persistedAccountDataListNode{e})
 	l.moveToFront(e)
 	checkListPointers(t, l, []*persistedAccountDataListNode{e})
@@ -192,8 +194,8 @@ func TestSingleElementListPositioning(t *testing.T) {
 
 func TestRemovedNodeShouldBeMovedToFreeList(t *testing.T) {
 	l := newPersistedAccountList()
-	e1 := l.pushFront(&persistedAccountData{addr: basics.Address{1}})
-	e2 := l.pushFront(&persistedAccountData{addr: basics.Address{2}})
+	e1 := l.pushFront(&store.PersistedAccountData{Addr: basics.Address{1}})
+	e2 := l.pushFront(&store.PersistedAccountData{Addr: basics.Address{2}})
 
 	checkListPointers(t, l, []*persistedAccountDataListNode{e2, e1})
 
