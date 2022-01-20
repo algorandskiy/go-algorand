@@ -90,7 +90,8 @@ type Ledger struct {
 	// verifiedTxnCache holds all the verified transactions state
 	verifiedTxnCache verify.VerifiedTransactionCache
 
-	cfg config.Local
+	cfg          config.Local
+	dbPathPrefix string
 }
 
 // OpenLedger creates a Ledger object, using SQLite database filenames
@@ -117,6 +118,7 @@ func OpenLedger(
 		accountsRebuildSynchronousMode: db.SynchronousMode(cfg.AccountsRebuildSynchronousMode),
 		verifiedTxnCache:               verify.MakeVerifiedTransactionCache(verifiedCacheSize),
 		cfg:                            cfg,
+		dbPathPrefix:                   dbPathPrefix,
 	}
 
 	l.headerCache.maxEntries = 10
@@ -153,9 +155,6 @@ func OpenLedger(
 	if l.genesisAccounts == nil {
 		l.genesisAccounts = make(map[basics.Address]basics.AccountData)
 	}
-
-	l.accts.initialize(cfg)
-	l.catchpoint.initialize(cfg, dbPathPrefix)
 
 	err = l.reloadLedger()
 	if err != nil {
@@ -209,6 +208,9 @@ func (l *Ledger) reloadLedger() error {
 	if err != nil {
 		return err
 	}
+
+	l.accts.initialize(l.cfg)
+	l.catchpoint.initialize(l.cfg, l.dbPathPrefix)
 
 	err = l.trackers.loadFromDisk(l)
 	if err != nil {
