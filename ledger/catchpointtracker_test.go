@@ -62,8 +62,9 @@ func TestIsWritingCatchpointFile(t *testing.T) {
 func newCatchpointTracker(tb testing.TB, l *mockLedgerForTracker, conf config.Local, dbPathPrefix string) *catchpointTracker {
 	au := &accountUpdates{}
 	ct := &catchpointTracker{}
-	au.initialize(conf)
-	ct.initialize(conf, dbPathPrefix)
+	cc := makeCatchpointControl(conf)
+	au.initialize(conf, cc)
+	ct.initialize(conf, dbPathPrefix, cc)
 	_, err := trackerDBInitialize(l, ct.catchpointEnabled(), dbPathPrefix)
 	require.NoError(tb, err)
 
@@ -253,7 +254,8 @@ func TestSchemaUpdateDeleteStoredCatchpoints(t *testing.T) {
 	ct := &catchpointTracker{}
 	conf := config.GetDefaultLocal()
 	conf.CatchpointInterval = 1
-	ct.initialize(conf, ".")
+	cc := makeCatchpointControl(conf)
+	ct.initialize(conf, ".", cc)
 	defer ct.close()
 	ct.dbDirectory = temporaryDirectroy
 
@@ -296,7 +298,8 @@ func TestSaveCatchpointFile(t *testing.T) {
 	conf := config.GetDefaultLocal()
 
 	conf.CatchpointFileHistoryLength = 3
-	ct.initialize(conf, ".")
+	cc := makeCatchpointControl(conf)
+	ct.initialize(conf, ".", cc)
 	defer ct.close()
 	ct.dbDirectory = temporaryDirectroy
 
@@ -343,7 +346,8 @@ func BenchmarkLargeCatchpointWriting(b *testing.B) {
 	cfg := config.GetDefaultLocal()
 	cfg.Archival = true
 	ct := catchpointTracker{}
-	ct.initialize(cfg, ".")
+	cc := makeCatchpointControl(cfg)
+	ct.initialize(cfg, ".", cc)
 
 	temporaryDirectroy, err := ioutil.TempDir(os.TempDir(), CatchpointDirName)
 	require.NoError(b, err)

@@ -253,7 +253,8 @@ func (au *accountUpdates) allBalances(rnd basics.Round) (bals map[basics.Address
 
 func newAcctUpdates(tb testing.TB, l *mockLedgerForTracker, conf config.Local, dbPathPrefix string) *accountUpdates {
 	au := &accountUpdates{}
-	au.initialize(conf)
+	cc := makeCatchpointControl(conf)
+	au.initialize(conf, cc)
 	_, err := trackerDBInitialize(l, false, ".")
 	require.NoError(tb, err)
 

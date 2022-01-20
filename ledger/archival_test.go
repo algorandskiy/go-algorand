@@ -810,7 +810,8 @@ func checkTrackers(t *testing.T, wl *wrappedLedger, rnd basics.Round) (basics.Ro
 			au = cleanTracker.(*accountUpdates)
 			cfg := config.GetDefaultLocal()
 			cfg.Archival = true
-			au.initialize(cfg)
+			cc := makeCatchpointControl(cfg)
+			au.initialize(cfg, cc)
 		} else {
 			minSave, _ = trk.committedUpTo(rnd)
 			if minSave < minMinSave {

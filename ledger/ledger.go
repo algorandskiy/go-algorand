@@ -209,8 +209,8 @@ func (l *Ledger) reloadLedger() error {
 		return err
 	}
 
-	l.accts.initialize(l.cfg)
-	l.catchpoint.initialize(l.cfg, l.dbPathPrefix)
+	l.accts.initialize(l.cfg, l.trackers.catchpointControl)
+	l.catchpoint.initialize(l.cfg, l.dbPathPrefix, l.trackers.catchpointControl)
 
 	err = l.trackers.loadFromDisk(l)
 	if err != nil {
