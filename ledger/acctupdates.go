@@ -35,6 +35,7 @@ import (
 	"github.com/algorand/go-algorand/data/basics"
 	"github.com/algorand/go-algorand/data/bookkeeping"
 	"github.com/algorand/go-algorand/data/transactions"
+	"github.com/algorand/go-algorand/ledger/internal"
 	"github.com/algorand/go-algorand/ledger/ledgercore"
 	"github.com/algorand/go-algorand/logging"
 	"github.com/algorand/go-algorand/logging/telemetryspec"
@@ -1639,11 +1640,20 @@ func (au *accountUpdates) postCommit(ctx context.Context, dcc *deferredCommitCon
 
 	for _, persistedAcct := range dcc.updatedPersistedAccounts {
 		au.baseAccounts.write(persistedAcct)
+		if newBase >= internal.BlockX {
+			au.log.Infof("modifed account %s", persistedAcct.addr.String())
+		}
 	}
 
 	for addr, deltas := range dcc.updatedPersistedResources {
+		if newBase >= internal.BlockX {
+			au.log.Infof("modifed resource addr %s", addr.String())
+		}
 		for _, persistedRes := range deltas {
 			au.baseResources.write(persistedRes, addr)
+			if newBase >= internal.BlockX {
+				au.log.Infof("modifed resource entry %d %d", persistedRes.addrid, persistedRes.aidx)
+			}
 		}
 	}
 

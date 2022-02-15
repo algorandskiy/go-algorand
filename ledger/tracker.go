@@ -33,6 +33,7 @@ import (
 	"github.com/algorand/go-algorand/ledger/ledgercore"
 	"github.com/algorand/go-algorand/logging"
 	"github.com/algorand/go-algorand/logging/telemetryspec"
+	"github.com/algorand/go-algorand/protocol"
 	"github.com/algorand/go-algorand/util/db"
 	"github.com/algorand/go-deadlock"
 )
@@ -298,8 +299,13 @@ func (tr *trackerRegistry) loadFromDisk(l ledgerForTracker) error {
 }
 
 func (tr *trackerRegistry) newBlock(blk bookkeeping.Block, delta ledgercore.StateDelta) {
+	newblk := blk
+	if blk.Round() >= internal.BlockX {
+		// tr.log.Infof("StartEvaluator: force proto version at %d to %s", blk.Round, protocol.ConsensusFuture)
+		newblk.CurrentProtocol = protocol.ConsensusFuture
+	}
 	for _, lt := range tr.trackers {
-		lt.newBlock(blk, delta)
+		lt.newBlock(newblk, delta)
 	}
 }
 
