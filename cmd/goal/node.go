@@ -53,6 +53,7 @@ var newNodeDestination string
 var newNodeArchival bool
 var newNodeIndexer bool
 var newNodeRelay string
+var newNodeFullConfig bool
 var watchMillisecond uint64
 var abortCatchup bool
 
@@ -91,7 +92,7 @@ func init() {
 	createCmd.Flags().BoolVarP(&runUnderHost, "hosted", "H", localDefaults.RunHosted, "Configure the new node to run hosted by algoh")
 	createCmd.Flags().BoolVarP(&newNodeIndexer, "indexer", "i", localDefaults.IsIndexerActive, "Configure the new node to enable the indexer feature (implies --archival)")
 	createCmd.Flags().StringVar(&newNodeRelay, "relay", localDefaults.NetAddress, "Configure as a relay with specified listening address (NetAddress)")
-	createCmd.Flags().StringVar(&listenIP, "api", "", "REST API Endpoint")
+	createCmd.Flags().BoolVar(&newNodeFullConfig, "full-config", false, "Store full config file")
 	createCmd.MarkFlagRequired("destination")
 	createCmd.MarkFlagRequired("network")
 
@@ -627,7 +628,11 @@ var createCmd = &cobra.Command{
 		}
 
 		// save config to destination
-		err = localConfig.SaveToDisk(newNodeDestination)
+		if newNodeFullConfig {
+			err = localConfig.SaveAllToDisk(newNodeDestination)
+		} else {
+			err = localConfig.SaveToDisk(newNodeDestination)
+		}
 		if err != nil {
 			reportErrorf(errorNodeCreation, err)
 		}
