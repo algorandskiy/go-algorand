@@ -84,9 +84,6 @@ func runKmd(dataDir string, timeoutSecs uint64) {
 	}
 	log.SetOutput(logFile)
 
-	// Prevent swapping with mlockall if supported by the platform
-	tryMlockall(log)
-
 	// Create a "kill" channel to allow the server to shut down gracefully
 	kill := make(chan os.Signal, 1)
 
@@ -94,7 +91,6 @@ func runKmd(dataDir string, timeoutSecs uint64) {
 	// will not block, this shouldn't cause an issue. From docs: "Package
 	// signal will not block sending to c"
 	signal.Notify(kill, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
-	signal.Ignore(syscall.SIGHUP)
 
 	// Build a kmd StartConfig
 	startConfig := kmd.StartConfig{

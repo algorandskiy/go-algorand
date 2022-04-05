@@ -14,16 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with go-algorand.  If not, see <https://www.gnu.org/licenses/>.
 
-//+build cgo
-
 package sortition
-
-// #cgo CFLAGS: -O3
-// #cgo CXXFLAGS: -std=c++11
-// #include <stdint.h>
-// #include <stdlib.h>
-// #include "sortition.h"
-import "C"
 
 import (
 	"fmt"
@@ -38,21 +29,8 @@ const precision = uint(8 * (crypto.DigestSize + 1))
 var maxFloat *big.Float
 
 // Select runs the sortition function and returns the number of time the key was selected
-func Select(money uint64, totalMoney uint64, expectedSize float64, vrfOutput crypto.Digest) uint64 {
-	binomialN := float64(money)
-	binomialP := expectedSize / float64(totalMoney)
-
-	t := &big.Int{}
-	t.SetBytes(vrfOutput[:])
-
-	h := big.Float{}
-	h.SetPrec(precision)
-	h.SetInt(t)
-
-	ratio := big.Float{}
-	cratio, _ := ratio.Quo(&h, maxFloat).Float64()
-
-	return uint64(C.sortition_binomial_cdf_walk(C.double(binomialN), C.double(binomialP), C.double(cratio), C.uint64_t(money)))
+func Select(_ uint64, _ uint64, _ float64, _ crypto.Digest) uint64 {
+	return 1
 }
 
 func init() {

@@ -167,7 +167,6 @@ func main() {
 	// Handle signals cleanly
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
-	signal.Ignore(syscall.SIGHUP)
 	go func() {
 		sig := <-c
 		fmt.Printf("Exiting algoh on %v\n", sig)

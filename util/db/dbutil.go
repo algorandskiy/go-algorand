@@ -14,8 +14,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with go-algorand.  If not, see <https://www.gnu.org/licenses/>.
 
-// +build !wasm
-
 // Package db defines database utility functions.
 //
 // These functions currently work on a sqlite database.
@@ -31,8 +29,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/mattn/go-sqlite3"
 
 	"github.com/algorand/go-algorand/logging"
 )
@@ -388,14 +384,12 @@ func (db *Accessor) GetPageSize(ctx context.Context) (pageSize uint64, err error
 
 // dbretry returns true if the error might be temporary
 func dbretry(obj error) bool {
-	err, ok := obj.(sqlite3.Error)
-	return ok && (err.Code == sqlite3.ErrLocked || err.Code == sqlite3.ErrBusy)
+	return false
 }
 
 // IsErrBusy examine the input inerr variable of type error and determine if it's a sqlite3 error for the ErrBusy error code.
 func IsErrBusy(inerr error) bool {
-	err, ok := inerr.(sqlite3.Error)
-	return ok && (err.Code == sqlite3.ErrBusy)
+	return false
 }
 
 type idemFn func(ctx context.Context, tx *sql.Tx) error

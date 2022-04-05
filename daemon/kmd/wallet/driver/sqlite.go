@@ -25,10 +25,6 @@ import (
 	"path/filepath"
 	"regexp"
 
-	"github.com/algorand/go-deadlock"
-	"github.com/jmoiron/sqlx"
-	"github.com/mattn/go-sqlite3"
-
 	"github.com/algorand/go-algorand/crypto"
 	"github.com/algorand/go-algorand/daemon/kmd/config"
 	"github.com/algorand/go-algorand/daemon/kmd/wallet"
@@ -37,6 +33,8 @@ import (
 	"github.com/algorand/go-algorand/logging"
 	"github.com/algorand/go-algorand/protocol"
 	"github.com/algorand/go-codec/codec"
+	"github.com/algorand/go-deadlock"
+	"github.com/jmoiron/sqlx"
 )
 
 const (
@@ -351,12 +349,6 @@ func (swd SQLiteWalletDriver) nameIDToPath(name []byte, id []byte) string {
 // "duplicate key" error, a generic database error, or a nil error
 func checkDBError(err error) error {
 	if err != nil {
-		serr, ok := err.(sqlite3.Error)
-		if ok && serr.Code == sqlite3.ErrConstraint {
-			// If it was a constraint error, that means we already have the key.
-			return errKeyExists
-		}
-		// Otherwise, return a generic database error
 		return errDatabase
 	}
 	return nil

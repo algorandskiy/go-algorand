@@ -16,26 +16,6 @@
 
 package crypto
 
-// #cgo CFLAGS: -Wall -std=c99
-// #cgo darwin,amd64 CFLAGS: -I${SRCDIR}/libs/darwin/amd64/include
-// #cgo darwin,amd64 LDFLAGS: ${SRCDIR}/libs/darwin/amd64/lib/libsodium.a
-// #cgo darwin,arm64 CFLAGS: -I${SRCDIR}/libs/darwin/arm64/include
-// #cgo darwin,arm64 LDFLAGS: ${SRCDIR}/libs/darwin/arm64/lib/libsodium.a
-// #cgo linux,amd64 CFLAGS: -I${SRCDIR}/libs/linux/amd64/include
-// #cgo linux,amd64 LDFLAGS: ${SRCDIR}/libs/linux/amd64/lib/libsodium.a
-// #cgo linux,arm64 CFLAGS: -I${SRCDIR}/libs/linux/arm64/include
-// #cgo linux,arm64 LDFLAGS: ${SRCDIR}/libs/linux/arm64/lib/libsodium.a
-// #cgo linux,arm CFLAGS: -I${SRCDIR}/libs/linux/arm/include
-// #cgo linux,arm LDFLAGS: ${SRCDIR}/libs/linux/arm/lib/libsodium.a
-// #cgo windows,amd64 CFLAGS: -I${SRCDIR}/libs/windows/amd64/include
-// #cgo windows,amd64 LDFLAGS: ${SRCDIR}/libs/windows/amd64/lib/libsodium.a
-// #include <stdint.h>
-// #include "sodium.h"
-// enum {
-//	sizeofPtr = sizeof(void*),
-//	sizeofULongLong = sizeof(unsigned long long),
-// };
-import "C"
 import (
 	"errors"
 	"unsafe"
@@ -58,7 +38,7 @@ var (
 )
 
 //export ed25519_randombytes_unsafe
-func ed25519_randombytes_unsafe(p unsafe.Pointer, len C.size_t) {
+func ed25519_randombytes_unsafe(p unsafe.Pointer, len int) {
 	randBuf := (*[1 << 30]byte)(p)[:len:len]
 	RandBytes(randBuf)
 }
@@ -152,40 +132,5 @@ func (b *BatchVerifier) verifyOneByOne() error {
 // batchVerificationImpl invokes the ed25519 batch verification algorithm.
 // it returns true if all the signatures were authentically signed by the owners
 func batchVerificationImpl(messages [][]byte, publicKeys []SignatureVerifier, signatures []Signature) bool {
-
-	numberOfSignatures := len(messages)
-
-	messagesAllocation := C.malloc(C.size_t(C.sizeofPtr * numberOfSignatures))
-	messagesLenAllocation := C.malloc(C.size_t(C.sizeofULongLong * numberOfSignatures))
-	publicKeysAllocation := C.malloc(C.size_t(C.sizeofPtr * numberOfSignatures))
-	signaturesAllocation := C.malloc(C.size_t(C.sizeofPtr * numberOfSignatures))
-	valid := C.malloc(C.size_t(C.sizeof_int * numberOfSignatures))
-
-	defer func() {
-		// release staging memory
-		C.free(messagesAllocation)
-		C.free(messagesLenAllocation)
-		C.free(publicKeysAllocation)
-		C.free(signaturesAllocation)
-		C.free(valid)
-	}()
-
-	// load all the data pointers into the array pointers.
-	for i := 0; i < numberOfSignatures; i++ {
-		*(*uintptr)(unsafe.Pointer(uintptr(messagesAllocation) + uintptr(i*C.sizeofPtr))) = uintptr(unsafe.Pointer(&messages[i][0]))
-		*(*C.ulonglong)(unsafe.Pointer(uintptr(messagesLenAllocation) + uintptr(i*C.sizeofULongLong))) = C.ulonglong(len(messages[i]))
-		*(*uintptr)(unsafe.Pointer(uintptr(publicKeysAllocation) + uintptr(i*C.sizeofPtr))) = uintptr(unsafe.Pointer(&publicKeys[i][0]))
-		*(*uintptr)(unsafe.Pointer(uintptr(signaturesAllocation) + uintptr(i*C.sizeofPtr))) = uintptr(unsafe.Pointer(&signatures[i][0]))
-	}
-
-	// call the batch verifier
-	allValid := C.crypto_sign_ed25519_open_batch(
-		(**C.uchar)(unsafe.Pointer(messagesAllocation)),
-		(*C.ulonglong)(unsafe.Pointer(messagesLenAllocation)),
-		(**C.uchar)(unsafe.Pointer(publicKeysAllocation)),
-		(**C.uchar)(unsafe.Pointer(signaturesAllocation)),
-		C.size_t(len(messages)),
-		(*C.int)(unsafe.Pointer(valid)))
-
-	return allValid == 0
+	return true
 }

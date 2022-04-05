@@ -21,8 +21,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/mattn/go-sqlite3"
-
 	"github.com/algorand/go-algorand/agreement"
 	"github.com/algorand/go-algorand/data/basics"
 	"github.com/algorand/go-algorand/data/bookkeeping"
@@ -61,11 +59,7 @@ func blockInit(tx *sql.Tx, initBlocks []bookkeeping.Block) error {
 		for _, blk := range initBlocks {
 			err = blockPut(tx, blk, agreement.Certificate{})
 			if err != nil {
-				serr, ok := err.(sqlite3.Error)
-				if ok && serr.Code == sqlite3.ErrConstraint {
-					continue
-				}
-				return err
+				continue
 			}
 		}
 	}

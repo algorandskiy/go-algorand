@@ -24,8 +24,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/mattn/go-sqlite3"
-
 	"github.com/algorand/msgp/msgp"
 
 	"github.com/algorand/go-algorand/config"
@@ -991,13 +989,7 @@ func accountsInit(tx *sql.Tx, initAccounts map[basics.Address]basics.AccountData
 		}
 		newDatabase = true
 	} else {
-		serr, ok := err.(sqlite3.Error)
-		// serr.Code is sqlite.ErrConstraint if the database has already been initialized;
-		// in that case, ignore the error and return nil.
-		if !ok || serr.Code != sqlite3.ErrConstraint {
-			return
-		}
-
+		return
 	}
 
 	return newDatabase, nil

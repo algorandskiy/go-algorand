@@ -42,7 +42,6 @@ import (
 	"github.com/algorand/go-algorand/logging/telemetryspec"
 	"github.com/algorand/go-algorand/network/limitlistener"
 	"github.com/algorand/go-algorand/node"
-	"github.com/algorand/go-algorand/util"
 	"github.com/algorand/go-algorand/util/metrics"
 	"github.com/algorand/go-algorand/util/tokens"
 )
@@ -103,17 +102,10 @@ func (s *Server) Initialize(cfg config.Local, phonebookAddresses []string, genes
 
 	// Set large enough soft file descriptors limit.
 	var ot basics.OverflowTracker
-	fdRequired := ot.Add(
-		cfg.ReservedFDs,
-		ot.Add(uint64(cfg.IncomingConnectionsLimit), cfg.RestConnectionsHardLimit))
 	if ot.Overflowed {
 		return errors.New(
 			"Initialize() overflowed when adding up ReservedFDs, IncomingConnectionsLimit " +
 				"RestConnectionsHardLimit; decrease them")
-	}
-	err = util.SetFdSoftLimit(fdRequired)
-	if err != nil {
-		return fmt.Errorf("Initialize() err: %w", err)
 	}
 
 	// configure the deadlock detector library
@@ -265,7 +257,6 @@ func (s *Server) Start() {
 	// Handle signals cleanly
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
-	signal.Ignore(syscall.SIGHUP)
 
 	fmt.Printf("Node running and accepting RPC requests over HTTP on port %v. Press Ctrl-C to exit\n", addr)
 	select {

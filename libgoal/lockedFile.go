@@ -29,13 +29,8 @@ type locker interface {
 }
 
 func newLockedFile(path string) (*lockedFile, error) {
-	locker, err := makeLocker()
-	if err != nil {
-		return nil, err
-	}
 	return &lockedFile{
-		path:   path,
-		locker: locker,
+		path: path,
 	}, nil
 }
 

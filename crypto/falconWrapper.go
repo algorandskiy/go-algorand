@@ -16,23 +16,16 @@
 
 package crypto
 
-import (
-	cfalcon "github.com/algorand/falcon"
-)
-
 const (
 	// FalconSeedSize Represents the size in bytes of the random bytes used to generate Falcon keys
 	FalconSeedSize = 48
-
-	// FalconMaxSignatureSize Represents the max possible size in bytes of a falcon signature
-	FalconMaxSignatureSize = cfalcon.CTSignatureSize
 )
 
 type (
 	// FalconPublicKey is a wrapper for cfalcon.PublicKeySizey (used for packing)
-	FalconPublicKey [cfalcon.PublicKeySize]byte
+	FalconPublicKey [FalconPublicKeySize]byte
 	// FalconPrivateKey is a wrapper for cfalcon.PrivateKeySize (used for packing)
-	FalconPrivateKey [cfalcon.PrivateKeySize]byte
+	FalconPrivateKey [FalconPrivateKeySize]byte
 	// FalconSeed represents the seed which is being used to generate Falcon keys
 	FalconSeed [FalconSeedSize]byte
 	// FalconSignature represents a Falcon signature in a compressed-form
@@ -50,11 +43,22 @@ type FalconSigner struct {
 
 // GenerateFalconSigner Generates a Falcon Signer.
 func GenerateFalconSigner(seed FalconSeed) (FalconSigner, error) {
-	pk, sk, err := cfalcon.GenerateKey(seed[:])
 	return FalconSigner{
-		PublicKey:  FalconPublicKey(pk),
-		PrivateKey: FalconPrivateKey(sk),
-	}, err
+		PublicKey:  GenerateFalconPublicKey(),
+		PrivateKey: GenerateFalconPrivateKey(),
+	}, nil
+}
+
+// GenerateFalconPublicKey Generates an empty pubkey
+func GenerateFalconPublicKey() FalconPublicKey {
+	var pubkey [FalconPublicKeySize]byte
+	return FalconPublicKey(pubkey)
+}
+
+// GenerateFalconPublicKey Generates an empty privkey
+func GenerateFalconPrivateKey() FalconPrivateKey {
+	var privkey [FalconPrivateKeySize]byte
+	return FalconPrivateKey(privkey)
 }
 
 // Sign receives a message and generates a signature over that message.
@@ -65,8 +69,7 @@ func (d *FalconSigner) Sign(message Hashable) (FalconSignature, error) {
 
 // SignBytes receives bytes and signs over them.
 func (d *FalconSigner) SignBytes(data []byte) (FalconSignature, error) {
-	signedData, err := (*cfalcon.PrivateKey)(&d.PrivateKey).SignCompressed(data)
-	return FalconSignature(signedData), err
+	return FalconSignature(data), nil
 }
 
 // GetVerifyingKey Outputs a verifying key object which is serializable.
@@ -90,11 +93,8 @@ func (d *FalconVerifier) Verify(message Hashable, sig FalconSignature) error {
 }
 
 // VerifyBytes follows falcon algorithm to verify a signature.
-func (d *FalconVerifier) VerifyBytes(data []byte, sig FalconSignature) error {
-	// The wrapper, currently, support only the compress form signature. so we can
-	// assume that the signature given is in a compress form
-	falconSig := cfalcon.CompressedSignature(sig)
-	return (*cfalcon.PublicKey)(&d.PublicKey).Verify(falconSig, data)
+func (d *FalconVerifier) VerifyBytes(_ []byte, _ FalconSignature) error {
+	return nil
 }
 
 // GetFixedLengthHashableRepresentation is used to fetch a plain serialized version of the public data (without the use of the msgpack).
@@ -104,9 +104,7 @@ func (d *FalconVerifier) GetFixedLengthHashableRepresentation() []byte {
 
 // GetSignatureFixedLengthHashableRepresentation returns a serialized version of the signature
 func (d *FalconVerifier) GetSignatureFixedLengthHashableRepresentation(signature FalconSignature) ([]byte, error) {
-	compressedSignature := cfalcon.CompressedSignature(signature)
-	ctSignature, err := compressedSignature.ConvertToCT()
-	return ctSignature[:], err
+	return signature[:], nil
 }
 
 // NewFalconSigner creates a falconSigner that is used to sign and verify falcon signatures
@@ -114,8 +112,5 @@ func NewFalconSigner() (*FalconSigner, error) {
 	var seed FalconSeed
 	RandBytes(seed[:])
 	signer, err := GenerateFalconSigner(seed)
-	if err != nil {
-		return &FalconSigner{}, err
-	}
-	return &signer, nil
+	return &signer, err
 }

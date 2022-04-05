@@ -14,8 +14,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with go-algorand.  If not, see <https://www.gnu.org/licenses/>.
 
-//+build !wasm
-
 package server
 
 import (
@@ -30,7 +28,6 @@ import (
 	"time"
 
 	"github.com/algorand/go-deadlock"
-	"github.com/gofrs/flock"
 
 	"github.com/algorand/go-algorand/daemon/kmd/api"
 	"github.com/algorand/go-algorand/daemon/kmd/session"
@@ -68,7 +65,6 @@ type WalletServer struct {
 	netPath      string
 	pidPath      string
 	lockPath     string
-	fileLock     *flock.Flock
 	sockPath     string
 	tmpSocketDir string
 
@@ -123,23 +119,11 @@ func MakeWalletServer(config WalletServerConfig) (*WalletServer, error) {
 // Acquire an exclusive file lock on kmd.lock
 func (ws *WalletServer) acquireFileLock() error {
 	// Attempt to acquire exclusive lock
-	ws.fileLock = flock.New(ws.lockPath)
-	locked, err := ws.fileLock.TryLock()
-	if err != nil {
-		return err
-	}
-	if !locked {
-		return ErrAlreadyRunning
-	}
 	return nil
 }
 
 // Release our exclusive lock on kmd.lock
 func (ws *WalletServer) releaseFileLock() error {
-	err := ws.fileLock.Unlock()
-	if err != nil {
-		return err
-	}
 	return nil
 }
 

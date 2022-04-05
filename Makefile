@@ -205,7 +205,7 @@ build: buildsrc
 build_wasm: check-go-version crypto/libs/$(OS_TYPE)/$(ARCH)/lib/libsodium.a
 	mkdir -p "${GOCACHE}" && \
 	touch "${GOCACHE}"/file.txt && \
-	GOCACHE=$(GOCACHE) GOOS=js GOARCH=wasm go install $(GOTRIMPATH) -ldflags="$(GOLDFLAGS)" ./data/transactions/logic/...
+	GOCACHE=$(GOCACHE) GOOS=js GOARCH=wasm go install $(GOTRIMPATH) -ldflags="$(GOLDFLAGS)" ./...
 
 # We're making an empty file in the go-cache dir to
 # get around a bug in go build where it will fail
