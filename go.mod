@@ -3,7 +3,6 @@ module github.com/algorand/go-algorand
 go 1.16
 
 require (
-	github.com/algorand/falcon v0.0.0-20220130164023-c9e1d466f123
 	github.com/algorand/go-codec/codec v1.1.8
 	github.com/algorand/go-deadlock v0.2.2
 	github.com/algorand/go-sumhash v0.1.0
@@ -23,8 +22,6 @@ require (
 	github.com/godbus/dbus v0.0.0-20181101234600-2ff6f7ffd60f // indirect
 	github.com/gofrs/flock v0.7.0
 	github.com/google/go-querystring v1.0.0
-	github.com/gopherjs/gopherjs v0.0.0-20181103185306-d547d1d9531e // indirect
-	github.com/gopherjs/gopherwasm v1.0.1 // indirect
 	github.com/gorilla/context v1.1.1 // indirect
 	github.com/gorilla/mux v1.6.2
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect

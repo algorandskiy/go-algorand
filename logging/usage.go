@@ -20,8 +20,6 @@ import (
 	"context"
 	"sync"
 	"time"
-
-	"github.com/algorand/go-algorand/util"
 )
 
 // UsageLogThread utility logging method
@@ -46,7 +44,8 @@ func UsageLogThread(ctx context.Context, log Logger, period time.Duration, wg *s
 		}
 
 		now = time.Now()
-		Utime, Stime, _ = util.GetCurrentProcessTimes()
+		Utime = 0
+		Stime = 0
 
 		if hasPrev {
 			userNanos := Utime - prevUtime

@@ -10,8 +10,8 @@ GOPATH1 := $(firstword $(subst :, ,$(GOPATH)))
 endif
 export GOPROXY := direct
 SRCPATH     := $(shell pwd)
-ARCH        := $(shell ./scripts/archtype.sh)
-OS_TYPE     := $(shell ./scripts/ostype.sh)
+ARCH        := wasm
+OS_TYPE     := js
 S3_RELEASE_BUCKET = $$S3_RELEASE_BUCKET
 
 # If build number already set, use it - to ensure same build number across multiple platforms being built
@@ -201,6 +201,11 @@ rebuild_swagger: deps
 # develop
 
 build: buildsrc
+
+build_wasm: check-go-version crypto/libs/$(OS_TYPE)/$(ARCH)/lib/libsodium.a
+	mkdir -p "${GOCACHE}" && \
+	touch "${GOCACHE}"/file.txt && \
+	GOCACHE=$(GOCACHE) GOOS=js GOARCH=wasm go install $(GOTRIMPATH) -ldflags="$(GOLDFLAGS)" ./data/transactions/logic/...
 
 # We're making an empty file in the go-cache dir to
 # get around a bug in go build where it will fail

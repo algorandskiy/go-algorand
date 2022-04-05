@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with go-algorand.  If not, see <https://www.gnu.org/licenses/>.
 
+//+build !wasm
+
 // doberman will tell you when there's something wrong with the system
 package main
 

@@ -15,6 +15,7 @@
 // along with go-algorand.  If not, see <https://www.gnu.org/licenses/>.
 
 // +build !windows
+// +build !wasm
 
 package util
 
