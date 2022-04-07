@@ -34,14 +34,12 @@ func callEval() js.Func {
 			return "Invalid no of arguments passed"
 		}
 		inputProgram := args[0].String()
-		fmt.Printf("input %s\n", inputProgram)
 		opStream, err := logic.AssembleString(inputProgram)
 		if err != nil {
-			fmt.Printf("Unable to assemble input program to OpStream %s\n", err)
 			return err.Error()
 		}
+		var outputStr strings.Builder
 		if opStream.HasStatefulOps {
-			fmt.Printf("Cannot evaluate stateful programs yet.")
 			return "Cannot evaluate stateful programs yet."
 		} else {
 			var txnGroup []transactions.SignedTxn
@@ -55,11 +53,13 @@ func callEval() js.Func {
 				Trace:    &sb,
 				TxnGroup: signedTxnGroup,
 			}
-			_, err := logic.EvalSignature(0, evalParams)
+			success, err := logic.EvalSignature(0, evalParams)
 			if err != nil {
 				return err.Error()
 			}
-			return evalParams.Trace.String()
+			fmt.Fprintf(&outputStr, "Program success: %t\n", success)
+			fmt.Fprintf(&outputStr, evalParams.Trace.String())
+			return outputStr.String()
 		}
 	})
 	return evalFunc
