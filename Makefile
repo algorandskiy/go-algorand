@@ -205,7 +205,12 @@ build: buildsrc
 build_wasm: check-go-version crypto/libs/$(OS_TYPE)/$(ARCH)/lib/libsodium.a
 	mkdir -p "${GOCACHE}" && \
 	touch "${GOCACHE}"/file.txt && \
-	GOCACHE=$(GOCACHE) GOOS=js GOARCH=wasm go install $(GOTRIMPATH) -ldflags="$(GOLDFLAGS)" ./...
+	GOCACHE=$(GOCACHE) GOOS=js GOARCH=wasm $(GOPATH)/bin/go1.16 build $(GOTRIMPATH) -ldflags="$(GOLDFLAGS)" ./...
+
+build_wasm_test:
+	mkdir -p "${GOCACHE}" && \
+	touch "${GOCACHE}"/file.txt && \
+	GOCACHE=$(GOCACHE) GOOS=js GOARCH=wasm $(GOPATH)/bin/go1.16 build $(GOTRIMPATH) -ldflags="$(GOLDFLAGS)" -o $(HOME)/wasmdbg.wasm ./cmd/wasmdbg/main.go
 
 # We're making an empty file in the go-cache dir to
 # get around a bug in go build where it will fail
