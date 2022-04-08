@@ -205,10 +205,11 @@ build: buildsrc
 build_wasm_server:
 	mkdir -p "${GOCACHE}" && \
 	touch "${GOCACHE}"/file.txt && \
-	GOCACHE=$(GOCACHE) GOOS=js GOARCH=wasm $(GOPATH)/bin/go1.16 build $(GOTRIMPATH) -ldflags="$(GOLDFLAGS)" -o $(HOME)/wasmdbg.wasm ./cmd/wasmdbg/main.go  &&\
-	cp $(HOME)/wasmdbg.wasm $(SRCPATH)/cmd/wasmdbgserver/assets/
+	GOCACHE=$(GOCACHE) GOOS=js GOARCH=wasm go build $(GOTRIMPATH) -ldflags="$(GOLDFLAGS)" -o $(SRCPATH)/cmd/wasmdbgserver/assets/wasmdbg.wasm ./cmd/wasmdbg/main.go
 
-
+run_wasm_server: build_wasm_server
+	cd $(SRCPATH)/cmd/wasmdbgserver/cmd/server && \
+	go run ./
 # We're making an empty file in the go-cache dir to
 # get around a bug in go build where it will fail
 # to cache binaries from time to time on empty NFS

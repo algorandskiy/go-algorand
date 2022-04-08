@@ -304,6 +304,14 @@
 						this.mem.setInt32(sp + 16, (msec % 1000) * 1000000, true);
 					},
 
+					// func walltime1() (sec int64, nsec int32)
+					"runtime.walltime": (sp) => {
+						sp >>>= 0;
+						const msec = (new Date).getTime();
+						setInt64(sp + 8, msec / 1000);
+						this.mem.setInt32(sp + 16, (msec % 1000) * 1000000, true);
+					},
+
 					// func scheduleTimeoutEvent(delay int64) int32
 					"runtime.scheduleTimeoutEvent": (sp) => {
 						sp >>>= 0;
