@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
+	"strings"
+	"syscall/js"
+
 	"github.com/algorand/go-algorand/config"
 	"github.com/algorand/go-algorand/data/transactions"
 	"github.com/algorand/go-algorand/data/transactions/logic"
 	"github.com/algorand/go-algorand/protocol"
-	"strings"
-	"syscall/js"
 )
 
 /*
