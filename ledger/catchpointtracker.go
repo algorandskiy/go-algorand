@@ -562,6 +562,7 @@ func repackCatchpoint(header CatchpointFileHeader, dataPath string, outPath stri
 
 // Create a catchpoint (a label and possibly a file with db record).
 func (ct *catchpointTracker) createCatchpoint(accountsRound basics.Round, round basics.Round, dataInfo catchpointFirstStageInfo, blockHash crypto.Digest) error {
+	startTime := time.Now()
 	label := ledgercore.MakeCatchpointLabel(
 		round, blockHash, dataInfo.TrieBalancesHash, dataInfo.Totals).String()
 
@@ -628,6 +629,13 @@ func (ct *catchpointTracker) createCatchpoint(accountsRound basics.Round, round 
 	if err != nil {
 		return err
 	}
+
+	ct.log.With("accountsRound", accountsRound).
+		With("writingDuration", uint64(time.Since(startTime).Nanoseconds())).
+		With("accountsCount", dataInfo.TotalAccounts).
+		With("fileSize", fileInfo.Size()).
+		With("catchpointLabel", label).
+		Infof("Catchpoint file was created")
 
 	return nil
 }
