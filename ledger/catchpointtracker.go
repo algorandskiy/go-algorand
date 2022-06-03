@@ -28,6 +28,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime/pprof"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -668,7 +669,19 @@ func (ct *catchpointTracker) createCatchpoints(first basics.Round, last basics.R
 		}
 
 		if exists {
-			err := ct.createCatchpoint(accountsRound, round, dataInfo, blockHashes[round-first])
+			profpath := fmt.Sprintf("TestLedgerMemoryLeak-cpuprof-create-%d", round)
+			profout, err := os.Create(profpath)
+			if err != nil {
+				ct.log.Errorf("cpuprof error: %w", err)
+			}
+
+			pprof.StartCPUProfile(profout)
+
+			err = ct.createCatchpoint(accountsRound, round, dataInfo, blockHashes[round-first])
+
+			pprof.StopCPUProfile()
+			profout.Close()
+
 			if err != nil {
 				return err
 			}
@@ -709,7 +722,17 @@ func (ct *catchpointTracker) postCommitUnlocked(ctx context.Context, dcc *deferr
 			// block any new accounts that from being written. generateCatchpointData()
 			// expects that the accounts data would not be modified in the background during
 			// it's execution.
+
 			var err error
+
+			profpath := fmt.Sprintf("TestLedgerMemoryLeak-cpuprof-generate-%d", dcc.newBase)
+			profout, err := os.Create(profpath)
+			if err != nil {
+				ct.log.Errorf("cpuprof error: %w", err)
+			}
+
+			pprof.StartCPUProfile(profout)
+
 			totalAccounts, totalChunks, biggestChunkLen, err = ct.generateCatchpointData(
 				ctx, dcc.newBase, dcc.updatingBalancesDuration)
 			atomic.StoreInt32(dcc.catchpointDataWriting, 0)
@@ -718,6 +741,8 @@ func (ct *catchpointTracker) postCommitUnlocked(ctx context.Context, dcc *deferr
 					"error creating a catchpoint data file dcc.newBase: %d err: %v",
 					dcc.newBase, err)
 			}
+			pprof.StopCPUProfile()
+			profout.Close()
 		}
 
 		err := ct.recordFirstStageInfo(dcc.newBase, totalAccounts, totalChunks, biggestChunkLen)

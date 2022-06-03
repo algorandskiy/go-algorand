@@ -1071,8 +1071,10 @@ func BenchmarkWriteCatchpointStagingBalances(b *testing.B) {
 
 // upsert updates existing or inserts a new entry
 func (a *compactResourcesDeltas) upsert(delta resourceDelta) {
-	if idx, exist := a.cache[accountCreatable{address: delta.address, index: delta.oldResource.aidx}]; exist {
-		a.deltas[idx] = delta
+	if resources, exist := a.cache[delta.address]; exist {
+		if idx, exist := resources[delta.oldResource.aidx]; exist {
+			a.deltas[idx] = delta
+		}
 		return
 	}
 	a.insert(delta)
@@ -1184,8 +1186,10 @@ func TestCompactAccountDeltas(t *testing.T) {
 
 // upsertOld updates existing or inserts a new partial entry with only old field filled
 func (a *compactResourcesDeltas) upsertOld(addr basics.Address, old persistedResourcesData) {
-	if idx, exist := a.cache[accountCreatable{address: addr, index: old.aidx}]; exist {
-		a.deltas[idx].oldResource = old
+	if resources, exist := a.cache[addr]; exist {
+		if idx, exist := resources[old.aidx]; exist {
+			a.deltas[idx].oldResource = old
+		}
 		return
 	}
 	idx := a.insert(resourceDelta{oldResource: old, address: addr})
@@ -2679,14 +2683,18 @@ func compactResourcesDeltasPermutations(a *require.Assertions, crd compactResour
 	// remap existing deltas to permutated one
 	for _, perm := range perms {
 		new := compactResourcesDeltas{}
-		new.cache = make(map[accountCreatable]int, size)
+		new.cache = make(map[basics.Address]map[basics.CreatableIndex]int, len(crd.cache))
 		new.deltas = make([]resourceDelta, size)
 		new.misses = make([]int, len(crd.misses))
 		for i, k := range perm {
 			new.deltas[k] = crd.deltas[i]
 		}
-		for key, i := range crd.cache {
-			new.cache[key] = perm[i]
+		for addr, resources := range crd.cache {
+			newRes := make(map[basics.CreatableIndex]int, len(resources))
+			for cidx, i := range resources {
+				newRes[cidx] = perm[i]
+			}
+			new.cache[addr] = newRes
 		}
 		copy(new.misses, crd.misses)
 		result = append(result, new)
@@ -2694,10 +2702,13 @@ func compactResourcesDeltasPermutations(a *require.Assertions, crd compactResour
 
 	// ensure remapping
 	for _, new := range result {
-		for key, idx := range new.cache {
-			d1 := crd.getByIdx(crd.cache[key])
-			d2 := new.getByIdx(idx)
-			a.Equal(d1, d2)
+		for addr, resources := range new.cache {
+			for cidx, idx := range resources {
+				crdIdx := crd.cache[addr][cidx]
+				d1 := crd.getByIdx(crdIdx)
+				d2 := new.getByIdx(idx)
+				a.Equal(d1, d2)
+			}
 		}
 	}
 

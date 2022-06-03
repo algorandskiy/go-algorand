@@ -276,7 +276,7 @@ type compactResourcesDeltas struct {
 	// actual account deltas
 	deltas []resourceDelta
 	// cache for addr to deltas index resolution
-	cache map[accountCreatable]int
+	cache map[basics.Address]map[basics.CreatableIndex]int
 	// misses holds indices of addresses for which old portion of delta needs to be loaded from disk
 	misses []int
 }
@@ -459,7 +459,7 @@ func makeCompactResourceDeltas(accountDeltas []ledgercore.AccountDeltas, baseRou
 
 	// the sizes of the maps here aren't super accurate, but would hopefully be a rough estimate for a reasonable starting point.
 	size := accountDeltas[0].Len()*len(accountDeltas) + 1
-	outResourcesDeltas.cache = make(map[accountCreatable]int, size)
+	outResourcesDeltas.cache = make(map[basics.Address]map[basics.CreatableIndex]int, size)
 	outResourcesDeltas.deltas = make([]resourceDelta, 0, size)
 	outResourcesDeltas.misses = make([]int, 0, size)
 
@@ -625,8 +625,12 @@ func (a *compactResourcesDeltas) resourcesLoadOld(tx *sql.Tx, knownAddresses map
 
 // get returns accountDelta by address and its position.
 // if no such entry -1 returned
-func (a *compactResourcesDeltas) get(addr basics.Address, index basics.CreatableIndex) (resourceDelta, int) {
-	idx, ok := a.cache[accountCreatable{address: addr, index: index}]
+func (a *compactResourcesDeltas) get(addr basics.Address, cidx basics.CreatableIndex) (resourceDelta, int) {
+	resources, ok := a.cache[addr]
+	if !ok {
+		return resourceDelta{}, -1
+	}
+	idx, ok := resources[cidx]
 	if !ok {
 		return resourceDelta{}, -1
 	}
@@ -651,9 +655,14 @@ func (a *compactResourcesDeltas) insert(delta resourceDelta) int {
 	a.deltas = append(a.deltas, delta)
 
 	if a.cache == nil {
-		a.cache = make(map[accountCreatable]int)
+		a.cache = make(map[basics.Address]map[basics.CreatableIndex]int)
 	}
-	a.cache[accountCreatable{address: delta.address, index: delta.oldResource.aidx}] = last
+	resources, ok := a.cache[delta.address]
+	if !ok {
+		resources = make(map[basics.CreatableIndex]int)
+	}
+	resources[delta.oldResource.aidx] = last
+	a.cache[delta.address] = resources
 	return last
 }
 
@@ -811,6 +820,10 @@ func (a *compactAccountDeltas) insertMissing(delta accountDelta) {
 // updateOld updates existing or inserts a new partial entry with only old field filled
 func (a *compactAccountDeltas) updateOld(idx int, old persistedAccountData) {
 	a.deltas[idx].oldAcct = old
+}
+
+func (a *compactAccountDeltas) numAddresses() int {
+	return len(a.cache)
 }
 
 func (c *onlineAccountDelta) append(acctDelta ledgercore.AccountData, deltaRound basics.Round) {
@@ -3438,7 +3451,7 @@ func accountsNewRoundImpl(
 
 	updatedAccounts = make([]persistedAccountData, updates.len())
 	updatedAccountIdx := 0
-	newAddressesRowIDs := make(map[basics.Address]int64)
+	newAddressesRowIDs := make(map[basics.Address]int64, updates.numAddresses())
 	for i := 0; i < updates.len(); i++ {
 		data := updates.getByIdx(i)
 		if data.oldAcct.rowid == 0 {
