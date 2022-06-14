@@ -152,18 +152,24 @@ func (ao *onlineAccounts) initializeFromDisk(l ledgerForTracker, lastBalancesRou
 	ao.log = l.trackerLog()
 
 	if ao.independentCommits {
+		var lastOnlineBalancesRound basics.Round
 		ao.log.Infoln("onlineAccounts: independent commits are on")
 		err = ao.dbs.Rdb.Atomic(func(ctx context.Context, tx *sql.Tx) (err error) {
-			lastBalancesRound, err = onlineAccountsRound(tx)
+			lastOnlineBalancesRound, err = onlineAccountsRound(tx)
 			return err
 		})
 		if err != nil {
 			return err
 		}
 
-		ao.cachedDBRoundOnline = lastBalancesRound
+		if lastOnlineBalancesRound == 0 && lastBalancesRound != 0 {
+			// catchpoint?
+			lastOnlineBalancesRound = lastBalancesRound
+		}
+		ao.cachedDBRoundOnline = lastOnlineBalancesRound
 	} else {
 		ao.log.Infof("onlineAccounts: independent commits are off: (%d, %d, %d)", ao.acctLookback, ao.cfg.MaxAcctLookback, ao.cfg.MaxOnlineAcctLookback)
+		ao.cachedDBRoundOnline = lastBalancesRound
 	}
 
 	err = ao.dbs.Wdb.Atomic(func(ctx context.Context, tx *sql.Tx) error {
