@@ -250,7 +250,8 @@ func (ao *onlineAccounts) newBlockImpl(blk bookkeeping.Block, delta ledgercore.S
 	}
 
 	if rnd != ao.latest()+1 {
-		ao.log.Panicf("onlineAccounts: newBlockImpl %d too far in the future, dbRound %d, deltas %d", rnd, ao.cachedDBRoundOnline, len(ao.deltas))
+		ao.log.Errorf("onlineAccounts: newBlockImpl %d too far in the future, dbRound %d, deltas %d", rnd, ao.cachedDBRoundOnline, len(ao.deltas))
+		return
 	}
 	ao.deltas = append(ao.deltas, delta.Accts)
 	ao.deltasAccum = append(ao.deltasAccum, delta.Accts.Len()+ao.deltasAccum[len(ao.deltasAccum)-1])
