@@ -444,6 +444,9 @@ func (l *Ledger) GetCreator(cidx basics.CreatableIndex, ctype basics.CreatableTy
 func (l *Ledger) CompactCertVoters(rnd basics.Round) (*ledgercore.VotersForRound, error) {
 	l.trackerMu.RLock()
 	defer l.trackerMu.RUnlock()
+	if l.acctsOnline.voters == nil {
+		return nil, nil
+	}
 	return l.acctsOnline.voters.getVoters(rnd)
 }
 

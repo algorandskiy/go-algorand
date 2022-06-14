@@ -324,11 +324,12 @@ func (tr *trackerRegistry) loadFromDisk(l ledgerForTracker) error {
 	}
 
 	// the votes have a special dependency on the account updates, so we need to initialize these separately.
-	tr.acctsOnline.voters = &votersTracker{}
-	err = tr.acctsOnline.voters.loadFromDisk(l, tr.acctsOnline)
-	if err != nil {
-		err = fmt.Errorf("voters tracker failed to loadFromDisk : %w", err)
-	}
+	// tr.acctsOnline.voters = &votersTracker{}
+	tr.acctsOnline.voters = nil
+	// err = tr.acctsOnline.voters.loadFromDisk(l, tr.acctsOnline)
+	// if err != nil {
+	// 	err = fmt.Errorf("voters tracker failed to loadFromDisk : %w", err)
+	// }
 	return err
 }
 
