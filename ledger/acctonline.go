@@ -398,8 +398,12 @@ func (ao *onlineAccounts) maxBalLookback() uint64 {
 
 // prepareCommit prepares data to write to the database a "chunk" of rounds, and update the cached dbRound accordingly.
 func (ao *onlineAccounts) prepareCommit(dcc *deferredCommitContext) error {
+	ao.accountsMu.RLock()
+	defer ao.accountsMu.RUnlock()
+
 	offset := dcc.offset
 	oldBase := dcc.oldBase
+	newBase := oldBase + basics.Round(offset)
 	if ao.independentCommits {
 		offset = dcc.onlineOffset
 		oldBase = dcc.onlineOldBase
@@ -417,10 +421,10 @@ func (ao *onlineAccounts) prepareCommit(dcc *deferredCommitContext) error {
 		dcc.onlineOffset = offset
 		dcc.onlineOldBase = ao.cachedDBRoundOnline
 		oldBase = dcc.onlineOldBase
-	}
 
-	ao.accountsMu.RLock()
-	defer ao.accountsMu.RUnlock()
+		dcc.onlineNewBase = oldBase + basics.Round(offset)
+		newBase = dcc.onlineNewBase
+	}
 
 	// fmt.Printf("prepareCommit o=%d of=%d d=%d\n", oldBase, offset, len(ao.deltas))
 	// create a copy of the deltas, round totals and protos for the range we're going to flush.
@@ -453,7 +457,6 @@ func (ao *onlineAccounts) prepareCommit(dcc *deferredCommitContext) error {
 	if err != nil {
 		return err
 	}
-	newBase := oldBase + basics.Round(offset)
 	end, err := ao.roundParamsOffset(newBase)
 	if err != nil {
 		return err
@@ -482,9 +485,11 @@ func (ao *onlineAccounts) prepareCommit(dcc *deferredCommitContext) error {
 func (ao *onlineAccounts) commitRound(ctx context.Context, tx *sql.Tx, dcc *deferredCommitContext) (err error) {
 	offset := dcc.offset
 	dbRound := dcc.oldBase
+	newBase := dcc.newBase
 	if ao.independentCommits {
 		offset = dcc.onlineOffset
 		dbRound = dcc.onlineOldBase
+		newBase = dcc.onlineNewBase
 	}
 
 	_, err = db.ResetTransactionWarnDeadline(ctx, tx, time.Now().Add(accountsUpdatePerRoundHighWatermark*time.Duration(offset)))
@@ -520,21 +525,21 @@ func (ao *onlineAccounts) commitRound(ctx context.Context, tx *sql.Tx, dcc *defe
 		return err
 	}
 
-	newBase := dbRound + basics.Round(offset)
 	err = updateOnlineAccountsRound(tx, newBase)
 
 	return
 }
 
 func (ao *onlineAccounts) postCommit(ctx context.Context, dcc *deferredCommitContext) {
+	ao.accountsMu.Lock()
+
 	offset := dcc.offset
-	newBase := dcc.oldBase + basics.Round(dcc.offset)
+	newBase := dcc.newBase
 	if ao.independentCommits {
 		offset = dcc.onlineOffset
-		newBase = dcc.onlineOldBase + basics.Round(dcc.onlineOffset)
+		newBase = dcc.onlineNewBase
 	}
 
-	ao.accountsMu.Lock()
 	// Drop reference counts to modified accounts, and evict them
 	// from in-memory cache when no references remain.
 	for i := 0; i < dcc.compactOnlineAccountDeltas.len(); i++ {
@@ -615,7 +620,7 @@ func (ao *onlineAccounts) onlineTotalsImpl(rnd basics.Round) (basics.MicroAlgos,
 
 	onlineRoundParams := ao.onlineRoundParamsData[offset]
 	if onlineRoundParams.Round != rnd {
-		ao.dump(0, false, true)
+		ao.dump(0, true, true)
 		return basics.MicroAlgos{}, fmt.Errorf("onlineTotalsImpl mismatch: %d != %d", onlineRoundParams.Round, rnd)
 	}
 	return basics.MicroAlgos{Raw: onlineRoundParams.OnlineSupply}, nil
@@ -945,7 +950,7 @@ func (ao *onlineAccounts) dump(dbRound basics.Round, deltas bool, totals bool) {
 	ao.accountsMu.RLock()
 	defer ao.accountsMu.RUnlock()
 
-	ao.log.Infof("dbRound: %d (cached: %d), deltas: %d, totals: %d", dbRound, ao.cachedDBRoundOnline, len(ao.deltas), len(ao.onlineRoundParamsData))
+	ao.log.Infof("onlineAccounts.dump: dbRound: %d (cached: %d), deltas: %d, totals: %d", dbRound, ao.cachedDBRoundOnline, len(ao.deltas), len(ao.onlineRoundParamsData))
 	if deltas {
 		buf := strings.Builder{}
 		for i := 0; i < len(ao.deltas); i++ {
@@ -959,16 +964,18 @@ func (ao *onlineAccounts) dump(dbRound basics.Round, deltas bool, totals bool) {
 		ao.log.Infof("deltas:\n%s", buf.String())
 	}
 	if totals {
+		errLogged := false
 		buf := strings.Builder{}
 		for i := 0; i < len(ao.onlineRoundParamsData); i++ {
 			rnd := ao.onlineRoundParamsData[i].Round
 			offset, err := ao.roundParamsOffset(rnd)
-			if err != nil {
-				buf.WriteString(fmt.Sprintf("err: %v", err))
+			if err != nil && (!errLogged || i == len(ao.onlineRoundParamsData)-1) {
+				buf.WriteString(fmt.Sprintf("err: %v\n", err))
+				errLogged = true
 			}
 			buf.WriteString(fmt.Sprintf("%d (%d): %d, %d\n", rnd, offset, ao.onlineRoundParamsData[i].OnlineSupply, ao.onlineRoundParamsData[i].RewardsLevel))
 		}
-		ao.log.Infof("totals:\n%s", buf.String())
+		ao.log.Infof("onlineAccounts.dump: totals:\n%s", buf.String())
 	}
 }
 

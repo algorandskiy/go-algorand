@@ -1693,7 +1693,7 @@ func (au *accountUpdates) dump(dbRound basics.Round, deltas bool, totals bool) {
 	au.accountsMu.RLock()
 	defer au.accountsMu.RUnlock()
 
-	au.log.Infof("dbRound: %d (cached: %d), deltas: %d, totals: %d", dbRound, au.cachedDBRound, len(au.deltas), len(au.roundTotals))
+	au.log.Infof("accountUpdates.dump: dbRound: %d (cached: %d), deltas: %d, totals: %d", dbRound, au.cachedDBRound, len(au.deltas), len(au.roundTotals))
 	if deltas {
 		buf := strings.Builder{}
 		for i := 0; i < len(au.deltas); i++ {
@@ -1711,7 +1711,7 @@ func (au *accountUpdates) dump(dbRound basics.Round, deltas bool, totals bool) {
 		for i := 0; i < len(au.roundTotals); i++ {
 			buf.WriteString(fmt.Sprintf("%d: %d, %d\n", au.cachedDBRound+basics.Round(i)+1, au.roundTotals[i].Online.Money.Raw, au.roundTotals[i].RewardsLevel))
 		}
-		au.log.Infof("totals:\n%s", buf.String())
+		au.log.Infof("accountUpdates.dump: totals:\n%s", buf.String())
 	}
 }
 

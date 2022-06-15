@@ -232,8 +232,9 @@ type deferredCommitRange struct {
 type deferredCommitContext struct {
 	deferredCommitRange
 
-	newBase   basics.Round
-	flushTime time.Time
+	newBase       basics.Round
+	onlineNewBase basics.Round
+	flushTime     time.Time
 
 	genesisProto config.ConsensusParams
 
