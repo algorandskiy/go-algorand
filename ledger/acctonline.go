@@ -23,6 +23,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -270,6 +271,7 @@ func (ao *onlineAccounts) newBlockImpl(blk bookkeeping.Block, delta ledgercore.S
 		OnlineSupply:    delta.Totals.Online.Money.Raw,
 		RewardsLevel:    delta.Totals.RewardsLevel,
 		CurrentProtocol: blk.CurrentProtocol,
+		Round:           rnd,
 	})
 
 	// calling prune would drop old entries from the base accounts.
@@ -457,6 +459,12 @@ func (ao *onlineAccounts) prepareCommit(dcc *deferredCommitContext) error {
 		return err
 	}
 	// write for rounds oldbase+1 up to and including newbase
+	if ao.onlineRoundParamsData[start+1].Round != oldBase+1 {
+		return fmt.Errorf("prepareCommit: range start mismatch: %d != %d", oldBase+1, ao.onlineRoundParamsData[start+1].Round)
+	}
+	if ao.onlineRoundParamsData[end].Round != newBase {
+		return fmt.Errorf("prepareCommit: range start mismatch: %d != %d", newBase, ao.onlineRoundParamsData[end].Round)
+	}
 	dcc.onlineRoundParams = ao.onlineRoundParamsData[start+1 : end+1]
 
 	maxOnlineLookback := basics.Round(ao.maxBalLookback())
@@ -606,6 +614,10 @@ func (ao *onlineAccounts) onlineTotalsImpl(rnd basics.Round) (basics.MicroAlgos,
 	}
 
 	onlineRoundParams := ao.onlineRoundParamsData[offset]
+	if onlineRoundParams.Round != rnd {
+		ao.dump(0, false, true)
+		return basics.MicroAlgos{}, fmt.Errorf("onlineTotalsImpl mismatch: %d != %d", onlineRoundParams.Round, rnd)
+	}
 	return basics.MicroAlgos{Raw: onlineRoundParams.OnlineSupply}, nil
 }
 
@@ -926,6 +938,37 @@ func (ao *onlineAccounts) onlineTop(rnd basics.Round, voteRnd basics.Round, n ui
 		}
 
 		return res, nil
+	}
+}
+
+func (ao *onlineAccounts) dump(dbRound basics.Round, deltas bool, totals bool) {
+	ao.accountsMu.RLock()
+	defer ao.accountsMu.RUnlock()
+
+	ao.log.Infof("dbRound: %d (cached: %d), deltas: %d, totals: %d", dbRound, ao.cachedDBRoundOnline, len(ao.deltas), len(ao.onlineRoundParamsData))
+	if deltas {
+		buf := strings.Builder{}
+		for i := 0; i < len(ao.deltas); i++ {
+			d := ao.deltas[i]
+			for j := 0; j < d.Len(); j++ {
+				addr, acct := d.GetByIdx(j)
+				buf.WriteString(
+					fmt.Sprintf("%d: %s %s: bal=%d base=%d\n", ao.cachedDBRoundOnline+basics.Round(i)+1, addr.String(), acct.Status.String(), acct.MicroAlgos.Raw, acct.RewardsBase))
+			}
+		}
+		ao.log.Infof("deltas:\n%s", buf.String())
+	}
+	if totals {
+		buf := strings.Builder{}
+		for i := 0; i < len(ao.onlineRoundParamsData); i++ {
+			rnd := ao.onlineRoundParamsData[i].Round
+			offset, err := ao.roundParamsOffset(rnd)
+			if err != nil {
+				buf.WriteString(fmt.Sprintf("err: %v", err))
+			}
+			buf.WriteString(fmt.Sprintf("%d (%d): %d, %d\n", rnd, offset, ao.onlineRoundParamsData[i].OnlineSupply, ao.onlineRoundParamsData[i].RewardsLevel))
+		}
+		ao.log.Infof("totals:\n%s", buf.String())
 	}
 }
 

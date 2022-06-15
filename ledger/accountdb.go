@@ -3001,6 +3001,11 @@ func accountsOnlineRoundParams(tx *sql.Tx) (onlineRoundParamsData []ledgercore.O
 			return nil, 0, err
 		}
 
+		if endRound != data.Round {
+			err = fmt.Errorf("accountsOnlineRoundParams: round mismatch col %d != %d data", endRound, data.Round)
+			return nil, endRound, err
+		}
+
 		onlineRoundParamsData = append(onlineRoundParamsData, data)
 	}
 	return

@@ -60,6 +60,7 @@ type OnlineRoundParamsData struct {
 	OnlineSupply    uint64                    `codec:"a"`
 	RewardsLevel    uint64                    `codec:"b"`
 	CurrentProtocol protocol.ConsensusVersion `codec:"c"`
+	Round           basics.Round              `codec:"r"`
 }
 
 func (at *AccountTotals) statusField(status basics.Status) *AlgoCount {

@@ -726,3 +726,10 @@ func (tr *trackerRegistry) blockHeaderCached(rnd basics.Round) (hdr bookkeeping.
 	}
 	return
 }
+
+func (tr *trackerRegistry) dump(deltas bool, totals bool) {
+	tr.mu.RLock()
+	defer tr.mu.RUnlock()
+	tr.accts.dump(tr.dbRound, deltas, totals)
+	tr.acctsOnline.dump(tr.dbRound, deltas, totals)
+}

@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io"
 	"sort"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -1686,6 +1687,32 @@ func (au *accountUpdates) vacuumDatabase(ctx context.Context) (err error) {
 
 	au.log.EventWithDetails(telemetryspec.Accounts, telemetryspec.BalancesAccountVacuumEvent, vacuumTelemetryStats)
 	return
+}
+
+func (au *accountUpdates) dump(dbRound basics.Round, deltas bool, totals bool) {
+	au.accountsMu.RLock()
+	defer au.accountsMu.RUnlock()
+
+	au.log.Infof("dbRound: %d (cached: %d), deltas: %d, totals: %d", dbRound, au.cachedDBRound, len(au.deltas), len(au.roundTotals))
+	if deltas {
+		buf := strings.Builder{}
+		for i := 0; i < len(au.deltas); i++ {
+			d := au.deltas[i]
+			for j := 0; j < d.Len(); j++ {
+				addr, acct := d.GetByIdx(j)
+				buf.WriteString(
+					fmt.Sprintf("%d: %s %s: bal=%d base=%d\n", au.cachedDBRound+basics.Round(i)+1, addr.String(), acct.Status.String(), acct.MicroAlgos.Raw, acct.RewardsBase))
+			}
+		}
+		au.log.Infof("deltas:\n%s", buf.String())
+	}
+	if totals {
+		buf := strings.Builder{}
+		for i := 0; i < len(au.roundTotals); i++ {
+			buf.WriteString(fmt.Sprintf("%d: %d, %d\n", au.cachedDBRound+basics.Round(i)+1, au.roundTotals[i].Online.Money.Raw, au.roundTotals[i].RewardsLevel))
+		}
+		au.log.Infof("totals:\n%s", buf.String())
+	}
 }
 
 var ledgerGetcatchpointCount = metrics.NewCounter("ledger_getcatchpoint_count", "calls")
