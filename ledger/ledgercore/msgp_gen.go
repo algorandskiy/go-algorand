@@ -790,8 +790,8 @@ func (z *AlgoCount) MsgIsZero() bool {
 func (z *OnlineRoundParamsData) MarshalMsg(b []byte) (o []byte) {
 	o = msgp.Require(b, z.Msgsize())
 	// omitempty: check for empty values
-	zb0001Len := uint32(3)
-	var zb0001Mask uint8 /* 4 bits */
+	zb0001Len := uint32(4)
+	var zb0001Mask uint8 /* 5 bits */
 	if (*z).OnlineSupply == 0 {
 		zb0001Len--
 		zb0001Mask |= 0x2
@@ -803,6 +803,10 @@ func (z *OnlineRoundParamsData) MarshalMsg(b []byte) (o []byte) {
 	if (*z).CurrentProtocol.MsgIsZero() {
 		zb0001Len--
 		zb0001Mask |= 0x8
+	}
+	if (*z).Round.MsgIsZero() {
+		zb0001Len--
+		zb0001Mask |= 0x10
 	}
 	// variable map header, size zb0001Len
 	o = append(o, 0x80|uint8(zb0001Len))
@@ -821,6 +825,11 @@ func (z *OnlineRoundParamsData) MarshalMsg(b []byte) (o []byte) {
 			// string "c"
 			o = append(o, 0xa1, 0x63)
 			o = (*z).CurrentProtocol.MarshalMsg(o)
+		}
+		if (zb0001Mask & 0x10) == 0 { // if not empty
+			// string "r"
+			o = append(o, 0xa1, 0x72)
+			o = (*z).Round.MarshalMsg(o)
 		}
 	}
 	return
@@ -869,6 +878,14 @@ func (z *OnlineRoundParamsData) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			}
 		}
 		if zb0001 > 0 {
+			zb0001--
+			bts, err = (*z).Round.UnmarshalMsg(bts)
+			if err != nil {
+				err = msgp.WrapError(err, "struct-from-array", "Round")
+				return
+			}
+		}
+		if zb0001 > 0 {
 			err = msgp.ErrTooManyArrayFields(zb0001)
 			if err != nil {
 				err = msgp.WrapError(err, "struct-from-array")
@@ -909,6 +926,12 @@ func (z *OnlineRoundParamsData) UnmarshalMsg(bts []byte) (o []byte, err error) {
 					err = msgp.WrapError(err, "CurrentProtocol")
 					return
 				}
+			case "r":
+				bts, err = (*z).Round.UnmarshalMsg(bts)
+				if err != nil {
+					err = msgp.WrapError(err, "Round")
+					return
+				}
 			default:
 				err = msgp.ErrNoField(string(field))
 				if err != nil {
@@ -929,11 +952,11 @@ func (_ *OnlineRoundParamsData) CanUnmarshalMsg(z interface{}) bool {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z *OnlineRoundParamsData) Msgsize() (s int) {
-	s = 1 + 2 + msgp.Uint64Size + 2 + msgp.Uint64Size + 2 + (*z).CurrentProtocol.Msgsize()
+	s = 1 + 2 + msgp.Uint64Size + 2 + msgp.Uint64Size + 2 + (*z).CurrentProtocol.Msgsize() + 2 + (*z).Round.Msgsize()
 	return
 }
 
 // MsgIsZero returns whether this is a zero value
 func (z *OnlineRoundParamsData) MsgIsZero() bool {
-	return ((*z).OnlineSupply == 0) && ((*z).RewardsLevel == 0) && ((*z).CurrentProtocol.MsgIsZero())
+	return ((*z).OnlineSupply == 0) && ((*z).RewardsLevel == 0) && ((*z).CurrentProtocol.MsgIsZero()) && ((*z).Round.MsgIsZero())
 }
