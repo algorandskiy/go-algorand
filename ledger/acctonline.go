@@ -58,6 +58,18 @@ type cachedOnlineAccount struct {
 	updRound basics.Round
 }
 
+// RoundHistoryOffsetError is an error for when requested round is behind earliest history round
+type RoundHistoryOffsetError struct {
+	round       basics.Round
+	dbRound     basics.Round
+	startRound  basics.Round
+	historySize int
+}
+
+func (e *RoundHistoryOffsetError) Error() string {
+	return fmt.Sprintf("round %d before history start round %d (dbRound=%d, history=%d)", e.round, e.startRound, e.dbRound, e.historySize)
+}
+
 // onlineAccounts tracks history of online accounts
 type onlineAccounts struct {
 	// Connection to the database.
@@ -668,9 +680,11 @@ func (ao *onlineAccounts) roundParamsOffset(rnd basics.Round) (offset uint64, er
 	// the invariant is that the last element of ao.onlineRoundParamsData is for round ao.latest()
 	startRound := ao.latest() + 1 - basics.Round(len(ao.onlineRoundParamsData))
 	if rnd < startRound {
-		err = &RoundOffsetError{
-			round:   rnd,
-			dbRound: startRound,
+		err = &RoundHistoryOffsetError{
+			round:       rnd,
+			dbRound:     ao.cachedDBRoundOnline,
+			historySize: len(ao.onlineRoundParamsData),
+			startRound:  startRound,
 		}
 		return
 	}
