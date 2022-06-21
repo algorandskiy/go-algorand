@@ -184,6 +184,7 @@ func (ao *onlineAccounts) initializeFromDisk(l ledgerForTracker, lastBalancesRou
 		ao.log.Infof("onlineAccounts: independent commits are off: (%d, %d, %d)", ao.acctLookback, ao.cfg.MaxAcctLookback, ao.cfg.MaxOnlineAcctLookback)
 		ao.cachedDBRoundOnline = lastBalancesRound
 	}
+	ao.log.Infof("onlineAccounts.initializeFromDisk: dbRound=%d, balRound = %d", ao.cachedDBRoundOnline, lastBalancesRound)
 
 	err = ao.dbs.Wdb.Atomic(func(ctx context.Context, tx *sql.Tx) error {
 		var err0 error
@@ -352,7 +353,7 @@ func (ao *onlineAccounts) produceCommittingTask(committedRound basics.Round, dbR
 		return nil
 	}
 
-	// fmt.Printf("produceCommittingTask: o=%d, n=%d d=%d\n", dbRound, newBase, len(ao.deltas))
+	ao.log.Infof("produceCommittingTask: o=%d, n=%d d=%d", dbRound, newBase, len(ao.deltas))
 
 	if newBase > dbRound+basics.Round(len(ao.deltas)) {
 		ao.log.Panicf("produceCommittingTask: block %d too far in the future, lookback %d, dbRound %d (cached %d), deltas %d", committedRound, lookback, dbRound, ao.cachedDBRoundOnline, len(ao.deltas))
@@ -377,6 +378,7 @@ func (ao *onlineAccounts) produceCommittingTask(committedRound basics.Round, dbR
 		dcr.oldBase = dbRound
 	}
 	dcr.lowestRound = lowestRound
+	ao.log.Infof("produceCommittingTask: onlineOffset %d onlineOldBase %d lr %d", dcr.onlineOffset, dcr.onlineOldBase, dcr.lowestRound)
 
 	return dcr
 }
@@ -436,6 +438,7 @@ func (ao *onlineAccounts) prepareCommit(dcc *deferredCommitContext) error {
 
 		dcc.onlineNewBase = oldBase + basics.Round(offset)
 		newBase = dcc.onlineNewBase
+		ao.log.Infof("prepareCommit: onlineOffset %d onlineOldBase %d newBase %d", dcc.onlineOffset, dcc.onlineOldBase, dcc.onlineNewBase)
 	}
 
 	// fmt.Printf("prepareCommit o=%d of=%d d=%d\n", oldBase, offset, len(ao.deltas))

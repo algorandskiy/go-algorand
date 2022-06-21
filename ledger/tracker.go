@@ -644,6 +644,7 @@ func (tr *trackerRegistry) initializeTrackerCaches(l ledgerForTracker, cfg confi
 			err = fmt.Errorf("trackerEvalVerified failed : %w", err)
 			return
 		}
+		tr.log.Infof("initializeTrackerCaches: adding block %d", blk.Round)
 		tr.newBlock(blk, delta)
 
 		// flush to disk if any of the following applies:
@@ -672,6 +673,7 @@ func (tr *trackerRegistry) initializeTrackerCaches(l ledgerForTracker, cfg confi
 			tr.scheduleCommit(blk.Round(), basics.Round(cfg.MaxAcctLookback))
 			// wait for the writing to complete.
 			tr.waitAccountsWriting()
+			tr.log.Infof("initializeTrackerCaches: flushed (%d %d)", blk.Round(), cfg.MaxAcctLookback)
 
 			func() {
 				tr.mu.RLock()
