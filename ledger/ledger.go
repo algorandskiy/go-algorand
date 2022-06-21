@@ -549,7 +549,7 @@ func (l *Ledger) LookupAgreement(rnd basics.Round, addr basics.Address) (basics.
 		}
 		if dataOld != data {
 			l.trackers.dump(true, false)
-			panic(fmt.Sprintf("LookupAgreement not equal: %v != %v", dataOld, data))
+			l.log.Panicf("LookupAgreement not equal: %v != %v", dataOld, data)
 		}
 	}
 
@@ -598,7 +598,7 @@ func (l *Ledger) OnlineTotals(rnd basics.Round) (basics.MicroAlgos, error) {
 
 		if totalsOld != totals {
 			l.trackers.dump(false, true)
-			panic(fmt.Sprintf("OnlineTotals not equal: %v != %v", totalsOld, totals))
+			l.log.Panicf("OnlineTotals not equal: %v != %v", totalsOld, totals)
 		}
 	}
 
