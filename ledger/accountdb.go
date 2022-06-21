@@ -2224,6 +2224,7 @@ func performOnlineRoundParamsTailMigration(ctx context.Context, tx *sql.Tx, bloc
 			OnlineSupply:    totals.Online.Money.Raw,
 			RewardsLevel:    totals.RewardsLevel,
 			CurrentProtocol: currentProto,
+			Round:           rnd,
 		},
 	}
 	return accountsPutOnlineRoundParams(tx, onlineRoundParams, rnd)
