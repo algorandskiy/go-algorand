@@ -43,3 +43,9 @@ tmp/go-cache
 data/transactions/logic/*.md
 
 *.pem
+
+betanet*
+testnet*
+mainnet*
+mem-*
+test-mem-*
