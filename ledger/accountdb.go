@@ -849,9 +849,16 @@ func makeCompactOnlineAccountDeltas(accountDeltas []ledgercore.AccountDeltas, ba
 		deltaRound++
 		for i := 0; i < roundDelta.Len(); i++ {
 			addr, acctDelta := roundDelta.GetByIdx(i)
+			var dump bool
+			if addr.String() == "JSG6NK7DKSHHXABXCJCBZ6PUD54PG2T7LJFSFXRNMVBWBPGRRHRXLRN6UQ" {
+				dump = true
+			}
 			if prev, idx := outAccountDeltas.get(addr); idx != -1 {
 				updEntry := prev
 				updEntry.nOnlineAcctDeltas++
+				if dump {
+					logging.Base().Warnf("JSG6N compact appending at round %d %v", deltaRound, acctDelta.VotingData)
+				}
 				updEntry.append(acctDelta, deltaRound)
 				outAccountDeltas.update(idx, updEntry)
 			} else {
@@ -860,14 +867,23 @@ func makeCompactOnlineAccountDeltas(accountDeltas []ledgercore.AccountDeltas, ba
 					nOnlineAcctDeltas: 1,
 					address:           addr,
 				}
+				if dump {
+					logging.Base().Warnf("JSG6N compact new entry at round %d %v", deltaRound, acctDelta.VotingData)
+				}
 				newEntry.append(acctDelta, deltaRound)
 				// the cache always has the most recent data,
 				// including deleted/expired online accounts with empty voting data
 				if baseOnlineAccountData, has := baseOnlineAccounts.read(addr); has {
 					newEntry.oldAcct = baseOnlineAccountData
 					outAccountDeltas.insert(newEntry)
+					if dump {
+						logging.Base().Warnf("JSG6N compact has cached at round %d %v", deltaRound, baseOnlineAccountData)
+					}
 				} else {
 					outAccountDeltas.insertMissing(newEntry)
+					if dump {
+						logging.Base().Warnf("JSG6N compact added missing at round %d %v", deltaRound, newEntry)
+					}
 				}
 			}
 		}
@@ -3598,6 +3614,11 @@ func onlineAccountsNewRoundImpl(
 	for i := 0; i < updates.len(); i++ {
 		data := updates.getByIdx(i)
 		prevAcct := data.oldAcct
+		var dump bool
+		if data.address.String() == "JSG6NK7DKSHHXABXCJCBZ6PUD54PG2T7LJFSFXRNMVBWBPGRRHRXLRN6UQ" {
+			logging.Base().Warnf("newBase = %d, JSG6N %d\n", lastUpdateRound, len(data.newAcct))
+			dump = true
+		}
 		for j := 0; j < len(data.newAcct); j++ {
 			newAcct := data.newAcct[j]
 			updRound := data.updRound[j]
@@ -3607,6 +3628,9 @@ func onlineAccountsNewRoundImpl(
 				if newAcct.IsEmpty() {
 					// IsEmpty means we don't have a previous value.
 					// if we didn't had it before, and we don't have anything now, just skip it.
+					if dump {
+						logging.Base().Warnf("JSG6N new empty: updRound %d", updRound)
+					}
 				} else {
 					if newStatus == basics.Online {
 						if newAcct.IsVotingEmpty() {
@@ -3626,6 +3650,9 @@ func onlineAccountsNewRoundImpl(
 								}
 								updatedAccounts = append(updatedAccounts, updated)
 								prevAcct = updated
+							}
+							if dump {
+								logging.Base().Warnf("JSG6N set online: rowid %d, updRound %d", rowid, updRound)
 							}
 						}
 					} else if !newAcct.IsVotingEmpty() {
@@ -3653,6 +3680,9 @@ func onlineAccountsNewRoundImpl(
 							updatedAccounts = append(updatedAccounts, updated)
 							prevAcct = updated
 						}
+						if dump {
+							logging.Base().Warnf("JSG6N set offline: rowid %d, updRound %d", rowid, updRound)
+						}
 					}
 				} else {
 					if prevAcct.accountData != newAcct {
@@ -3671,6 +3701,12 @@ func onlineAccountsNewRoundImpl(
 							updatedAccounts = append(updatedAccounts, updated)
 							prevAcct = updated
 						}
+						if dump {
+							logging.Base().Warnf("JSG6N update: rowid %d, updRound %d", rowid, updRound)
+						}
+					}
+					if dump {
+						logging.Base().Warnf("JSG6N prev == newAcct: updRound %d, acct %v", updRound, newAcct)
 					}
 				}
 			}
@@ -3775,15 +3811,28 @@ func onlineAccountsDelete(tx *sql.Tx, forgetBefore basics.Round) (err error) {
 			if err != nil {
 				return
 			}
+			var addr basics.Address
+			copy(addr[:], addrbuf)
+			if addr.String() == "JSG6NK7DKSHHXABXCJCBZ6PUD54PG2T7LJFSFXRNMVBWBPGRRHRXLRN6UQ" {
+				fmt.Printf("JSG6N deletion loop forgetBefore: %d\n", forgetBefore)
+			}
 			if oad.IsVotingEmpty() {
 				// delete this and all subsequent
 				rowids = append(rowids, rowid.Int64)
+				if addr.String() == "JSG6NK7DKSHHXABXCJCBZ6PUD54PG2T7LJFSFXRNMVBWBPGRRHRXLRN6UQ" {
+					fmt.Printf("JSG6N del first rowid %d updRound %d\n", rowid.Int64, updRound.Int64)
+				}
 			}
 
 			// restart the loop
 			// if there are some subsequent entries, they will deleted on the next iteration
 			// if no subsequent entries, the loop will reset the state and the latest entry does not get deleted
 			continue
+		}
+		var addr basics.Address
+		copy(addr[:], addrbuf)
+		if addr.String() == "JSG6NK7DKSHHXABXCJCBZ6PUD54PG2T7LJFSFXRNMVBWBPGRRHRXLRN6UQ" {
+			fmt.Printf("JSG6N delete subseq rowid %d updRound %d\n", rowid.Int64, updRound.Int64)
 		}
 		// delete all subsequent entries
 		rowids = append(rowids, rowid.Int64)

@@ -461,6 +461,9 @@ func (ao *onlineAccounts) postCommit(ctx context.Context, dcc *deferredCommitCon
 	}
 
 	for _, persistedAcct := range dcc.updatedPersistedOnlineAccounts {
+		if persistedAcct.addr.String() == "JSG6NK7DKSHHXABXCJCBZ6PUD54PG2T7LJFSFXRNMVBWBPGRRHRXLRN6UQ" {
+			ao.log.Warnf("JSG6N writing base cache %d", persistedAcct.updRound, persistedAcct.accountData)
+		}
 		ao.baseOnlineAccounts.write(persistedAcct)
 		ao.onlineAccountsCache.writeFrontIfExist(
 			persistedAcct.addr,

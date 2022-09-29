@@ -340,6 +340,9 @@ func (s *Service) fetchAndWrite(r basics.Round, prevFetchCompleteChan chan bool,
 				if s.cfg.CatchupVerifyTransactionSignatures() || s.cfg.CatchupVerifyApplyData() {
 					var vb *ledgercore.ValidatedBlock
 					vb, err = s.ledger.Validate(s.ctx, *block, s.blockValidationPool)
+					// if block.Round() >= 22144001 {
+					// 	err = fmt.Errorf("stop catchup at %d", block.Round())
+					// }
 					if err != nil {
 						if s.ctx.Err() != nil {
 							// if the context expired, just exit.
@@ -357,6 +360,9 @@ func (s *Service) fetchAndWrite(r basics.Round, prevFetchCompleteChan chan bool,
 					err = s.ledger.AddValidatedBlock(*vb, *cert)
 				} else {
 					err = s.ledger.AddBlock(*block, *cert)
+					// if block.Round() >= 22144001 {
+					// 	err = fmt.Errorf("stop catchup at %d", block.Round())
+					// }
 				}
 
 				if err != nil {
