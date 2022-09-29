@@ -867,9 +867,6 @@ func makeCompactOnlineAccountDeltas(accountDeltas []ledgercore.AccountDeltas, ba
 					nOnlineAcctDeltas: 1,
 					address:           addr,
 				}
-				if dump {
-					logging.Base().Warnf("JSG6N compact new entry at round %d %v", deltaRound, acctDelta.VotingData)
-				}
 				newEntry.append(acctDelta, deltaRound)
 				// the cache always has the most recent data,
 				// including deleted/expired online accounts with empty voting data
@@ -877,12 +874,12 @@ func makeCompactOnlineAccountDeltas(accountDeltas []ledgercore.AccountDeltas, ba
 					newEntry.oldAcct = baseOnlineAccountData
 					outAccountDeltas.insert(newEntry)
 					if dump {
-						logging.Base().Warnf("JSG6N compact has cached at round %d %v", deltaRound, baseOnlineAccountData)
+						logging.Base().Warnf("JSG6N compact new entry has cached old at round %d %v", deltaRound, baseOnlineAccountData)
 					}
 				} else {
 					outAccountDeltas.insertMissing(newEntry)
 					if dump {
-						logging.Base().Warnf("JSG6N compact added missing at round %d %v", deltaRound, newEntry)
+						logging.Base().Warnf("JSG6N compact new entry added missing at round %d", deltaRound)
 					}
 				}
 			}
@@ -3704,9 +3701,10 @@ func onlineAccountsNewRoundImpl(
 						if dump {
 							logging.Base().Warnf("JSG6N update: rowid %d, updRound %d", rowid, updRound)
 						}
-					}
-					if dump {
-						logging.Base().Warnf("JSG6N prev == newAcct: updRound %d, acct %v", updRound, newAcct)
+					} else {
+						if dump {
+							logging.Base().Warnf("JSG6N prev == newAcct: updRound %d, acct %v", updRound, newAcct)
+						}
 					}
 				}
 			}
@@ -3797,6 +3795,8 @@ func onlineAccountsDelete(tx *sql.Tx, forgetBefore basics.Round) (err error) {
 			return
 		}
 
+		var addr basics.Address
+		copy(addr[:], addrbuf)
 		if !bytes.Equal(addrbuf, prevAddr) {
 			// new address
 			// if the first (latest) entry is
@@ -3811,8 +3811,6 @@ func onlineAccountsDelete(tx *sql.Tx, forgetBefore basics.Round) (err error) {
 			if err != nil {
 				return
 			}
-			var addr basics.Address
-			copy(addr[:], addrbuf)
 			if addr.String() == "JSG6NK7DKSHHXABXCJCBZ6PUD54PG2T7LJFSFXRNMVBWBPGRRHRXLRN6UQ" {
 				fmt.Printf("JSG6N deletion loop forgetBefore: %d\n", forgetBefore)
 			}
@@ -3829,8 +3827,6 @@ func onlineAccountsDelete(tx *sql.Tx, forgetBefore basics.Round) (err error) {
 			// if no subsequent entries, the loop will reset the state and the latest entry does not get deleted
 			continue
 		}
-		var addr basics.Address
-		copy(addr[:], addrbuf)
 		if addr.String() == "JSG6NK7DKSHHXABXCJCBZ6PUD54PG2T7LJFSFXRNMVBWBPGRRHRXLRN6UQ" {
 			fmt.Printf("JSG6N delete subseq rowid %d updRound %d\n", rowid.Int64, updRound.Int64)
 		}
