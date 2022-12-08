@@ -205,7 +205,7 @@ func makeRandomTransactions(num int) ([]transactions.SignedTxn, []byte) {
 
 func TestTxHandlerProcessIncomingTxn(t *testing.T) {
 	partitiontest.PartitionTest(t)
-	t.Parallel()
+	//t.Parallel()
 
 	const numTxns = 11
 	handler := makeTestTxHandlerOrphaned(1)
@@ -282,7 +282,7 @@ func ipow(x, n int) int {
 
 func TestPow(t *testing.T) {
 	partitiontest.PartitionTest(t)
-	t.Parallel()
+	//t.Parallel()
 
 	require.Equal(t, 1, ipow(10, 0))
 	require.Equal(t, 10, ipow(10, 1))
@@ -518,7 +518,7 @@ func BenchmarkTxHandlerIncDeDup(b *testing.B) {
 
 func TestTxHandlerProcessIncomingGroup(t *testing.T) {
 	partitiontest.PartitionTest(t)
-	t.Parallel()
+	//t.Parallel()
 
 	type T struct {
 		inputSize  int
@@ -556,7 +556,7 @@ func TestTxHandlerProcessIncomingGroup(t *testing.T) {
 
 func TestTxHandlerProcessIncomingCensoring(t *testing.T) {
 	partitiontest.PartitionTest(t)
-	t.Parallel()
+	//t.Parallel()
 
 	craftNonCanonical := func(t *testing.T, stxn *transactions.SignedTxn, blobStxn []byte) []byte {
 		// make non-canonical encoding and ensure it is not accepted
@@ -733,7 +733,7 @@ func makeTestTxHandler(dl *Ledger, cfg config.Local) *TxHandler {
 
 func TestTxHandlerProcessIncomingCache(t *testing.T) {
 	partitiontest.PartitionTest(t)
-	t.Parallel()
+	//t.Parallel()
 
 	handler := makeTestTxHandlerOrphaned(20)
 
@@ -809,7 +809,7 @@ func TestTxHandlerProcessIncomingCache(t *testing.T) {
 
 func TestTxHandlerProcessIncomingCacheRotation(t *testing.T) {
 	partitiontest.PartitionTest(t)
-	t.Parallel()
+	//t.Parallel()
 
 	stxns1, blob1 := makeRandomTransactions(1)
 	require.Equal(t, 1, len(stxns1))
@@ -883,7 +883,7 @@ func TestTxHandlerProcessIncomingCacheRotation(t *testing.T) {
 // TestTxHandlerProcessIncomingCacheBacklogDrop checks if dropped messages are also removed from caches
 func TestTxHandlerProcessIncomingCacheBacklogDrop(t *testing.T) {
 	partitiontest.PartitionTest(t)
-	t.Parallel()
+	//t.Parallel()
 
 	handler := makeTestTxHandlerOrphanedWithContext(context.Background(), 1, 20, 0)
 
@@ -1485,7 +1485,7 @@ func runHandlerBenchmarkWithBacklog(maxGroupSize, tps int, invalidRate float32, 
 
 func TestTxHandlerPostProcessError(t *testing.T) {
 	partitiontest.PartitionTest(t)
-	t.Parallel()
+	//t.Parallel()
 
 	collect := func() map[string]float64 {
 		// collect all specific error reason metrics except TxGroupErrorReasonNotWellFormed,
@@ -1542,7 +1542,7 @@ func TestTxHandlerPostProcessError(t *testing.T) {
 
 func TestTxHandlerPostProcessErrorWithVerify(t *testing.T) {
 	partitiontest.PartitionTest(t)
-	t.Parallel()
+	//t.Parallel()
 
 	txn := transactions.Transaction{}
 	stxn := transactions.SignedTxn{Txn: txn}
