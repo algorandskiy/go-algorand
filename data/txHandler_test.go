@@ -1501,6 +1501,18 @@ func BenchmarkHandleMsigTxnGroups(b *testing.B) {
 	}
 }
 
+// BenchmarkHandleTxnGroups sends signed transaction groups directly to the verifier
+func BenchmarkHandleLsigTxnGroups(b *testing.B) {
+	maxGroupSize := proto.MaxTxGroupSize / 2
+	invalidRates := []float32{0.5, 0.001}
+	for _, ivr := range invalidRates {
+		b.Run(fmt.Sprintf("lsig-inv_%.3f", ivr), func(b *testing.B) {
+			txGen := makeLsigGenerator(b, numBenchUsers, maxGroupSize, ivr)
+			runHandlerBenchmarkWithBacklog(b, txGen, 0, false)
+		})
+	}
+}
+
 // BenchmarkBacklogWorkerHandleTxns sends signed transactions to the verifier
 // using a backlog worker replica
 func BenchmarkHandleBLWTxns(b *testing.B) {
@@ -1535,7 +1547,7 @@ func BenchmarkHandleBLWTxnGroups(b *testing.B) {
 
 type txGenIf interface {
 	makeLedger(tb testing.TB, cfg config.Local, log logging.Logger, namePrefix string) *Ledger
-	createSignedTxGroups(tb testing.TB, txCount int) ([][]transactions.SignedTxn, map[uint64]interface{})
+	createSignedTxGroups(tb testing.TB, txgCount int) ([][]transactions.SignedTxn, map[uint64]interface{})
 }
 
 type txGenerator struct {
@@ -1555,6 +1567,10 @@ type sigGenerator struct {
 type msigGenerator struct {
 	txGenerator
 	msigSize int
+}
+
+type lsigGenerator struct {
+	txGenerator
 }
 
 func makeTxGenerator(tb testing.TB, numUsers, maxGroupSize int, invalidRate float32) *txGenerator {
@@ -1585,8 +1601,8 @@ func makeSigGenerator(tb testing.TB, numUsers, maxGroupSize int, invalidRate flo
 	}
 }
 
-func (g *sigGenerator) createSignedTxGroups(tb testing.TB, txCount int) ([][]transactions.SignedTxn, map[uint64]interface{}) {
-	return makeSignedTxnGroups(txCount, g.numUsers, g.maxGroupSize, g.invalidRate, g.addresses, g.secrets)
+func (g *sigGenerator) createSignedTxGroups(tb testing.TB, txgCount int) ([][]transactions.SignedTxn, map[uint64]interface{}) {
+	return makeSignedTxnGroups(txgCount, g.numUsers, g.maxGroupSize, g.invalidRate, g.addresses, g.secrets)
 }
 
 func makeMsigGenerator(tb testing.TB, numUsers, maxGroupSize int, invalidRate float32, msigSize int) *msigGenerator {
@@ -1596,11 +1612,38 @@ func makeMsigGenerator(tb testing.TB, numUsers, maxGroupSize int, invalidRate fl
 	}
 }
 
-func (g *msigGenerator) createSignedTxGroups(tb testing.TB, txCount int) ([][]transactions.SignedTxn, map[uint64]interface{}) {
-	txnGroups := getTransactionGroups(txCount, g.numUsers, g.maxGroupSize, g.addresses)
+func (g *msigGenerator) createSignedTxGroups(tb testing.TB, txgCount int) ([][]transactions.SignedTxn, map[uint64]interface{}) {
+	txnGroups := getTransactionGroups(txgCount, g.numUsers, g.maxGroupSize, g.addresses)
 	signedTransactionGroups, badTxnGroups, err := signMSigTransactionGroups(txnGroups, g.secrets, g.invalidRate, g.msigSize)
 	require.NoError(tb, err)
 	return signedTransactionGroups, badTxnGroups
+}
+
+func makeLsigGenerator(tb testing.TB, numUsers, maxGroupSize int, invalidRate float32) *lsigGenerator {
+	return &lsigGenerator{
+		txGenerator: *makeTxGenerator(tb, numUsers, maxGroupSize, invalidRate),
+	}
+}
+
+func (g *lsigGenerator) createSignedTxGroups(tb testing.TB, txgCount int) ([][]transactions.SignedTxn, map[uint64]interface{}) {
+	stxns := make([][]transactions.SignedTxn, txgCount)
+	badTxnGroups := make(map[uint64]interface{})
+	for i := 0; i < txgCount; i++ {
+		txns := txntest.CreateTinyManTxGroup(tb, true)
+		stxns[i], _ = txntest.CreateTinyManSignedTxGroup(tb, txns)
+
+		// randomly make bad signatures
+		if rand.Float32() < g.invalidRate {
+			tinGrp := rand.Intn(len(txns))
+			if stxns[i][tinGrp].Sig != (crypto.Signature{}) {
+				stxns[i][tinGrp].Sig[0] = stxns[i][tinGrp].Sig[0] + 1
+			} else {
+				stxns[i][tinGrp].Lsig.Logic[0] = 255
+			}
+			badTxnGroups[uint64(i)] = struct{}{}
+		}
+	}
+	return stxns, badTxnGroups
 }
 
 // runHandlerBenchmarkWithBacklog benchmarks the number of transactions verified or dropped
@@ -1684,17 +1727,17 @@ func runHandlerBenchmarkWithBacklog(b *testing.B, txGen txGenIf, tps int, useBac
 	}
 
 	// Prepare 1000 transactions
-	txCount := 1000
-	if b.N < txCount {
-		txCount = b.N
+	txgCount := 1000
+	if b.N < txgCount {
+		txgCount = b.N
 	}
 	var signedTransactionGroups [][]transactions.SignedTxn
 	var badTxnGroups map[uint64]interface{}
 
-	signedTransactionGroups, badTxnGroups = txGen.createSignedTxGroups(b, txCount)
+	signedTransactionGroups, badTxnGroups = txGen.createSignedTxGroups(b, txgCount)
 	var encStxns []network.IncomingMessage
 	if useBacklogWorker {
-		encStxns = make([]network.IncomingMessage, 0, txCount)
+		encStxns = make([]network.IncomingMessage, 0, txgCount)
 		for _, stxngrp := range signedTransactionGroups {
 			data := make([]byte, 0)
 			for _, stxn := range stxngrp {
