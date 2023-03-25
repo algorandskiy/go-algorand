@@ -55,7 +55,7 @@ func (tma *txnMerkleArray) Length() uint64 {
 	return uint64(len(tma.block.Payset))
 }
 
-// Get implements the merklearray.Array interface.
+// Marshal implements the merklearray.Array interface.
 func (tma *txnMerkleArray) Marshal(pos uint64) (crypto.Hashable, error) {
 	if pos >= uint64(len(tma.block.Payset)) {
 		return nil, fmt.Errorf("txnMerkleArray.Get(%d): out of bounds, payset size %d", pos, len(tma.block.Payset))
@@ -74,8 +74,7 @@ func (tma *txnMerkleArray) Marshal(pos uint64) (crypto.Hashable, error) {
 	return &elem, nil
 }
 
-func txnMerkleToRaw(txid [crypto.DigestSize]byte, stib [crypto.DigestSize]byte) (buf []byte) {
-	buf = make([]byte, 2*crypto.DigestSize)
+func txnMerkleToRaw(txid [crypto.DigestSize]byte, stib [crypto.DigestSize]byte) (buf [2 * crypto.DigestSize]byte) {
 	copy(buf[:], txid[:])
 	copy(buf[crypto.DigestSize:], stib[:])
 	return
@@ -89,7 +88,7 @@ type txnMerkleElem struct {
 	hashType crypto.HashType
 }
 
-func (tme *txnMerkleElem) RawLeaf() []byte {
+func (tme *txnMerkleElem) RawLeaf() [2 * crypto.DigestSize]byte {
 	if tme.hashType == crypto.Sha512_256 {
 		return txnMerkleToRaw(tme.txn.ID(), tme.stib.Hash())
 	}
@@ -98,10 +97,11 @@ func (tme *txnMerkleElem) RawLeaf() []byte {
 }
 
 // ToBeHashed implements the crypto.Hashable interface.
-func (tme *txnMerkleElem) ToBeHashed() (protocol.HashID, []byte) {
+func (tme *txnMerkleElem) ToBeHashed() []byte {
 	// The leaf contains two hashes: the transaction ID (hash of the
 	// transaction itself), and the hash of the entire SignedTxnInBlock.
-	return protocol.TxnMerkleLeaf, tme.RawLeaf()
+	rawLeaf := tme.RawLeaf()
+	return append([]byte(protocol.TxnMerkleLeaf), rawLeaf[:]...)
 }
 
 // Hash implements an optimized version of crypto.HashObj(tme).
