@@ -21,7 +21,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/algorand/go-algorand/ledger/eval"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -29,6 +28,8 @@ import (
 	"sort"
 	"testing"
 	"time"
+
+	"github.com/algorand/go-algorand/ledger/eval"
 
 	"github.com/stretchr/testify/require"
 
@@ -3384,4 +3385,82 @@ func TestLedgerSPTrackerAfterReplay(t *testing.T) {
 
 	a.Equal(1, len(l.spVerification.pendingDeleteContexts))
 	verifyStateProofVerificationTracking(t, &l.spVerification, firstStateProofRound, 1, proto.StateProofInterval, true, any)
+}
+
+// TestGetLastCatchpointLabel tests ledger.GetLastCatchpointLabel is returning the correct value.
+func TestEmpty(t *testing.T) {
+	partitiontest.PartitionTest(t)
+
+	genesisInitState, initKeys := ledgertesting.GenerateInitState(t, protocol.ConsensusCurrentVersion, 2)
+	const inMem = true
+	log := logging.TestingLog(t)
+	cfg := config.GetDefaultLocal()
+	cfg.MaxAcctLookback = 1
+	l, err := OpenLedger(log, t.Name(), inMem, genesisInitState, cfg)
+	require.NoError(t, err, "could not open ledger")
+	defer l.Close()
+
+	initAccounts := genesisInitState.Accounts
+	var addrList []basics.Address
+	for addr := range initAccounts {
+		if addr != testPoolAddr && addr != testSinkAddr {
+			addrList = append(addrList, addr)
+		}
+	}
+	sender := addrList[0]
+	proto := config.Consensus[protocol.ConsensusCurrentVersion]
+	receiver := ledgertesting.RandomAddress()
+	invalidAddr := ledgertesting.RandomAddress()
+
+	// castedDB := l.trackerDBs.(*trackerSQLStore)
+	db, err := db.OpenPair(t.Name()+".tracker.sqlite", inMem)
+	require.NoError(t, err)
+	_, err = db.Wdb.Handle.Exec("INSERT INTO accountbase (address, data) VALUES (?, ?)", invalidAddr[:], []byte{})
+	require.NoError(t, err)
+
+	for _, rcv := range []basics.Address{receiver, invalidAddr} {
+		stxns := make([]transactions.SignedTxn, 1)
+		latest := l.Latest()
+		for j := 0; j < 1; j++ {
+			feeMult := rand.Intn(5) + 1
+			amountMult := rand.Intn(1000) + 1
+			txHeader := transactions.Header{
+				Sender:      sender,
+				Fee:         basics.MicroAlgos{Raw: proto.MinTxnFee * uint64(feeMult)},
+				FirstValid:  latest + 1,
+				LastValid:   latest + 10,
+				GenesisID:   t.Name(),
+				GenesisHash: crypto.Hash([]byte(t.Name())),
+			}
+
+			correctPayFields := transactions.PaymentTxnFields{
+				Receiver: rcv,
+				Amount:   basics.MicroAlgos{Raw: uint64(100 * amountMult)},
+			}
+
+			tx := transactions.Transaction{
+				Type:             protocol.PaymentTx,
+				Header:           txHeader,
+				PaymentTxnFields: correctPayFields,
+			}
+
+			stxns[j] = sign(initKeys, tx)
+		}
+		err = l.addBlockTxns(t, genesisInitState.Accounts, stxns, transactions.ApplyData{})
+		require.NoError(t, err)
+	}
+	l.WaitForCommit(2)
+
+	addEmptyValidatedBlock(t, l, initAccounts)
+	addEmptyValidatedBlock(t, l, initAccounts)
+
+	commitRoundLookback(basics.Round(cfg.MaxAcctLookback), l)
+
+	d, _, _, err := l.LookupAccount(l.Latest(), receiver)
+	require.NoError(t, err)
+	require.Greater(t, d.MicroAlgos.Raw, uint64(0))
+
+	d, _, _, err = l.LookupAccount(l.Latest(), invalidAddr)
+	require.NoError(t, err)
+	require.Greater(t, d.MicroAlgos.Raw, uint64(0))
 }
