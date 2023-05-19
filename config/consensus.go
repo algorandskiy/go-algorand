@@ -1282,7 +1282,7 @@ func initConsensusProtocols() {
 	Consensus[protocol.ConsensusV37] = v37
 
 	// v36 can be upgraded to v37, with an update delay of 7 days ( see calculation above )
-	v36.ApprovedUpgrades[protocol.ConsensusV37] = 140000
+	v36.ApprovedUpgrades[protocol.ConsensusV37] = 100
 
 	v38 := v37
 	v38.ApprovedUpgrades = map[protocol.ConsensusVersion]uint64{}
@@ -1306,7 +1306,7 @@ func initConsensusProtocols() {
 	// v37 can be upgraded to v38, with an update delay of 12h:
 	// 10046 = (12 * 60 * 60 / 4.3)
 	// for the sake of future manual calculations, we'll round that down a bit :
-	v37.ApprovedUpgrades[protocol.ConsensusV38] = 10000
+	v37.ApprovedUpgrades[protocol.ConsensusV38] = 100
 
 	// ConsensusFuture is used to test features that are implemented
 	// but not yet released in a production protocol version.
