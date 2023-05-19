@@ -1268,6 +1268,12 @@ func initConsensusProtocols() {
 	v36.MaxAppBoxReferences = 8
 	v36.BytesPerBoxReference = 1024
 
+	v36.UpgradeVoteRounds = 100
+	v36.UpgradeThreshold = 90
+	v36.DefaultUpgradeWaitRounds = 100
+	v36.MinUpgradeWaitRounds = 100
+	v36.MaxUpgradeWaitRounds = 150
+
 	Consensus[protocol.ConsensusV36] = v36
 
 	v35.ApprovedUpgrades[protocol.ConsensusV36] = 140000
