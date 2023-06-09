@@ -544,9 +544,9 @@ func (wn *WebsocketNetwork) BroadcastArray(ctx context.Context, tags []protocol.
 	}
 
 	request := broadcastRequest{tags: tags, data: data, enqueueTime: time.Now(), ctx: ctx}
-	if except != nil {
-		request.except = except
-	}
+	// if except != nil {
+	// 	request.except = except
+	// }
 	if exceptOne != nil {
 		request.exceptOne = exceptOne.(*wsPeer)
 	}
@@ -1598,11 +1598,11 @@ func (wn *WebsocketNetwork) innerBroadcast(request broadcastRequest, prio bool, 
 		if peer == request.exceptOne {
 			continue
 		}
-		if request.except != nil {
-			if _, ok := request.except.Load(Peer(peer)); ok {
-				continue
-			}
-		}
+		// if request.except != nil {
+		// 	if _, ok := request.except.Load(Peer(peer)); ok {
+		// 		continue
+		// 	}
+		// }
 		var ok bool
 		if peer.pfProposalCompressionSupported() && len(dataWithCompression) > 0 {
 			// if this peer supports compressed proposals and compressed data batch is filled out, use it
