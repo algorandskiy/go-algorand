@@ -18,6 +18,7 @@ package data
 
 import (
 	"context"
+	"encoding/binary"
 	"fmt"
 	"math/rand"
 	"sync"
@@ -109,7 +110,7 @@ func TestTxHandlerDigestCache(t *testing.T) {
 }
 
 func (c *txSaltedCache) check(msg []byte) bool {
-	_, _, _, found := c.innerCheck(msg)
+	_, _, found := c.innerCheck(msg)
 	return found
 }
 
@@ -279,7 +280,7 @@ func TestTxHandlerSaltedCacheManual(t *testing.T) {
 
 // benchmark abstractions
 type cachePusher interface {
-	push()
+	push(seed int)
 }
 
 type cacheMaker interface {
@@ -288,12 +289,19 @@ type cacheMaker interface {
 
 type digestCacheMaker struct{}
 type saltedCacheMaker struct{}
+type saltedCacheDupMaker struct{}
 
 func (m digestCacheMaker) make(size int) cachePusher {
 	return &digestCachePusher{c: makeDigestCache(size)}
 }
 func (m saltedCacheMaker) make(size int) cachePusher {
 	scp := &saltedCachePusher{c: makeSaltedCache(size)}
+	scp.c.Start(context.Background(), 0)
+	return scp
+}
+
+func (m saltedCacheDupMaker) make(size int) cachePusher {
+	scp := &saltedCacheDupPusher{c: makeSaltedCache(size)}
 	scp.c.Start(context.Background(), 0)
 	return scp
 }
@@ -305,17 +313,29 @@ type saltedCachePusher struct {
 	c *txSaltedCache
 }
 
-func (p *digestCachePusher) push() {
+type saltedCacheDupPusher struct {
+	c *txSaltedCache
+}
+
+func (p *digestCachePusher) push(seed int) {
 	var d [crypto.DigestSize]byte
 	crypto.RandBytes(d[:])
 	h := crypto.Digest(blake2b.Sum256(d[:])) // digestCache does not hashes so calculate hash here
 	p.c.CheckAndPut(&h)
 }
 
-func (p *saltedCachePusher) push() {
+func (p *saltedCachePusher) push(seed int) {
 	var d [crypto.DigestSize]byte
 	crypto.RandBytes(d[:])
 	p.c.CheckAndPut(d[:], struct{}{}) // saltedCache hashes inside
+}
+
+func (p *saltedCacheDupPusher) push(seed int) {
+	var d [crypto.DigestSize]byte
+	var peer [8]byte
+	crypto.RandBytes(peer[:])
+	binary.BigEndian.PutUint64(d[:], uint64(seed))
+	p.c.CheckAndPut(d[:], peer) // saltedCache hashes inside
 }
 
 func BenchmarkDigestCaches(b *testing.B) {
@@ -327,18 +347,23 @@ func BenchmarkDigestCaches(b *testing.B) {
 
 	digestCacheMaker := digestCacheMaker{}
 	saltedCacheMaker := saltedCacheMaker{}
+	saltedCacheDupMaker := saltedCacheDupMaker{}
 	var benchmarks = []struct {
 		maker      cacheMaker
 		numThreads int
 	}{
 		{digestCacheMaker, 1},
 		{saltedCacheMaker, 1},
+		{saltedCacheDupMaker, 1},
 		{digestCacheMaker, 4},
 		{saltedCacheMaker, 4},
+		{saltedCacheDupMaker, 4},
 		{digestCacheMaker, 16},
 		{saltedCacheMaker, 16},
+		{saltedCacheDupMaker, 16},
 		{digestCacheMaker, 128},
 		{saltedCacheMaker, 128},
+		{saltedCacheDupMaker, 128},
 	}
 	for _, bench := range benchmarks {
 		b.Run(fmt.Sprintf("%T/threads=%d", bench.maker, bench.numThreads), func(b *testing.B) {
@@ -365,7 +390,7 @@ func benchmarkDigestCache(b *testing.B, m cacheMaker, numThreads int) {
 		go func() {
 			defer wg.Done()
 			for j := 0; j < numHashes; j++ {
-				p.push()
+				p.push(j)
 			}
 		}()
 	}
@@ -402,9 +427,8 @@ func TestTxHandlerSaltedCacheValues(t *testing.T) {
 		id int
 	}
 
-	d, v, p, found := cache.innerCheck([]byte{1})
+	d, v, found := cache.innerCheck([]byte{1})
 	require.False(t, found)
-	require.Nil(t, p)
 	require.Nil(t, v)
 	require.NotNil(t, d)
 	require.NotEmpty(t, d)
@@ -414,15 +438,11 @@ func TestTxHandlerSaltedCacheValues(t *testing.T) {
 	require.False(t, found)
 	require.NotNil(t, d1)
 	require.NotEmpty(t, d1)
-	d, v, p, found = cache.innerCheck([]byte{1})
+	d, v, found = cache.innerCheck([]byte{1})
 	require.True(t, found)
-	require.NotNil(t, p)
 	require.NotNil(t, v)
 	require.NotNil(t, d)
 	require.Equal(t, *d, *d1)
-	require.Equal(t, p, &cache.cur)
-	require.Equal(t, *p, cache.cur)
-	require.Len(t, *p, 1)
 	smapLenEqual(t, v, 1)
 	require.Equal(t, v, v1)
 	smapContains(t, v, snd{id: 1})
@@ -442,16 +462,13 @@ func TestTxHandlerSaltedCacheValues(t *testing.T) {
 	require.NotNil(t, dt)
 	require.NotEmpty(t, dt)
 	require.Nil(t, cache.prev)
-	d, v, p, found = cache.innerCheck([]byte{1})
+	d, v, found = cache.innerCheck([]byte{1})
 	require.True(t, found)
-	require.NotNil(t, p)
 	require.NotNil(t, v)
 	require.NotNil(t, d)
 	require.Equal(t, *d, *dt)
 	require.Equal(t, *d, *d1)
 	require.Equal(t, v, vt)
-	require.Equal(t, p, &cache.cur)
-	require.Len(t, *p, 1)
 	smapLenEqual(t, v, 2)
 	smapContains(t, v, snd{id: 1})
 	smapContains(t, v, snd{id: 2})
@@ -503,15 +520,12 @@ func TestTxHandlerSaltedCacheValues(t *testing.T) {
 	require.Len(t, cache.prev, 2)
 	smapLenEqual(t, cache.prev[*d1], 2)
 	smapLenEqual(t, cache.prev[*d2], 3)
-	d, v, p, found = cache.innerCheck([]byte{2})
+	d, v, found = cache.innerCheck([]byte{2})
 	require.True(t, found)
-	require.NotNil(t, p)
 	require.NotNil(t, v)
 	require.NotNil(t, d)
 	require.Equal(t, *d, *dt)
 	require.Equal(t, *d, *d2)
-	require.Equal(t, p, &cache.prev)
-	require.Len(t, *p, 2)
 	smapLenEqual(t, v, 3)
 	require.Equal(t, vt, v)
 	smapContains(t, v, snd{id: 3})
