@@ -23,7 +23,6 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
-	"github.com/algorand/go-algorand/internal/rapidgen"
 	"io"
 	"math/rand"
 	"net"
@@ -31,7 +30,6 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
-	"pgregory.net/rapid"
 	"regexp"
 	"runtime"
 	"sort"
@@ -40,6 +38,9 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/algorand/go-algorand/internal/rapidgen"
+	"pgregory.net/rapid"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -521,7 +522,7 @@ func TestWebsocketNetworkArray(t *testing.T) {
 
 	tags := []protocol.Tag{protocol.TxnTag, protocol.TxnTag, protocol.TxnTag}
 	data := [][]byte{[]byte("foo"), []byte("bar"), []byte("algo")}
-	netA.BroadcastArray(context.Background(), tags, data, false, nil)
+	netA.BroadcastArray(context.Background(), tags, data, false, nil, nil)
 
 	select {
 	case <-counterDone:
@@ -549,7 +550,7 @@ func TestWebsocketNetworkCancel(t *testing.T) {
 	cancel()
 
 	// try calling BroadcastArray
-	netA.BroadcastArray(ctx, tags, data, true, nil)
+	netA.BroadcastArray(ctx, tags, data, true, nil, nil)
 
 	select {
 	case <-counterDone:
