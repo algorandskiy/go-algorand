@@ -216,12 +216,13 @@ func (c *txSaltedCache) CheckAndPut(msg []byte, sender network.Peer) (d *crypto.
 	c.mu.RUnlock()
 	// fast read-only path: assuming most messages are duplicates, hash msg and check cache
 	// keep lock - it is needed for copying vals in defer
-	senderFound := false
+	// senderFound := false
 	if found {
-		if _, senderFound = vals.Load(sender); !senderFound {
-			vals.Store(sender, struct{}{})
-		}
 		return d, vals, true
+		// if _, senderFound = vals.Load(sender); !senderFound {
+		// 	vals.Store(sender, struct{}{})
+		// }
+		// return d, vals, true
 	}
 
 	// not found: acquire write lock to add this msg hash to cache
@@ -231,10 +232,12 @@ func (c *txSaltedCache) CheckAndPut(msg []byte, sender network.Peer) (d *crypto.
 		d, vals, found = c.innerCheck(msg)
 		if found {
 			c.mu.Unlock()
-			if _, senderFound = vals.Load(sender); !senderFound {
-				vals.Store(sender, struct{}{})
-			}
 			return d, vals, true
+			// c.mu.Unlock()
+			// if _, senderFound = vals.Load(sender); !senderFound {
+			// 	vals.Store(sender, struct{}{})
+			// }
+			// return d, vals, true
 		}
 	} else { // not found or found in cur page
 		// Do another check to see if another copy of the transaction won the race to write it to the cache
@@ -242,10 +245,11 @@ func (c *txSaltedCache) CheckAndPut(msg []byte, sender network.Peer) (d *crypto.
 		vals, found = c.cur[*d]
 		if found {
 			c.mu.Unlock()
-			if _, senderFound = vals.Load(sender); !senderFound {
-				vals.Store(sender, struct{}{})
-			}
 			return d, vals, true
+			// if _, senderFound = vals.Load(sender); !senderFound {
+			// 	vals.Store(sender, struct{}{})
+			// }
+			// return d, vals, true
 		}
 	}
 	defer c.mu.Unlock()
