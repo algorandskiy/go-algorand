@@ -19,6 +19,7 @@ package pools
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -264,9 +265,15 @@ func (pool *TransactionPool) PendingCount() int {
 // transactions pending in the pool
 func (pool *TransactionPool) pendingCountNoLock() int {
 	var count int
-	for _, txgroup := range pool.pendingTxGroups {
-		count += len(txgroup)
+	var txnIds strings.Builder
+	for i := range pool.pendingTxGroups {
+		count += len(pool.pendingTxGroups[i])
+		for j := range pool.pendingTxGroups[i] {
+			txnIds.WriteString(pool.pendingTxGroups[i][j].Txn.ID().String())
+			txnIds.WriteRune(' ')
+		}
 	}
+	pool.log.Infof("pending txns: %s", txnIds.String())
 	return count
 }
 

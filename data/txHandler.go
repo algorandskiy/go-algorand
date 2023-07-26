@@ -22,6 +22,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strings"
 	"sync"
 	"time"
 
@@ -481,7 +482,7 @@ func (handler *TxHandler) postProcessCheckedTxn(wi *txBacklogMsg) {
 	err := handler.txPool.Remember(verifiedTxGroup)
 	if err != nil {
 		handler.rememberReportErrors(err)
-		logging.Base().Debugf("could not remember tx: %v", err)
+		logging.Base().Infof("could not remember tx: %v", err)
 		return
 	}
 
@@ -492,6 +493,14 @@ func (handler *TxHandler) postProcessCheckedTxn(wi *txBacklogMsg) {
 	if err != nil {
 		logging.Base().Infof("unable to pin transaction: %v", err)
 	}
+
+	var txnIds strings.Builder
+	for i := range verifiedTxGroup {
+		txnIds.WriteString(verifiedTxGroup[i].Txn.ID().String())
+		txnIds.WriteRune(' ')
+	}
+
+	logging.Base().Infof("broadcasting txns: %v", txnIds.String())
 
 	// We reencode here instead of using rawmsg.Data to avoid broadcasting non-canonical encodings
 	handler.net.Relay(handler.ctx, protocol.TxnTag, reencode(verifiedTxGroup), false, wi.rawmsg.Sender)
