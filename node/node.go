@@ -522,17 +522,19 @@ func (node *AlgorandFullNode) broadcastSignedTxGroup(txgroup []transactions.Sign
 		return nil
 	}
 	var enc []byte
-	var txids []transactions.Txid
+	txids := make([]string, 0, len(txgroup))
+	senders := make([]string, 0, len(txgroup))
 	for _, tx := range txgroup {
 		enc = append(enc, protocol.Encode(&tx)...)
-		txids = append(txids, tx.ID())
+		txids = append(txids, tx.ID().String())
+		senders = append(senders, tx.Txn.Sender.String())
 	}
 	err = node.net.Broadcast(context.TODO(), protocol.TxnTag, enc, false, nil)
 	if err != nil {
 		node.log.Infof("failure broadcasting transaction to network: %v - transaction group was %+v", err, txgroup)
 		return err
 	}
-	node.log.Infof("Sent signed tx group with IDs %v", txids)
+	node.log.WithFields(logging.Fields{"senders": senders, "txns": txids}).Info("sent txgroup")
 	return nil
 }
 

@@ -264,9 +264,18 @@ func (pool *TransactionPool) PendingCount() int {
 // transactions pending in the pool
 func (pool *TransactionPool) pendingCountNoLock() int {
 	var count int
-	for _, txgroup := range pool.pendingTxGroups {
-		count += len(txgroup)
+	var txnIds []string
+	for i := range pool.pendingTxGroups {
+		count += len(pool.pendingTxGroups[i])
+		numItems := len(pool.pendingTxGroups[i])
+		if numItems >= 64 {
+			numItems = 64
+		}
+		for j := range pool.pendingTxGroups[i][:numItems] {
+			txnIds = append(txnIds, pool.pendingTxGroups[i][j].Txn.ID().String())
+		}
 	}
+	pool.log.WithFields(logging.Fields{"count": count, "txns": txnIds}).Info("pending txns")
 	return count
 }
 
