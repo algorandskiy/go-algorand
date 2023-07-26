@@ -133,7 +133,7 @@ type Local struct {
 	// If the filename ends with .gz or .bz2 it will be compressed.
 	//
 	// default: "node.archive.log" (no rotation, clobbers previous archive)
-	LogArchiveName string `version[4]:"node.archive.log"`
+	LogArchiveName string `version[4]:"node.archive-{{.Year}}-{{.Month}}-{{.Day}}T{{.Hour}}{{.Minute}}{{.Second}}.log"`
 
 	// LogArchiveMaxAge will be parsed by time.ParseDuration().
 	// Valid units are 's' seconds, 'm' minutes, 'h' hours
@@ -262,11 +262,11 @@ type Local struct {
 
 	// PeerConnectionsUpdateInterval defines the interval at which the peer connections information is being sent to the
 	// telemetry ( when enabled ). Defined in seconds.
-	PeerConnectionsUpdateInterval int `version[5]:"3600"`
+	PeerConnectionsUpdateInterval int `version[5]:"30"`
 
 	// HeartbeatUpdateInterval defines the interval at which the heartbeat information is being sent to the
 	// telemetry ( when enabled ). Defined in seconds. Minimum value is 60.
-	HeartbeatUpdateInterval int `version[27]:"600"`
+	HeartbeatUpdateInterval int `version[27]:"30"`
 
 	// EnableProfiler enables the go pprof endpoints, should be false if
 	// the algod api will be exposed to untrusted individuals
