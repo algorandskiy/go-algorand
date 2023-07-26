@@ -2,11 +2,11 @@
     "APIEndpoint": "{{APIEndpoint}}",
     "APIToken": "{{APIToken}}",
     "EnableBlockStats": false,
-    "EnableTelemetry": false,
+    "EnableTelemetry": true,
     "TelemetryURI": "{{TelemetryURI}}",
-    "EnableMetrics": false,
+    "EnableMetrics": true,
     "MetricsURI": "{{MetricsURI}}",
-    "ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 3, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true }",
+    "ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": \"30\", \"HeartbeatUpdateInterval\": \"30\" }",
     "AltConfigs": [
         {
             "APIEndpoint": "{{APIEndpoint}}",
@@ -16,7 +16,7 @@
             "TelemetryURI": "{{TelemetryURI}}",
             "EnableMetrics": true,
             "MetricsURI": "{{MetricsURI}}",
-            "ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 3, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true}",
+            "ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": \"30\", \"HeartbeatUpdateInterval\": \"30\" }",
             "FractionApply": 0.2
         }
     ]
