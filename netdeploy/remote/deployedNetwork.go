@@ -169,6 +169,20 @@ func replaceTokens(original string, buildConfig BuildConfig) (expanded string, e
 	expanded = strings.NewReplacer(tokenPairs...).Replace(original)
 
 	// To validate that there wasn't a typo in an intended token, look for obvious clues like "{{" or "}}"
+	allowedTokens := map[string]struct{}{
+		"{{.Year}}":      {},
+		"{{.Month}}":     {},
+		"{{.Day}}":       {},
+		"{{.Hour}}":      {},
+		"{{.Minute}}":    {},
+		"{{.Second}}":    {},
+		"{{.EndYear}}":   {},
+		"{{.EndMonth}}":  {},
+		"{{.EndDay}}":    {},
+		"{{.EndHour}}":   {},
+		"{{.EndMinute}}": {},
+		"{{.EndSecond}}": {},
+	}
 	openIndex := strings.Index(expanded, "{{")
 	closeIndex := strings.Index(expanded, "}}")
 	if openIndex >= 0 || closeIndex >= 0 {
@@ -178,7 +192,9 @@ func replaceTokens(original string, buildConfig BuildConfig) (expanded string, e
 		if closeIndex < 0 {
 			closeIndex = len(expanded) - 2
 		}
-		return "", ErrDeployedNetworkTemplate{expanded[openIndex : closeIndex+2]}
+		if _, ok := allowedTokens[expanded[openIndex:closeIndex+2]]; !ok {
+			return "", ErrDeployedNetworkTemplate{expanded[openIndex : closeIndex+2]}
+		}
 	}
 
 	return
