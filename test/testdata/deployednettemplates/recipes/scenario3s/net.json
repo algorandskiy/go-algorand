@@ -17,7 +17,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": true,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -38,7 +38,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": true,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -59,7 +59,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": true,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -80,7 +80,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": true,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -101,7 +101,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": true,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -122,7 +122,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": true,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -143,7 +143,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": true,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -164,7 +164,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": true,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -185,7 +185,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": true,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -206,7 +206,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": true,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -227,7 +227,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": true,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -248,7 +248,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": true,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -269,7 +269,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": true,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -290,7 +290,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": true,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -311,7 +311,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": true,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -332,7 +332,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": true,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -353,7 +353,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": true,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -374,7 +374,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": true,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -395,7 +395,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": true,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -416,7 +416,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": true,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -456,7 +456,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -495,8 +495,8 @@
 					"EnableMetrics": true,
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
-					"EnableBlockStats": true,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"EnableBlockStats": false,
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -536,7 +536,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": true,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -576,7 +576,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -616,7 +616,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -656,7 +656,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -696,7 +696,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": true,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -736,7 +736,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -776,7 +776,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -816,7 +816,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -855,8 +855,8 @@
 					"EnableMetrics": true,
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
-					"EnableBlockStats": true,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"EnableBlockStats": false,
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -895,8 +895,8 @@
 					"EnableMetrics": true,
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
-					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"EnableBlockStats": true,
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -936,7 +936,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -975,8 +975,8 @@
 					"EnableMetrics": true,
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
-					"EnableBlockStats": true,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"EnableBlockStats": false,
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -1016,7 +1016,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -1056,7 +1056,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -1096,7 +1096,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": true,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -1135,8 +1135,8 @@
 					"EnableMetrics": true,
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
-					"EnableBlockStats": true,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"EnableBlockStats": false,
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -1175,8 +1175,8 @@
 					"EnableMetrics": true,
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
-					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"EnableBlockStats": true,
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -1216,7 +1216,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -1256,7 +1256,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -1295,8 +1295,8 @@
 					"EnableMetrics": true,
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
-					"EnableBlockStats": true,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"EnableBlockStats": false,
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -1335,8 +1335,8 @@
 					"EnableMetrics": true,
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
-					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"EnableBlockStats": true,
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -1376,7 +1376,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -1416,7 +1416,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -1456,7 +1456,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -1496,7 +1496,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -1536,7 +1536,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -1576,7 +1576,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -1616,7 +1616,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -1656,7 +1656,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -1695,8 +1695,8 @@
 					"EnableMetrics": true,
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
-					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"EnableBlockStats": true,
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -1735,8 +1735,8 @@
 					"EnableMetrics": true,
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
-					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"EnableBlockStats": true,
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -1776,7 +1776,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -1815,8 +1815,8 @@
 					"EnableMetrics": true,
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
-					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"EnableBlockStats": true,
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -1855,8 +1855,8 @@
 					"EnableMetrics": true,
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
-					"EnableBlockStats": true,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"EnableBlockStats": false,
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -1896,7 +1896,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -1936,7 +1936,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -1976,7 +1976,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -2016,7 +2016,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": true,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -2056,7 +2056,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -2096,7 +2096,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -2136,7 +2136,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -2175,8 +2175,8 @@
 					"EnableMetrics": true,
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
-					"EnableBlockStats": true,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"EnableBlockStats": false,
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -2216,7 +2216,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -2255,8 +2255,8 @@
 					"EnableMetrics": true,
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
-					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"EnableBlockStats": true,
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -2296,7 +2296,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -2335,8 +2335,8 @@
 					"EnableMetrics": true,
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
-					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"EnableBlockStats": true,
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -2375,8 +2375,8 @@
 					"EnableMetrics": true,
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
-					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"EnableBlockStats": true,
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -2416,7 +2416,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -2456,7 +2456,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -2496,7 +2496,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -2535,8 +2535,8 @@
 					"EnableMetrics": true,
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
-					"EnableBlockStats": true,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"EnableBlockStats": false,
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -2575,8 +2575,8 @@
 					"EnableMetrics": true,
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
-					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"EnableBlockStats": true,
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -2616,7 +2616,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -2656,7 +2656,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -2695,8 +2695,8 @@
 					"EnableMetrics": true,
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
-					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"EnableBlockStats": true,
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -2735,8 +2735,8 @@
 					"EnableMetrics": true,
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
-					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"EnableBlockStats": true,
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -2776,7 +2776,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -2816,7 +2816,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -2855,8 +2855,8 @@
 					"EnableMetrics": true,
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
-					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"EnableBlockStats": true,
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -2895,8 +2895,8 @@
 					"EnableMetrics": true,
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
-					"EnableBlockStats": true,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"EnableBlockStats": false,
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -2936,7 +2936,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -2976,7 +2976,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -3016,7 +3016,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -3056,7 +3056,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -3096,7 +3096,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -3135,8 +3135,8 @@
 					"EnableMetrics": true,
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
-					"EnableBlockStats": true,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"EnableBlockStats": false,
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -3176,7 +3176,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": true,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -3216,7 +3216,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": true,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -3256,7 +3256,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -3296,7 +3296,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": true,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -3336,7 +3336,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -3375,8 +3375,8 @@
 					"EnableMetrics": true,
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
-					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"EnableBlockStats": true,
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -3415,8 +3415,8 @@
 					"EnableMetrics": true,
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
-					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"EnableBlockStats": true,
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -3456,7 +3456,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -3496,7 +3496,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -3536,7 +3536,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -3576,7 +3576,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -3616,7 +3616,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -3655,8 +3655,8 @@
 					"EnableMetrics": true,
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
-					"EnableBlockStats": true,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"EnableBlockStats": false,
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -3696,7 +3696,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -3736,7 +3736,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -3775,8 +3775,8 @@
 					"EnableMetrics": true,
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
-					"EnableBlockStats": true,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"EnableBlockStats": false,
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -3816,7 +3816,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -3856,7 +3856,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": true,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -3896,7 +3896,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -3935,8 +3935,8 @@
 					"EnableMetrics": true,
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
-					"EnableBlockStats": true,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"EnableBlockStats": false,
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -3975,8 +3975,8 @@
 					"EnableMetrics": true,
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
-					"EnableBlockStats": true,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"EnableBlockStats": false,
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -4016,7 +4016,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -4056,7 +4056,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -4096,7 +4096,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -4135,8 +4135,8 @@
 					"EnableMetrics": true,
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
-					"EnableBlockStats": true,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"EnableBlockStats": false,
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -4176,7 +4176,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -4216,7 +4216,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -4256,7 +4256,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -4295,8 +4295,8 @@
 					"EnableMetrics": true,
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
-					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"EnableBlockStats": true,
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -4335,8 +4335,8 @@
 					"EnableMetrics": true,
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
-					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"EnableBlockStats": true,
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -4375,8 +4375,8 @@
 					"EnableMetrics": true,
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
-					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"EnableBlockStats": true,
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -4416,7 +4416,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"CadaverSizeTarget\": 0, \"EnableAccountUpdatesStats\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30 }"
 				}
 			]
 		},
@@ -4439,7 +4439,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"BaseLoggerDebugLevel\": 4, \"CadaverSizeTarget\": 0, \"EnableProfiler\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30  }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"BaseLoggerDebugLevel\": 4, \"CadaverSizeTarget\": 0, \"EnableProfiler\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30  }"
 				}
 			]
 		},
@@ -4462,7 +4462,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"BaseLoggerDebugLevel\": 4, \"CadaverSizeTarget\": 0, \"EnableProfiler\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30  }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"BaseLoggerDebugLevel\": 4, \"CadaverSizeTarget\": 0, \"EnableProfiler\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30  }"
 				}
 			]
 		},
@@ -4485,7 +4485,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"BaseLoggerDebugLevel\": 4, \"CadaverSizeTarget\": 0, \"EnableProfiler\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30  }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"BaseLoggerDebugLevel\": 4, \"CadaverSizeTarget\": 0, \"EnableProfiler\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30  }"
 				}
 			]
 		},
@@ -4508,7 +4508,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"BaseLoggerDebugLevel\": 4, \"CadaverSizeTarget\": 0, \"EnableProfiler\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30  }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"BaseLoggerDebugLevel\": 4, \"CadaverSizeTarget\": 0, \"EnableProfiler\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30  }"
 				}
 			]
 		},
@@ -4531,7 +4531,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"BaseLoggerDebugLevel\": 4, \"CadaverSizeTarget\": 0, \"EnableProfiler\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30  }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"BaseLoggerDebugLevel\": 4, \"CadaverSizeTarget\": 0, \"EnableProfiler\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30  }"
 				}
 			]
 		},
@@ -4554,7 +4554,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"BaseLoggerDebugLevel\": 4, \"CadaverSizeTarget\": 0, \"EnableProfiler\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30  }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"BaseLoggerDebugLevel\": 4, \"CadaverSizeTarget\": 0, \"EnableProfiler\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30  }"
 				}
 			]
 		},
@@ -4577,7 +4577,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"BaseLoggerDebugLevel\": 4, \"CadaverSizeTarget\": 0, \"EnableProfiler\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30  }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"BaseLoggerDebugLevel\": 4, \"CadaverSizeTarget\": 0, \"EnableProfiler\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30  }"
 				}
 			]
 		},
@@ -4600,7 +4600,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"BaseLoggerDebugLevel\": 4, \"CadaverSizeTarget\": 0, \"EnableProfiler\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30  }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"BaseLoggerDebugLevel\": 4, \"CadaverSizeTarget\": 0, \"EnableProfiler\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30  }"
 				}
 			]
 		},
@@ -4623,7 +4623,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"BaseLoggerDebugLevel\": 4, \"CadaverSizeTarget\": 0, \"EnableProfiler\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30  }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"BaseLoggerDebugLevel\": 4, \"CadaverSizeTarget\": 0, \"EnableProfiler\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30  }"
 				}
 			]
 		},
@@ -4646,7 +4646,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"BaseLoggerDebugLevel\": 4, \"CadaverSizeTarget\": 0, \"EnableProfiler\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30  }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"BaseLoggerDebugLevel\": 4, \"CadaverSizeTarget\": 0, \"EnableProfiler\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30  }"
 				}
 			]
 		},
@@ -4669,7 +4669,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"BaseLoggerDebugLevel\": 4, \"CadaverSizeTarget\": 0, \"EnableProfiler\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30  }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"BaseLoggerDebugLevel\": 4, \"CadaverSizeTarget\": 0, \"EnableProfiler\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30  }"
 				}
 			]
 		},
@@ -4692,7 +4692,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"BaseLoggerDebugLevel\": 4, \"CadaverSizeTarget\": 0, \"EnableProfiler\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30  }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"BaseLoggerDebugLevel\": 4, \"CadaverSizeTarget\": 0, \"EnableProfiler\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30  }"
 				}
 			]
 		},
@@ -4715,7 +4715,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"BaseLoggerDebugLevel\": 4, \"CadaverSizeTarget\": 0, \"EnableProfiler\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30  }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"BaseLoggerDebugLevel\": 4, \"CadaverSizeTarget\": 0, \"EnableProfiler\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30  }"
 				}
 			]
 		},
@@ -4738,7 +4738,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"BaseLoggerDebugLevel\": 4, \"CadaverSizeTarget\": 0, \"EnableProfiler\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30  }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"BaseLoggerDebugLevel\": 4, \"CadaverSizeTarget\": 0, \"EnableProfiler\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30  }"
 				}
 			]
 		},
@@ -4761,7 +4761,7 @@
 					"MetricsURI": "{{MetricsURI}}",
 					"EnableService": false,
 					"EnableBlockStats": false,
-					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"BaseLoggerDebugLevel\": 4, \"CadaverSizeTarget\": 0, \"EnableProfiler\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30  }"
+					"ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"BaseLoggerDebugLevel\": 4, \"CadaverSizeTarget\": 0, \"EnableProfiler\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30  }"
 				}
 			]
 		}

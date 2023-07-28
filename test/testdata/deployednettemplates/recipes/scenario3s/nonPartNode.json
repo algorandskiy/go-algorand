@@ -4,5 +4,5 @@
     "MetricsURI": "{{MetricsURI}}",
     "EnableTelemetry": true,
     "EnableMetrics": true,
-    "ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"BaseLoggerDebugLevel\": 4, \"CadaverSizeTarget\": 0, \"EnableProfiler\": true, \"LogArchiveName\": \"node.log.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30  }"
+    "ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"BaseLoggerDebugLevel\": 4, \"CadaverSizeTarget\": 0, \"EnableProfiler\": true, \"LogArchiveName\": \"node.{{.Year}}{{.Month}}{{.Day}}_{{.Hour}}{{.Minute}}{{.Second}}-{{.EndYear}}{{.EndMonth}}{{.EndDay}}_{{.EndHour}}{{.EndMinute}}{{.EndSecond}}.log\", \"PeerConnectionsUpdateInterval\": 30, \"HeartbeatUpdateInterval\": 30  }"
 }
