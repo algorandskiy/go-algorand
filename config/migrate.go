@@ -29,7 +29,7 @@ import (
 // it's implemented in ./config/defaults_gen.go, and should be the only "consumer" of this exported variable
 var AutogenLocal = GetVersionedDefaultLocalConfig(getLatestConfigVersion())
 
-func migrate(cfg Local) (newCfg Local, err error) {
+func migrate(cfg Local, explicit map[string]interface{}) (newCfg Local, err error) {
 	newCfg = cfg
 	latestConfigVersion := getLatestConfigVersion()
 
@@ -71,12 +71,14 @@ func migrate(cfg Local) (newCfg Local, err error) {
 			}
 			// we have found a field that has a new value for this new version. See if the current configuration value for that
 			// field is identical to the default configuration for the field.
+			wasDefault := false
 			switch reflect.ValueOf(&defaultCurrentConfig).Elem().FieldByName(field.Name).Kind() {
 			case reflect.Bool:
 				if reflect.ValueOf(&newCfg).Elem().FieldByName(field.Name).Bool() == reflect.ValueOf(&defaultCurrentConfig).Elem().FieldByName(field.Name).Bool() {
 					// we're skipping the error checking here since we already tested that in the unit test.
 					boolVal, _ := strconv.ParseBool(nextVersionDefaultValue)
 					reflect.ValueOf(&newCfg).Elem().FieldByName(field.Name).SetBool(boolVal)
+					wasDefault = true
 				}
 			case reflect.Int32:
 				fallthrough
@@ -87,6 +89,7 @@ func migrate(cfg Local) (newCfg Local, err error) {
 					// we're skipping the error checking here since we already tested that in the unit test.
 					intVal, _ := strconv.ParseInt(nextVersionDefaultValue, 10, 64)
 					reflect.ValueOf(&newCfg).Elem().FieldByName(field.Name).SetInt(intVal)
+					wasDefault = true
 				}
 			case reflect.Uint32:
 				fallthrough
@@ -97,14 +100,22 @@ func migrate(cfg Local) (newCfg Local, err error) {
 					// we're skipping the error checking here since we already tested that in the unit test.
 					uintVal, _ := strconv.ParseUint(nextVersionDefaultValue, 10, 64)
 					reflect.ValueOf(&newCfg).Elem().FieldByName(field.Name).SetUint(uintVal)
+					wasDefault = true
 				}
 			case reflect.String:
 				if reflect.ValueOf(&newCfg).Elem().FieldByName(field.Name).String() == reflect.ValueOf(&defaultCurrentConfig).Elem().FieldByName(field.Name).String() {
 					// we're skipping the error checking here since we already tested that in the unit test.
 					reflect.ValueOf(&newCfg).Elem().FieldByName(field.Name).SetString(nextVersionDefaultValue)
+					wasDefault = true
 				}
 			default:
 				panic(fmt.Sprintf("unsupported data type (%s) encountered when reflecting on config.Local datatype %s", reflect.ValueOf(&defaultCurrentConfig).Elem().FieldByName(field.Name).Kind(), field.Name))
+			}
+			if explicit[field.Name] != nil && wasDefault && field.Name != "Version" {
+				value := explicit[field.Name]
+				val := reflect.ValueOf(value)
+				conv := val.Convert(field.Type)
+				reflect.ValueOf(&newCfg).Elem().FieldByName(field.Name).Set(conv)
 			}
 		}
 	}

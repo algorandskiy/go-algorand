@@ -23,6 +23,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"strings"
 
 	"github.com/algorand/go-algorand/protocol"
 	"github.com/algorand/go-algorand/util/codecs"
@@ -100,7 +101,7 @@ func LoadConfigFromDisk(custom string) (c Local, err error) {
 func loadConfigFromFile(configFile string) (c Local, err error) {
 	c = defaultLocal
 	c.Version = 0 // Reset to 0 so we get the version from the loaded file.
-	c, err = mergeConfigFromFile(configFile, c)
+	c, explicit, err := mergeConfigFromFile(configFile, c)
 	if err != nil {
 		return
 	}
@@ -108,7 +109,7 @@ func loadConfigFromFile(configFile string) (c Local, err error) {
 	// Migrate in case defaults were changed
 	// If a config file does not have version, it is assumed to be zero.
 	// All fields listed in migrate() might be changed if an actual value matches to default value from a previous version.
-	c, err = migrate(c)
+	c, err = migrate(c, explicit)
 	return
 }
 
@@ -117,18 +118,18 @@ func GetDefaultLocal() Local {
 	return defaultLocal
 }
 
-func mergeConfigFromDir(root string, source Local) (Local, error) {
+func mergeConfigFromDir(root string, source Local) (Local, map[string]interface{}, error) {
 	return mergeConfigFromFile(filepath.Join(root, ConfigFilename), source)
 }
 
-func mergeConfigFromFile(configpath string, source Local) (Local, error) {
+func mergeConfigFromFile(configpath string, source Local) (Local, map[string]interface{}, error) {
 	f, err := os.Open(configpath)
 	if err != nil {
-		return source, err
+		return source, nil, err
 	}
 	defer f.Close()
 
-	err = loadConfig(f, &source)
+	explicit, err := loadConfig(f, &source)
 
 	// For now, all relays (listening for incoming connections) are also Archival
 	// We can change this logic in the future, but it's currently the sanest default.
@@ -144,12 +145,36 @@ func mergeConfigFromFile(configpath string, source Local) (Local, error) {
 		}
 	}
 
-	return source, err
+	return source, explicit, err
 }
 
-func loadConfig(reader io.Reader, config *Local) error {
-	dec := json.NewDecoder(reader)
-	return dec.Decode(config)
+// loadConfig loads a config from a reader into config,
+// and returns a map of the fields that were explicitly set
+func loadConfig(reader io.Reader, config *Local) (map[string]interface{}, error) {
+	data, err := io.ReadAll(reader)
+	if err != nil {
+		return nil, err
+	}
+	// read into map to preserve explicitly set fields
+	r := strings.NewReader(string(data))
+	dec := json.NewDecoder(r)
+	existing := make(map[string]interface{})
+	err = dec.Decode(&existing)
+	if err != nil {
+		return nil, err
+	}
+	if len(existing) == 0 {
+		existing = nil
+	}
+
+	// read into struct to overwrite defaults
+	r = strings.NewReader(string(data))
+	dec = json.NewDecoder(r)
+	err = dec.Decode(config)
+	if err != nil {
+		return nil, err
+	}
+	return existing, nil
 }
 
 type phonebookBlackWhiteList struct {

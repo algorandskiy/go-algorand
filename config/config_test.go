@@ -49,7 +49,7 @@ func TestLocal_SaveThenLoad(t *testing.T) {
 
 	c1, err := loadWithoutDefaults(defaultConfig)
 	require.NoError(t, err)
-	c1, err = migrate(c1)
+	c1, err = migrate(c1, nil)
 	require.NoError(t, err)
 	var b1 bytes.Buffer
 	ser1 := json.NewEncoder(&b1)
@@ -109,7 +109,7 @@ func TestLocal_MergeConfig(t *testing.T) {
 
 	// Take defaultConfig and merge with the saved custom settings.
 	// This should result in c2 being the same as defaultConfig except for the value(s) in our custom c1
-	c2, err := mergeConfigFromDir(tempDir, defaultConfig)
+	c2, _, err := mergeConfigFromDir(tempDir, defaultConfig)
 
 	require.NoError(t, err)
 	require.Equal(t, defaultConfig.Archival || c1.NetAddress != "", c2.Archival)
@@ -118,6 +118,33 @@ func TestLocal_MergeConfig(t *testing.T) {
 
 	require.Equal(t, c1.NetAddress, c2.NetAddress)
 	require.Equal(t, c1.GossipFanout, c2.GossipFanout)
+}
+
+// TestLocal_DefaultsMigrate ensures values that match to some older defaults
+// in non-versioned config are not overwritten by the new defaults.
+func TestLocal_DefaultsMigrate(t *testing.T) {
+	mycfg := `{
+	"IncomingConnectionsLimit": 800
+}`
+
+	partitiontest.PartitionTest(t)
+	t.Parallel()
+
+	tempDir := t.TempDir()
+	configFilePath := filepath.Join(tempDir, ConfigFilename)
+	os.WriteFile(configFilePath, []byte(mycfg), 0600)
+
+	cfg, err := LoadConfigFromDisk(tempDir)
+	require.NoError(t, err)
+	require.Equal(t, cfg.IncomingConnectionsLimit, 800)
+	require.Equal(t, cfg.Version, defaultLocal.Version)
+
+	// txBacklogSize := new.TxBacklogSize
+	// if new.EnableTxBacklogRateLimiting {
+	// 	txBacklogSize += (new.IncomingConnectionsLimit * new.TxBacklogReservedCapacityPerPeer)
+	// }
+	// t.Logf("txBacklogSize = %d\n", txBacklogSize)
+
 }
 
 func saveFullPhonebook(phonebook phonebookBlackWhiteList, saveToDir string) error {
@@ -200,7 +227,7 @@ func testArchivalIfRelay(t *testing.T, relay bool) {
 	require.NoError(t, err)
 	require.False(t, defaultConfig.Archival, "Default should be non-archival")
 
-	c2, err := mergeConfigFromDir(tempDir, defaultConfig)
+	c2, _, err := mergeConfigFromDir(tempDir, defaultConfig)
 	require.NoError(t, err)
 	if relay {
 		require.True(t, c2.Archival, "Relay should be archival")
@@ -259,22 +286,22 @@ func TestLocal_ConfigMigrate(t *testing.T) {
 
 	c0, err := loadWithoutDefaults(GetVersionedDefaultLocalConfig(0))
 	a.NoError(err)
-	c0, err = migrate(c0)
+	c0, err = migrate(c0, nil)
 	a.NoError(err)
-	cLatest, err := migrate(defaultLocal)
+	cLatest, err := migrate(defaultLocal, nil)
 	a.NoError(err)
 
 	a.Equal(defaultLocal, c0)
 	a.Equal(defaultLocal, cLatest)
 
 	cLatest.Version = getLatestConfigVersion() + 1
-	_, err = migrate(cLatest)
+	_, err = migrate(cLatest, nil)
 	a.Error(err)
 
 	// Ensure we don't migrate values that aren't the default old version
 	c0Modified := GetVersionedDefaultLocalConfig(0)
 	c0Modified.BaseLoggerDebugLevel = GetVersionedDefaultLocalConfig(0).BaseLoggerDebugLevel + 1
-	c0Modified, err = migrate(c0Modified)
+	c0Modified, err = migrate(c0Modified, nil)
 	a.NoError(err)
 	a.NotEqual(defaultLocal, c0Modified)
 }
@@ -291,13 +318,13 @@ func TestLocal_ConfigMigrateFromDisk(t *testing.T) {
 	for configVersion := uint32(0); configVersion <= getLatestConfigVersion(); configVersion++ {
 		c, err := loadConfigFromFile(filepath.Join(configsPath, fmt.Sprintf("config-v%d.json", configVersion)))
 		a.NoError(err)
-		modified, err := migrate(c)
+		modified, err := migrate(c, nil)
 		a.NoError(err)
 		a.Equal(defaultLocal, modified, "config-v%d.json", configVersion)
 	}
 
 	cNext := Local{Version: getLatestConfigVersion() + 1}
-	_, err = migrate(cNext)
+	_, err = migrate(cNext, nil)
 	a.Error(err)
 }
 
