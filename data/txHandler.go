@@ -594,7 +594,7 @@ func (handler *TxHandler) processIncomingTxn(rawmsg network.IncomingMessage) net
 
 	var err error
 	var capguard *util.ErlCapacityGuard
-	var congested bool
+	var congested bool = float64(cap(handler.backlogQueue))*0.5 < float64(len(handler.backlogQueue))
 	if handler.erl != nil {
 		congested = float64(cap(handler.backlogQueue))*handler.backlogCongestionThreshold < float64(len(handler.backlogQueue))
 		// consume a capacity unit
