@@ -36,6 +36,7 @@ import (
 	"github.com/algorand/go-algorand/network"
 	"github.com/algorand/go-algorand/protocol"
 	"github.com/algorand/go-algorand/util/execpool"
+	"github.com/algorand/go-algorand/util/metrics"
 )
 
 const catchupPeersForSync = 10
@@ -294,6 +295,7 @@ func (s *Service) fetchAndWrite(ctx context.Context, r basics.Round, prevFetchCo
 
 		// Try to fetch, timing out after retryInterval
 		block, cert, blockDownloadDuration, err := s.innerFetch(ctx, r, peer)
+		totalBlocksFetched.Inc(nil)
 
 		if err != nil {
 			if err == errLedgerAlreadyHasBlock {
@@ -847,3 +849,5 @@ func createPeerSelector(net network.GossipNode, cfg config.Local, pipelineFetch 
 	}
 	return makePeerSelector(net, peerClasses)
 }
+
+var totalBlocksFetched = metrics.MakeCounter(metrics.MetricName{Name: "algod_catchup_blocks_fetched", Description: "Total number of blocks fetched with catchup"})
