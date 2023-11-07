@@ -168,7 +168,7 @@ func (r *appRateLimiter) shouldDrop(txgroup []transactions.SignedTxn, origin []b
 // shouldDropAt is the same as shouldDrop but accepts the current time as a parameter
 // in order to make it testable
 func (r *appRateLimiter) shouldDropAt(txgroup []transactions.SignedTxn, origin []byte, nowNano int64) bool {
-	keysBuckets := txgroupToKeys(txgroup, origin, r.seed, r.salt, numBuckets)
+	keysBuckets := txgroupToKeysDups(txgroup, origin, r.seed, r.salt, numBuckets)
 	defer putAppKeyBuf(keysBuckets)
 	if len(keysBuckets.keys) == 0 {
 		return false
