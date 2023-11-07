@@ -72,7 +72,7 @@ func MakeNibbles(data []byte, oddLength bool) Nibbles {
 // [] -> [], false
 func Pack(nyb Nibbles) ([]byte, bool) {
 	length := len(nyb)
-	data := make([]byte, length/2+length%2)
+	data := make([]byte, length/2+length%2, length/2+length%2+1)
 	for i := 0; i < length; i++ {
 		if i%2 == 0 {
 			data[i/2] = nyb[i] << 4
@@ -132,18 +132,15 @@ func SharedPrefix(nyb1 Nibbles, nyb2 Nibbles) Nibbles {
 // [] -> [0x03]
 func Serialize(nyb Nibbles) (data []byte) {
 	p, h := Pack(nyb)
-	length := len(p)
-	output := make([]byte, length+1)
-	copy(output, p)
 	if h {
 		// 0x01 is the odd length indicator
-		output[length] = oddIndicator
+		p = append(p, oddIndicator)
 	} else {
 		// 0x03 is the even length indicator
-		output[length] = evenIndicator
+		p = append(p, evenIndicator)
 	}
 
-	return output
+	return p
 }
 
 // Deserialize returns a nibble array from the byte array.
