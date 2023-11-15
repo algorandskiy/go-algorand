@@ -186,16 +186,9 @@ func TestCapabilities_DHTTwoPeers(t *testing.T) {
 		var advertisers []peer.AddrInfo
 		peersChan, err := disc.FindPeers(ctx, topic, discovery.Limit(numAdvertisers))
 		require.NoError(t, err)
-	pollingForPeers:
-		for {
-			select {
-			case p, open := <-peersChan:
-				if p.ID.Size() > 0 {
-					advertisers = append(advertisers, p)
-				}
-				if !open {
-					break pollingForPeers
-				}
+		for p := range peersChan {
+			if p.ID.Size() > 0 {
+				advertisers = append(advertisers, p)
 			}
 		}
 		cancel()
@@ -268,6 +261,11 @@ func TestCapabilities_Varying(t *testing.T) {
 						time.Second,
 						"Not all expected archival peers were found",
 					)
+
+					// ensure all nodes are discovered and stored in the peer store
+					h := disc.dht.Host()
+					ps := h.Peerstore()
+					require.Equal(t, ps.Peers().Len(), numAdvertisers)
 				}(disc)
 
 				go func(disc *CapabilitiesDiscovery) {
