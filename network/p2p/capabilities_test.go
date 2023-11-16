@@ -115,11 +115,8 @@ func waitForRouting(t *testing.T, disc *CapabilitiesDiscovery) {
 	}
 }
 
-func setupCapDiscovery(t *testing.T, numHosts int, numBootstrapPeers int) []*CapabilitiesDiscovery {
+func createHosts(t *testing.T, numHosts int, cfg config.Local) []host.Host {
 	var hosts []host.Host
-	var bootstrapPeers []*peer.AddrInfo
-	var capsDisc []*CapabilitiesDiscovery
-	cfg := config.GetDefaultLocal()
 	for i := 0; i < numHosts; i++ {
 		tmpdir := t.TempDir()
 		pk, err := GetPrivKey(cfg, tmpdir)
@@ -132,8 +129,20 @@ func setupCapDiscovery(t *testing.T, numHosts int, numBootstrapPeers int) []*Cap
 			libp2p.Peerstore(ps))
 		require.NoError(t, err)
 		hosts = append(hosts, h)
+	}
+	return hosts
+}
+
+func setupCapDiscovery(t *testing.T, numHosts int, numBootstrapPeers int) []*CapabilitiesDiscovery {
+	var capsDisc []*CapabilitiesDiscovery
+	cfg := config.GetDefaultLocal()
+
+	hosts := createHosts(t, numHosts, cfg)
+	var bootstrapPeers []*peer.AddrInfo
+	for _, h := range hosts {
 		bootstrapPeers = append(bootstrapPeers, &peer.AddrInfo{ID: h.ID(), Addrs: h.Addrs()})
 	}
+
 	for _, h := range hosts {
 		bp := bootstrapPeers
 		if numBootstrapPeers != 0 && numBootstrapPeers != numHosts {
@@ -329,4 +338,86 @@ func TestCapabilities_ExcludesSelf(t *testing.T) {
 
 	disc[0].Close()
 	disc[0].wg.Wait()
+}
+
+// TestCapabilities_RoutingConnectivity creates a dumbbell-like topology of 6 nodes
+// with the "handle" nodes connected to each other, and "weights" nodes connected only its "handle" side.
+// Left side nodes are DHT clients and right side nodes are DHT servers one of them announces Archival capability.
+// The test checks that left side discovers capablity on the right.
+// It also asserts that despite the fact left nodes bootstrapped to the left handle node, participating in DHT they connect
+// to other (right side) DHT servers.
+func TestCapabilities_RoutingConnectivity(t *testing.T) {
+	partitiontest.PartitionTest(t)
+
+	// golog.SetDebugLogging()
+
+	cfg := config.GetDefaultLocal()
+	hosts := createHosts(t, 6, cfg)
+
+	leftNodes := hosts[0:2]
+	handleNodes := hosts[2:4]
+	rightNodes := hosts[4:]
+	require.Equal(t, 2, len(leftNodes))
+	require.Equal(t, len(leftNodes), len(handleNodes))
+	require.Equal(t, len(handleNodes), len(rightNodes))
+
+	toBootstrap := func(hs ...host.Host) []*peer.AddrInfo {
+		ai := make([]*peer.AddrInfo, len(hs))
+		for i, h := range hs {
+			ai[i] = &peer.AddrInfo{ID: h.ID(), Addrs: h.Addrs()}
+		}
+		return ai
+	}
+
+	toCds := func(bootstrap host.Host, mode dht.ModeOpt, hs ...host.Host) []*CapabilitiesDiscovery {
+		cds := make([]*CapabilitiesDiscovery, len(hs))
+		for i, h := range hs {
+			ht, err := algodht.MakeDHTEx(context.Background(), h, "devtestnet", cfg, toBootstrap(bootstrap), mode)
+			require.NoError(t, err)
+			disc, err := algodht.MakeDiscovery(ht)
+			require.NoError(t, err)
+			cds[i] = &CapabilitiesDiscovery{
+				disc: disc,
+				dht:  ht,
+				log:  logging.Base(),
+			}
+		}
+		return cds
+	}
+
+	// connect left to handle
+	leftCd := toCds(handleNodes[0], dht.ModeClient, leftNodes...)
+	// connect right to handle
+	rightCd := toCds(handleNodes[1], dht.ModeServer, rightNodes...)
+	// connect both handle sides
+	handleCd := make([]*CapabilitiesDiscovery, len(handleNodes))
+	handleCd[0] = toCds(handleNodes[1], dht.ModeServer, handleNodes[0])[0]
+	handleCd[1] = toCds(handleNodes[0], dht.ModeServer, handleNodes[1])[0]
+
+	waitForRouting(t, leftCd[0])
+	waitForRouting(t, rightCd[0])
+	rightCd[0].AdvertiseCapabilities(Archival)
+
+	require.Eventuallyf(t,
+		func() bool {
+			numArchPeers := 1
+			peers, err := leftCd[0].PeersForCapability(Archival, numArchPeers)
+			if err == nil && len(peers) == numArchPeers {
+				return true
+			}
+			return false
+		},
+		time.Minute,
+		time.Second,
+		"Not all expected archival peers were found",
+	)
+
+	// TODO: figure out why Peerstore has self
+	require.Equal(t, len(handleNodes)+len(rightNodes)+1, len(leftNodes[0].Peerstore().Peers()))
+	require.Contains(t, leftNodes[0].Peerstore().Peers(), leftNodes[0].ID())
+	require.NotContains(t, leftNodes[0].Peerstore().Peers(), leftNodes[1].ID())
+	require.Equal(t, len(handleNodes)+len(rightNodes), leftCd[0].dht.RoutingTable().Size())
+
+	require.Equal(t, len(handleNodes)+len(rightNodes)+len(leftNodes), len(rightNodes[0].Peerstore().Peers()))
+	require.Equal(t, len(handleNodes)+len(rightNodes)-1, rightCd[0].dht.RoutingTable().Size()) // exlcuding self
 }

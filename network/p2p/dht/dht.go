@@ -70,9 +70,14 @@ func dhtProtocolPrefix(network string) protocol.ID {
 
 // MakeDHT creates the dht.IpfsDHT object
 func MakeDHT(ctx context.Context, h host.Host, network string, cfg config.Local, bootstrapPeers []*peer.AddrInfo) (*dht.IpfsDHT, error) {
+	return MakeDHTEx(ctx, h, network, cfg, bootstrapPeers, dht.ModeAutoServer)
+}
+
+// MakeDHT creates the dht.IpfsDHT object
+func MakeDHTEx(ctx context.Context, h host.Host, network string, cfg config.Local, bootstrapPeers []*peer.AddrInfo, mode dht.ModeOpt) (*dht.IpfsDHT, error) {
 	dhtCfg := []dht.Option{
 		// Automatically determine server or client mode
-		dht.Mode(dht.ModeAutoServer),
+		dht.Mode(mode),
 		// We don't need the value store right now
 		dht.DisableValues(),
 		dht.ProtocolPrefix(dhtProtocolPrefix(network)),
