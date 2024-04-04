@@ -58,7 +58,7 @@ type P2PNetwork struct {
 	wg sync.WaitGroup
 
 	// which tags to use with libp2p's GossipSub, mapped to topic names
-	topicTags map[protocol.Tag]string
+	// topicTags map[protocol.Tag]string
 
 	// websockets message support
 	handler                        msgHandler
@@ -222,11 +222,11 @@ func NewP2PNetwork(log logging.Logger, cfg config.Local, datadir string, phonebo
 
 	relayMessages := cfg.IsGossipServer() || cfg.ForceRelayMessages
 	net := &P2PNetwork{
-		log:           log,
-		config:        cfg,
-		genesisID:     genesisID,
-		networkID:     networkID,
-		topicTags:     map[protocol.Tag]string{protocol.TxnTag: p2p.TXTopicName},
+		log:       log,
+		config:    cfg,
+		genesisID: genesisID,
+		networkID: networkID,
+		// topicTags:     map[protocol.Tag]string{protocol.TxnTag: p2p.TXTopicName},
 		wsPeers:       make(map[peer.ID]*wsPeer),
 		wsPeersToIDs:  make(map[*wsPeer]peer.ID),
 		peerStats:     make(map[peer.ID]*p2pPeerStats),
@@ -320,12 +320,12 @@ func (n *P2PNetwork) Start() error {
 		return err
 	}
 
-	wantTXGossip := n.relayMessages || n.config.ForceFetchTransactions || n.nodeInfo.IsParticipating()
-	if wantTXGossip {
-		n.wantTXGossip.Store(true)
-		n.wg.Add(1)
-		go n.txTopicHandleLoop()
-	}
+	// wantTXGossip := n.relayMessages || n.config.ForceFetchTransactions || n.nodeInfo.IsParticipating()
+	// if wantTXGossip {
+	// 	n.wantTXGossip.Store(true)
+	// 	n.wg.Add(1)
+	// 	go n.txTopicHandleLoop()
+	// }
 
 	if n.wsPeersConnectivityCheckTicker != nil {
 		n.wsPeersConnectivityCheckTicker.Stop()
@@ -488,9 +488,9 @@ func (n *P2PNetwork) Address() (string, bool) {
 // Broadcast sends a message.
 func (n *P2PNetwork) Broadcast(ctx context.Context, tag protocol.Tag, data []byte, wait bool, except Peer) error {
 	// For tags using pubsub topics, publish to GossipSub
-	if topic, ok := n.topicTags[tag]; ok {
-		return n.service.Publish(ctx, topic, data)
-	}
+	// if topic, ok := n.topicTags[tag]; ok {
+	// 	return n.service.Publish(ctx, topic, data)
+	// }
 	// Otherwise broadcast over websocket protocol stream
 	return n.broadcaster.BroadcastArray(ctx, []protocol.Tag{tag}, [][]byte{data}, wait, except)
 }
@@ -675,17 +675,17 @@ func (n *P2PNetwork) GetHTTPClient(address string) (*http.Client, error) {
 // arrive very quickly, but might be missing some votes. The usage of this call is expected to have similar
 // characteristics as with a watchdog timer.
 func (n *P2PNetwork) OnNetworkAdvance() {
-	if n.nodeInfo != nil {
-		old := n.wantTXGossip.Load()
-		new := n.nodeInfo.IsParticipating()
-		if old != new {
-			n.wantTXGossip.Store(new)
-			if new {
-				n.wg.Add(1)
-				go n.txTopicHandleLoop()
-			}
-		}
-	}
+	// if n.nodeInfo != nil {
+	// 	old := n.wantTXGossip.Load()
+	// 	new := n.nodeInfo.IsParticipating()
+	// 	if old != new {
+	// 		n.wantTXGossip.Store(new)
+	// 		if new {
+	// 			n.wg.Add(1)
+	// 			go n.txTopicHandleLoop()
+	// 		}
+	// 	}
+	// }
 }
 
 // GetHTTPRequestConnection returns the underlying connection for the given request. Note that the request must be the same
