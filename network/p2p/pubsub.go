@@ -57,46 +57,46 @@ func makePubSub(ctx context.Context, cfg config.Local, host host.Host) (*pubsub.
 	//defaultParams := pubsub.DefaultGossipSubParams()
 
 	options := []pubsub.Option{
-		pubsub.WithPeerScore(&pubsub.PeerScoreParams{
-			DecayInterval: pubsub.DefaultDecayInterval,
-			DecayToZero:   pubsub.DefaultDecayToZero,
+		// pubsub.WithPeerScore(&pubsub.PeerScoreParams{
+		// 	DecayInterval: pubsub.DefaultDecayInterval,
+		// 	DecayToZero:   pubsub.DefaultDecayToZero,
 
-			AppSpecificScore: func(p peer.ID) float64 { return 1000 },
+		// 	AppSpecificScore: func(p peer.ID) float64 { return 1000 },
 
-			Topics: map[string]*pubsub.TopicScoreParams{
-				TXTopicName: {
-					TopicWeight: 0.1,
+		// 	Topics: map[string]*pubsub.TopicScoreParams{
+		// 		TXTopicName: {
+		// 			TopicWeight: 0.1,
 
-					TimeInMeshWeight:  0.0002778, // ~1/3600
-					TimeInMeshQuantum: time.Second,
-					TimeInMeshCap:     1,
+		// 			TimeInMeshWeight:  0.0002778, // ~1/3600
+		// 			TimeInMeshQuantum: time.Second,
+		// 			TimeInMeshCap:     1,
 
-					FirstMessageDeliveriesWeight: 0.5, // max value is 50
-					FirstMessageDeliveriesDecay:  pubsub.ScoreParameterDecay(10 * time.Minute),
-					FirstMessageDeliveriesCap:    100, // 100 messages in 10 minutes
+		// 			FirstMessageDeliveriesWeight: 0.5, // max value is 50
+		// 			FirstMessageDeliveriesDecay:  pubsub.ScoreParameterDecay(10 * time.Minute),
+		// 			FirstMessageDeliveriesCap:    100, // 100 messages in 10 minutes
 
-					// invalid messages decay after 1 hour
-					InvalidMessageDeliveriesWeight: -1000,
-					InvalidMessageDeliveriesDecay:  pubsub.ScoreParameterDecay(time.Hour),
-				},
-			},
-		},
-			&pubsub.PeerScoreThresholds{
-				GossipThreshold:             gossipScoreThreshold,
-				PublishThreshold:            publishScoreThreshold,
-				GraylistThreshold:           graylistScoreThreshold,
-				AcceptPXThreshold:           acceptPXScoreThreshold,
-				OpportunisticGraftThreshold: opportunisticGraftScoreThreshold,
-			},
-		),
+		// 			// invalid messages decay after 1 hour
+		// 			InvalidMessageDeliveriesWeight: -1000,
+		// 			InvalidMessageDeliveriesDecay:  pubsub.ScoreParameterDecay(time.Hour),
+		// 		},
+		// 	},
+		// },
+		// 	&pubsub.PeerScoreThresholds{
+		// 		GossipThreshold:             gossipScoreThreshold,
+		// 		PublishThreshold:            publishScoreThreshold,
+		// 		GraylistThreshold:           graylistScoreThreshold,
+		// 		AcceptPXThreshold:           acceptPXScoreThreshold,
+		// 		OpportunisticGraftThreshold: opportunisticGraftScoreThreshold,
+		// 	},
+		// ),
 		// pubsub.WithPeerGater(&pubsub.PeerGaterParams{}),
 		pubsub.WithSubscriptionFilter(pubsub.WrapLimitSubscriptionFilter(pubsub.NewAllowlistSubscriptionFilter(TXTopicName), 100)),
 		// pubsub.WithEventTracer(jsonTracer),
 		pubsub.WithValidateQueueSize(256),
 		// pubsub.WithValidateThrottle(cfg.TxBacklogSize),
 	}
-
-	return pubsub.NewGossipSub(ctx, host, options...)
+	return pubsub.NewFloodSub(ctx, host, options...)
+	// return pubsub.NewGossipSub(ctx, host, options...)
 }
 
 func txMsgID(m *pubsub_pb.Message) string {
