@@ -888,7 +888,19 @@ func (n *P2PNetwork) txTopicHandleLoop() {
 		// discard TX message.
 		// from gossipsub's point of view, it's just waiting to hear back from the validator,
 		// and txHandler does all its work in the validator, so we don't need to do anything here
-		_ = msg
+		// _ = msg
+
+		if msg != nil {
+			inmsg := IncomingMessage{
+				Sender:   gossipSubPeer{peerID: msg.ReceivedFrom, net: n},
+				Tag:      protocol.TxnTag,
+				Data:     msg.Data,
+				Net:      n,
+				Received: time.Now().UnixNano(),
+			}
+			outmsg := n.handler.Handle(inmsg)
+			_ = outmsg
+		}
 
 		// participation or configuration change, cancel subscription and quit
 		if !n.wantTXGossip.Load() {
@@ -901,13 +913,6 @@ func (n *P2PNetwork) txTopicHandleLoop() {
 
 // txTopicValidator calls txHandler to validate and process incoming transactions.
 func (n *P2PNetwork) txTopicValidator(ctx context.Context, peerID peer.ID, msg *pubsub.Message) pubsub.ValidationResult {
-	inmsg := IncomingMessage{
-		Sender:   gossipSubPeer{peerID: msg.ReceivedFrom, net: n},
-		Tag:      protocol.TxnTag,
-		Data:     msg.Data,
-		Net:      n,
-		Received: time.Now().UnixNano(),
-	}
 
 	// if we sent the message, don't validate it
 	if msg.ReceivedFrom == n.service.ID() {
@@ -923,17 +928,27 @@ func (n *P2PNetwork) txTopicValidator(ctx context.Context, peerID peer.ID, msg *
 	peerStats.txReceived.Add(1)
 	n.peerStatsMu.Unlock()
 
-	outmsg := n.handler.Handle(inmsg)
+	// inmsg := IncomingMessage{
+	// 	Sender:   gossipSubPeer{peerID: msg.ReceivedFrom, net: n},
+	// 	Tag:      protocol.TxnTag,
+	// 	Data:     msg.Data,
+	// 	Net:      n,
+	// 	Received: time.Now().UnixNano(),
+	// }
+
+	// outmsg := n.handler.Handle(inmsg)
 	// there was a decision made in the handler about this message
-	switch outmsg.Action {
-	case Ignore:
-		return pubsub.ValidationIgnore
-	case Disconnect:
-		return pubsub.ValidationReject
-	case Broadcast: // TxHandler.processIncomingTxn does not currently return this Action
-		return pubsub.ValidationAccept
-	default:
-		n.log.Warnf("handler returned invalid action %d", outmsg.Action)
-		return pubsub.ValidationIgnore
-	}
+	// switch outmsg.Action {
+	// case Ignore:
+	// 	return pubsub.ValidationIgnore
+	// case Disconnect:
+	// 	return pubsub.ValidationReject
+	// case Broadcast: // TxHandler.processIncomingTxn does not currently return this Action
+	// 	return pubsub.ValidationAccept
+	// default:
+	// 	n.log.Warnf("handler returned invalid action %d", outmsg.Action)
+	// 	return pubsub.ValidationIgnore
+	// }
+
+	return pubsub.ValidationAccept
 }
