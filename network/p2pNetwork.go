@@ -873,41 +873,62 @@ func (n *P2PNetwork) txTopicHandleLoop() {
 		return
 	}
 	n.log.Debugf("Subscribed to topic %s", p2p.TXTopicName)
+	var wg sync.WaitGroup
+	wg.Add(incomingThreads)
+	defer wg.Wait()
+	for i := 0; i < incomingThreads; i++ {
+		go func() {
+			defer wg.Done()
 
-	for {
-		msg, err := sub.Next(n.ctx)
-		if err != nil {
-			if err != pubsub.ErrSubscriptionCancelled && err != context.Canceled {
-				n.log.Errorf("Error reading from subscription %v, peerId %s", err, n.service.ID())
+			for {
+				msg, err := sub.Next(n.ctx)
+				if err != nil {
+					if err != pubsub.ErrSubscriptionCancelled && err != context.Canceled {
+						n.log.Errorf("Error reading from subscription %v, peerId %s", err, n.service.ID())
+					}
+					n.log.Debugf("Cancelling subscription to topic %s due Subscription.Next error: %v", p2p.TXTopicName, err)
+					sub.Cancel()
+					return
+				}
+				if msg != nil {
+
+					inmsg := IncomingMessage{
+						Sender:   gossipSubPeer{peerID: msg.ReceivedFrom, net: n},
+						Tag:      protocol.TxnTag,
+						Data:     msg.Data,
+						Net:      n,
+						Received: time.Now().UnixNano(),
+					}
+
+					_ = n.handler.Handle(inmsg)
+				}
+
+				// discard TX message.
+				// from gossipsub's point of view, it's just waiting to hear back from the validator,
+				// and txHandler does all its work in the validator, so we don't need to do anything here
+				// _ = msg
+
+				// participation or configuration change, cancel subscription and quit
+				if !n.wantTXGossip.Load() {
+					n.log.Debugf("Cancelling subscription to topic %s due participation change", p2p.TXTopicName)
+					sub.Cancel()
+					return
+				}
 			}
-			n.log.Debugf("Cancelling subscription to topic %s due Subscription.Next error: %v", p2p.TXTopicName, err)
-			sub.Cancel()
-			return
-		}
 
-		// discard TX message.
-		// from gossipsub's point of view, it's just waiting to hear back from the validator,
-		// and txHandler does all its work in the validator, so we don't need to do anything here
-		_ = msg
-
-		// participation or configuration change, cancel subscription and quit
-		if !n.wantTXGossip.Load() {
-			n.log.Debugf("Cancelling subscription to topic %s due participation change", p2p.TXTopicName)
-			sub.Cancel()
-			return
-		}
+		}()
 	}
 }
 
 // txTopicValidator calls txHandler to validate and process incoming transactions.
 func (n *P2PNetwork) txTopicValidator(ctx context.Context, peerID peer.ID, msg *pubsub.Message) pubsub.ValidationResult {
-	inmsg := IncomingMessage{
-		Sender:   gossipSubPeer{peerID: msg.ReceivedFrom, net: n},
-		Tag:      protocol.TxnTag,
-		Data:     msg.Data,
-		Net:      n,
-		Received: time.Now().UnixNano(),
-	}
+	// inmsg := IncomingMessage{
+	// 	Sender:   gossipSubPeer{peerID: msg.ReceivedFrom, net: n},
+	// 	Tag:      protocol.TxnTag,
+	// 	Data:     msg.Data,
+	// 	Net:      n,
+	// 	Received: time.Now().UnixNano(),
+	// }
 
 	// if we sent the message, don't validate it
 	if msg.ReceivedFrom == n.service.ID() {
@@ -923,17 +944,19 @@ func (n *P2PNetwork) txTopicValidator(ctx context.Context, peerID peer.ID, msg *
 	peerStats.txReceived.Add(1)
 	n.peerStatsMu.Unlock()
 
-	outmsg := n.handler.Handle(inmsg)
-	// there was a decision made in the handler about this message
-	switch outmsg.Action {
-	case Ignore:
-		return pubsub.ValidationIgnore
-	case Disconnect:
-		return pubsub.ValidationReject
-	case Broadcast: // TxHandler.processIncomingTxn does not currently return this Action
-		return pubsub.ValidationAccept
-	default:
-		n.log.Warnf("handler returned invalid action %d", outmsg.Action)
-		return pubsub.ValidationIgnore
-	}
+	return pubsub.ValidationAccept
+
+	// outmsg := n.handler.Handle(inmsg)
+	// // there was a decision made in the handler about this message
+	// switch outmsg.Action {
+	// case Ignore:
+	// 	return pubsub.ValidationIgnore
+	// case Disconnect:
+	// 	return pubsub.ValidationReject
+	// case Broadcast: // TxHandler.processIncomingTxn does not currently return this Action
+	// 	return pubsub.ValidationAccept
+	// default:
+	// 	n.log.Warnf("handler returned invalid action %d", outmsg.Action)
+	// 	return pubsub.ValidationIgnore
+	// }
 }
