@@ -324,7 +324,6 @@ type HTTPPeer interface {
 
 // IPAddressable is addressable with either IPv4 or IPv6 address
 type IPAddressable interface {
-	IPAddr() []byte
 	RoutingAddr() []byte
 }
 
@@ -380,7 +379,7 @@ func (wp *wsPeer) Version() string {
 	return wp.version
 }
 
-func (wp *wsPeer) IPAddr() []byte {
+func (wp *wsPeer) ipAddr() []byte {
 	remote := wp.conn.RemoteAddr()
 	if remote == nil {
 		return nil
@@ -415,7 +414,7 @@ func (wp *wsPeer) RoutingAddr() []byte {
 	if wp.wsPeerCore.originAddress != "" {
 		ip = net.ParseIP(wp.wsPeerCore.originAddress)
 	} else {
-		ip = wp.IPAddr()
+		ip = wp.ipAddr()
 	}
 
 	if len(ip) != net.IPv6len {
