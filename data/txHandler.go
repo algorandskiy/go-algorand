@@ -748,18 +748,28 @@ type validatedIncomingTxMessage struct {
 func (handler *TxHandler) validateIncomingTxMessage(rawmsg network.IncomingMessage) network.ValidatedMessage {
 	msgKey, capguard, isDup := handler.incomingMsgDupErlCheck(rawmsg.Data, rawmsg.Sender)
 	if isDup {
+		logging.Base().Debugf("txhandler ignore dup from %s", rawmsg.Sender.(network.IPAddressable).RoutingAddr())
 		return network.ValidatedMessage{Action: network.Ignore, ValidatorData: nil}
 	}
 
 	unverifiedTxGroup, consumed, drop := decodeMsg(rawmsg.Data)
 	if drop {
+		logging.Base().Debugf("txhandler drop invalid from %s", rawmsg.Sender.(network.IPAddressable).RoutingAddr())
 		return network.ValidatedMessage{Action: network.Disconnect, ValidatorData: nil}
+	}
+
+	var txids []transactions.Txid
+	for i := range unverifiedTxGroup {
+		txids = append(txids, unverifiedTxGroup[i].ID())
 	}
 
 	canonicalKey, drop := handler.incomingTxGroupDupRateLimit(unverifiedTxGroup, consumed, rawmsg.Sender)
 	if drop {
+		logging.Base().Debugf("txhandler drop rate limit from %s: %v", rawmsg.Sender.(network.IPAddressable).RoutingAddr(), txids)
 		return network.ValidatedMessage{Action: network.Ignore, ValidatorData: nil}
 	}
+
+	logging.Base().Debugf("txhandler validated %v", txids)
 
 	return network.ValidatedMessage{
 		Action: network.Accept,
@@ -776,6 +786,12 @@ func (handler *TxHandler) validateIncomingTxMessage(rawmsg network.IncomingMessa
 
 func (handler *TxHandler) processIncomingTxMessage(validatedMessage network.ValidatedMessage) network.OutgoingMessage {
 	msg := validatedMessage.ValidatorData.(*validatedIncomingTxMessage)
+
+	var txids []transactions.Txid
+	for i := range msg.unverifiedTxGroup {
+		txids = append(txids, msg.unverifiedTxGroup[i].ID())
+	}
+
 	select {
 	case handler.backlogQueue <- &txBacklogMsg{
 		rawmsg:                &msg.rawmsg,
@@ -784,6 +800,7 @@ func (handler *TxHandler) processIncomingTxMessage(validatedMessage network.Vali
 		unverifiedTxGroupHash: msg.canonicalKey,
 		capguard:              msg.capguard,
 	}:
+		logging.Base().Debugf("txhandler accepted %v", txids)
 	default:
 		// if we failed here we want to increase the corresponding metric. It might suggest that we
 		// want to increase the queue size.
@@ -796,6 +813,7 @@ func (handler *TxHandler) processIncomingTxMessage(validatedMessage network.Vali
 		if handler.msgCache != nil && msg.msgKey != nil {
 			handler.msgCache.DeleteByKey(msg.msgKey)
 		}
+		logging.Base().Debugf("txhandler rejected %v", txids)
 	}
 	return network.OutgoingMessage{Action: network.Ignore}
 }
