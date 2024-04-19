@@ -503,12 +503,16 @@ func waitPendingTransactions(accounts []string, client *libgoal.Client) error {
 			fmt.Printf("failed to check pending transaction pool status : %v\n", err)
 			return err
 		}
+		if len(pendingTxns.TopTransactions) > 0 {
+			fmt.Printf("waiting for %d pending transactions to clear out for account %s\n", len(pendingTxns.TopTransactions), from)
+		}
 		for _, txn := range pendingTxns.TopTransactions {
 			if txn.Txn.Sender.String() != from {
 				// we found a transaction where the receiver was the given account. We don't
 				// care about these.
 				continue
 			}
+			fmt.Printf("txn: %s\n", txn.Txn.ID())
 			// the transaction is still in the transaction pool.
 			// this would wait for the next round, when we will perform the check again.
 			waitForNextRoundOrSleep(client, 500*time.Millisecond)
