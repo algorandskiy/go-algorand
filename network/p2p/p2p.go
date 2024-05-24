@@ -197,20 +197,20 @@ func MakeService(ctx context.Context, log logging.Logger, cfg config.Local, h ho
 	telemetryProtoInfo := formatPeerTelemetryInfoProtocolName(telemetryID, telemetryInstance)
 	h.SetStreamHandler(protocol.ID(telemetryProtoInfo), func(s network.Stream) { s.Close() })
 
-	ps, err := makePubSub(ctx, cfg, h)
-	if err != nil {
-		return nil, err
-	}
+	// ps, err := makePubSub(ctx, cfg, h)
+	// if err != nil {
+	// 	return nil, err
+	// }
 	return &serviceImpl{
 
 		log:        log,
 		listenAddr: listenAddr,
 		host:       h,
 		streams:    sm,
-		pubsub:     ps,
-		pubsubCtx:  ctx,
-		privKey:    h.Peerstore().PrivKey(h.ID()),
-		topics:     make(map[string]*pubsub.Topic),
+		// pubsub:     ps,
+		// pubsubCtx:  ctx,
+		privKey: h.Peerstore().PrivKey(h.ID()),
+		topics:  make(map[string]*pubsub.Topic),
 	}, nil
 }
 

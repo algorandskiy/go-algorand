@@ -37,7 +37,6 @@ import (
 	"github.com/algorand/go-algorand/protocol"
 	"github.com/algorand/go-deadlock"
 
-	yamux "github.com/algorandskiy/go-yamux/v4"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
@@ -333,8 +332,8 @@ func (n *P2PNetwork) Start() error {
 	wantTXGossip := n.relayMessages || n.config.ForceFetchTransactions || n.nodeInfo.IsParticipating()
 	if wantTXGossip {
 		n.wantTXGossip.Store(true)
-		n.wg.Add(1)
-		go n.txTopicHandleLoop()
+		// n.wg.Add(1)
+		// go n.txTopicHandleLoop()
 	}
 
 	if n.wsPeersConnectivityCheckTicker != nil {
@@ -512,9 +511,9 @@ func (n *P2PNetwork) Address() (string, bool) {
 // Broadcast sends a message.
 func (n *P2PNetwork) Broadcast(ctx context.Context, tag protocol.Tag, data []byte, wait bool, except Peer) error {
 	// For tags using pubsub topics, publish to GossipSub
-	if topic, ok := n.topicTags[tag]; ok {
-		return n.service.Publish(ctx, topic, data)
-	}
+	// if topic, ok := n.topicTags[tag]; ok {
+	// 	return n.service.Publish(ctx, topic, data)
+	// }
 	// Otherwise broadcast over websocket protocol stream
 	return n.broadcaster.BroadcastArray(ctx, []protocol.Tag{tag}, [][]byte{data}, wait, except)
 }
@@ -714,10 +713,10 @@ func (n *P2PNetwork) OnNetworkAdvance() {
 		new := n.relayMessages || n.config.ForceFetchTransactions || n.nodeInfo.IsParticipating()
 		if old != new {
 			n.wantTXGossip.Store(new)
-			if new {
-				n.wg.Add(1)
-				go n.txTopicHandleLoop()
-			}
+			// if new {
+			// 	n.wg.Add(1)
+			// 	go n.txTopicHandleLoop()
+			// }
 		}
 	}
 }
@@ -779,7 +778,7 @@ func (n *P2PNetwork) wsStreamHandler(ctx context.Context, p2pPeer peer.ID, strea
 		}
 	}
 
-	stream.SetWriteDeadline(yamux.HighPriorityWriteDeadlineMagicValue)
+	// stream.SetWriteDeadline(yamux.HighPriorityWriteDeadlineMagicValue)
 
 	// get address for peer ID
 	ma := stream.Conn().RemoteMultiaddr()
@@ -905,6 +904,8 @@ func (n *P2PNetwork) checkPeersConnectivity() {}
 
 // txTopicHandleLoop reads messages from the pubsub topic for transactions.
 func (n *P2PNetwork) txTopicHandleLoop() {
+	return
+
 	defer n.wg.Done()
 	sub, err := n.service.Subscribe(p2p.TXTopicName, n.txTopicValidator)
 	if err != nil {
