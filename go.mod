@@ -35,7 +35,6 @@ require (
 	github.com/libp2p/go-libp2p v0.32.2
 	github.com/libp2p/go-libp2p-kad-dht v0.24.3
 	github.com/libp2p/go-libp2p-pubsub v0.10.0
-	github.com/libp2p/go-mplex v0.7.0
 	github.com/mattn/go-sqlite3 v1.14.16
 	github.com/miekg/dns v1.1.56
 	github.com/muesli/termenv v0.15.2

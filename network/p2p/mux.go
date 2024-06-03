@@ -18,161 +18,161 @@
 
 package p2p
 
-// import (
-// 	"context"
-// 	"io"
-// 	"math"
-// 	"net"
-// 	"time"
+import (
+	"context"
+	"io"
+	"math"
+	"net"
+	"time"
 
-// 	"github.com/libp2p/go-libp2p/core/network"
+	"github.com/libp2p/go-libp2p/core/network"
 
-// 	yamux "github.com/algorandskiy/go-yamux/v4"
-// )
+	yamux "github.com/algorandskiy/go-yamux/v4"
+)
 
-// var DefaultTransport *Transport
+var DefaultTransport *Transport
 
-// const ID = "/yamux/1.0.0"
+const ID = "/yamux/1.0.0"
 
-// func init() {
-// 	config := yamux.DefaultConfig()
-// 	// We've bumped this to 16MiB as this critically limits throughput.
-// 	//
-// 	// 1MiB means a best case of 10MiB/s (83.89Mbps) on a connection with
-// 	// 100ms latency. The default gave us 2.4MiB *best case* which was
-// 	// totally unacceptable.
-// 	config.MaxStreamWindowSize = uint32(16 * 1024 * 1024)
-// 	// don't spam
-// 	config.LogOutput = io.Discard
-// 	// We always run over a security transport that buffers internally
-// 	// (i.e., uses a block cipher).
-// 	config.ReadBufSize = 0
-// 	// Effectively disable the incoming streams limit.
-// 	// This is now dynamically limited by the resource manager.
-// 	config.MaxIncomingStreams = math.MaxUint32
-// 	DefaultTransport = (*Transport)(config)
-// }
+func init() {
+	config := yamux.DefaultConfig()
+	// We've bumped this to 16MiB as this critically limits throughput.
+	//
+	// 1MiB means a best case of 10MiB/s (83.89Mbps) on a connection with
+	// 100ms latency. The default gave us 2.4MiB *best case* which was
+	// totally unacceptable.
+	config.MaxStreamWindowSize = uint32(16 * 1024 * 1024)
+	// don't spam
+	config.LogOutput = io.Discard
+	// We always run over a security transport that buffers internally
+	// (i.e., uses a block cipher).
+	config.ReadBufSize = 0
+	// Effectively disable the incoming streams limit.
+	// This is now dynamically limited by the resource manager.
+	config.MaxIncomingStreams = math.MaxUint32
+	DefaultTransport = (*Transport)(config)
+}
 
-// // Transport implements mux.Multiplexer that constructs
-// // yamux-backed muxed connections.
-// type Transport yamux.Config
+// Transport implements mux.Multiplexer that constructs
+// yamux-backed muxed connections.
+type Transport yamux.Config
 
-// var _ network.Multiplexer = &Transport{}
+var _ network.Multiplexer = &Transport{}
 
-// func (t *Transport) NewConn(nc net.Conn, isServer bool, scope network.PeerScope) (network.MuxedConn, error) {
-// 	var newSpan func() (yamux.MemoryManager, error)
-// 	if scope != nil {
-// 		newSpan = func() (yamux.MemoryManager, error) { return scope.BeginSpan() }
-// 	}
+func (t *Transport) NewConn(nc net.Conn, isServer bool, scope network.PeerScope) (network.MuxedConn, error) {
+	var newSpan func() (yamux.MemoryManager, error)
+	if scope != nil {
+		newSpan = func() (yamux.MemoryManager, error) { return scope.BeginSpan() }
+	}
 
-// 	var s *yamux.Session
-// 	var err error
-// 	if isServer {
-// 		s, err = yamux.Server(nc, t.Config(), newSpan)
-// 	} else {
-// 		s, err = yamux.Client(nc, t.Config(), newSpan)
-// 	}
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return NewMuxedConn(s), nil
-// }
+	var s *yamux.Session
+	var err error
+	if isServer {
+		s, err = yamux.Server(nc, t.Config(), newSpan)
+	} else {
+		s, err = yamux.Client(nc, t.Config(), newSpan)
+	}
+	if err != nil {
+		return nil, err
+	}
+	return NewMuxedConn(s), nil
+}
 
-// func (t *Transport) Config() *yamux.Config {
-// 	return (*yamux.Config)(t)
-// }
+func (t *Transport) Config() *yamux.Config {
+	return (*yamux.Config)(t)
+}
 
-// // conn implements mux.MuxedConn over yamux.Session.
-// type conn yamux.Session
+// conn implements mux.MuxedConn over yamux.Session.
+type conn yamux.Session
 
-// var _ network.MuxedConn = &conn{}
+var _ network.MuxedConn = &conn{}
 
-// // NewMuxedConn constructs a new MuxedConn from a yamux.Session.
-// func NewMuxedConn(m *yamux.Session) network.MuxedConn {
-// 	return (*conn)(m)
-// }
+// NewMuxedConn constructs a new MuxedConn from a yamux.Session.
+func NewMuxedConn(m *yamux.Session) network.MuxedConn {
+	return (*conn)(m)
+}
 
-// // Close closes underlying yamux
-// func (c *conn) Close() error {
-// 	return c.yamux().Close()
-// }
+// Close closes underlying yamux
+func (c *conn) Close() error {
+	return c.yamux().Close()
+}
 
-// // IsClosed checks if yamux.Session is in closed state.
-// func (c *conn) IsClosed() bool {
-// 	return c.yamux().IsClosed()
-// }
+// IsClosed checks if yamux.Session is in closed state.
+func (c *conn) IsClosed() bool {
+	return c.yamux().IsClosed()
+}
 
-// // OpenStream creates a new stream.
-// func (c *conn) OpenStream(ctx context.Context) (network.MuxedStream, error) {
-// 	s, err := c.yamux().OpenStream(ctx)
-// 	if err != nil {
-// 		return nil, err
-// 	}
+// OpenStream creates a new stream.
+func (c *conn) OpenStream(ctx context.Context) (network.MuxedStream, error) {
+	s, err := c.yamux().OpenStream(ctx)
+	if err != nil {
+		return nil, err
+	}
 
-// 	return (*stream)(s), nil
-// }
+	return (*stream)(s), nil
+}
 
-// // AcceptStream accepts a stream opened by the other side.
-// func (c *conn) AcceptStream() (network.MuxedStream, error) {
-// 	s, err := c.yamux().AcceptStream()
-// 	return (*stream)(s), err
-// }
+// AcceptStream accepts a stream opened by the other side.
+func (c *conn) AcceptStream() (network.MuxedStream, error) {
+	s, err := c.yamux().AcceptStream()
+	return (*stream)(s), err
+}
 
-// func (c *conn) yamux() *yamux.Session {
-// 	return (*yamux.Session)(c)
-// }
+func (c *conn) yamux() *yamux.Session {
+	return (*yamux.Session)(c)
+}
 
-// // stream implements mux.MuxedStream over yamux.Stream.
-// type stream yamux.Stream
+// stream implements mux.MuxedStream over yamux.Stream.
+type stream yamux.Stream
 
-// var _ network.MuxedStream = &stream{}
+var _ network.MuxedStream = &stream{}
 
-// func (s *stream) Read(b []byte) (n int, err error) {
-// 	n, err = s.yamux().Read(b)
-// 	if err == yamux.ErrStreamReset {
-// 		err = network.ErrReset
-// 	}
+func (s *stream) Read(b []byte) (n int, err error) {
+	n, err = s.yamux().Read(b)
+	if err == yamux.ErrStreamReset {
+		err = network.ErrReset
+	}
 
-// 	return n, err
-// }
+	return n, err
+}
 
-// func (s *stream) Write(b []byte) (n int, err error) {
-// 	n, err = s.yamux().Write(b)
-// 	if err == yamux.ErrStreamReset {
-// 		err = network.ErrReset
-// 	}
+func (s *stream) Write(b []byte) (n int, err error) {
+	n, err = s.yamux().Write(b)
+	if err == yamux.ErrStreamReset {
+		err = network.ErrReset
+	}
 
-// 	return n, err
-// }
+	return n, err
+}
 
-// func (s *stream) Close() error {
-// 	return s.yamux().Close()
-// }
+func (s *stream) Close() error {
+	return s.yamux().Close()
+}
 
-// func (s *stream) Reset() error {
-// 	return s.yamux().Reset()
-// }
+func (s *stream) Reset() error {
+	return s.yamux().Reset()
+}
 
-// func (s *stream) CloseRead() error {
-// 	return s.yamux().CloseRead()
-// }
+func (s *stream) CloseRead() error {
+	return s.yamux().CloseRead()
+}
 
-// func (s *stream) CloseWrite() error {
-// 	return s.yamux().CloseWrite()
-// }
+func (s *stream) CloseWrite() error {
+	return s.yamux().CloseWrite()
+}
 
-// func (s *stream) SetDeadline(t time.Time) error {
-// 	return s.yamux().SetDeadline(t)
-// }
+func (s *stream) SetDeadline(t time.Time) error {
+	return s.yamux().SetDeadline(t)
+}
 
-// func (s *stream) SetReadDeadline(t time.Time) error {
-// 	return s.yamux().SetReadDeadline(t)
-// }
+func (s *stream) SetReadDeadline(t time.Time) error {
+	return s.yamux().SetReadDeadline(t)
+}
 
-// func (s *stream) SetWriteDeadline(t time.Time) error {
-// 	return s.yamux().SetWriteDeadline(t)
-// }
+func (s *stream) SetWriteDeadline(t time.Time) error {
+	return s.yamux().SetWriteDeadline(t)
+}
 
-// func (s *stream) yamux() *yamux.Stream {
-// 	return (*yamux.Stream)(s)
-// }
+func (s *stream) yamux() *yamux.Stream {
+	return (*yamux.Stream)(s)
+}
