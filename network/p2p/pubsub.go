@@ -30,12 +30,12 @@ import (
 
 func init() {
 	// configure larger overlay parameters
-	pubsub.GossipSubD = 12
+	pubsub.GossipSubD = 8
 	pubsub.GossipSubDscore = 6
-	pubsub.GossipSubDout = 6
-	pubsub.GossipSubDlo = 8
-	pubsub.GossipSubDhi = 18
-	pubsub.GossipSubDlazy = 18
+	pubsub.GossipSubDout = 3
+	pubsub.GossipSubDlo = 6
+	pubsub.GossipSubDhi = 12
+	pubsub.GossipSubDlazy = 12
 	pubsub.GossipSubDirectConnectInitialDelay = 30 * time.Second
 	pubsub.GossipSubIWantFollowupTime = 5 * time.Second
 	pubsub.GossipSubHistoryLength = 10
@@ -103,7 +103,7 @@ func makePubSub(ctx context.Context, cfg config.Local, host host.Host) (*pubsub.
 
 func txMsgID(m *pubsub_pb.Message) string {
 	h := blake2b.Sum256(m.Data)
-	return string(h[:8])
+	return string(h[:])
 }
 
 // getOrCreateTopic returns a topic if it was already joined previously and otherwise creates it and adds it to the topics map
