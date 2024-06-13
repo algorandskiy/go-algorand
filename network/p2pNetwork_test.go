@@ -58,7 +58,7 @@ func TestP2PSubmitTX(t *testing.T) {
 	cfg := config.GetDefaultLocal()
 	cfg.ForceFetchTransactions = true
 	log := logging.TestingLog(t)
-	netA, err := NewP2PNetwork(log, cfg, "", nil, genesisID, config.Devtestnet, &nopeNodeInfo{})
+	netA, err := NewP2PNetwork(log, cfg, "", nil, genesisID, config.Devtestnet, &nopeNodeInfo{}, nil)
 	require.NoError(t, err)
 	netA.Start()
 	defer netA.Stop()
@@ -70,12 +70,12 @@ func TestP2PSubmitTX(t *testing.T) {
 
 	multiAddrStr := addrsA[0].String()
 	phoneBookAddresses := []string{multiAddrStr}
-	netB, err := NewP2PNetwork(log, cfg, "", phoneBookAddresses, genesisID, config.Devtestnet, &nopeNodeInfo{})
+	netB, err := NewP2PNetwork(log, cfg, "", phoneBookAddresses, genesisID, config.Devtestnet, &nopeNodeInfo{}, nil)
 	require.NoError(t, err)
 	netB.Start()
 	defer netB.Stop()
 
-	netC, err := NewP2PNetwork(log, cfg, "", phoneBookAddresses, genesisID, config.Devtestnet, &nopeNodeInfo{})
+	netC, err := NewP2PNetwork(log, cfg, "", phoneBookAddresses, genesisID, config.Devtestnet, &nopeNodeInfo{}, nil)
 	require.NoError(t, err)
 	netC.Start()
 	defer netC.Stop()
@@ -150,7 +150,7 @@ func TestP2PSubmitTXNoGossip(t *testing.T) {
 	cfg := config.GetDefaultLocal()
 	cfg.ForceFetchTransactions = true
 	log := logging.TestingLog(t)
-	netA, err := NewP2PNetwork(log, cfg, "", nil, genesisID, config.Devtestnet, &nopeNodeInfo{})
+	netA, err := NewP2PNetwork(log, cfg, "", nil, genesisID, config.Devtestnet, &nopeNodeInfo{}, nil)
 	require.NoError(t, err)
 	netA.Start()
 	defer netA.Stop()
@@ -162,7 +162,7 @@ func TestP2PSubmitTXNoGossip(t *testing.T) {
 
 	multiAddrStr := addrsA[0].String()
 	phoneBookAddresses := []string{multiAddrStr}
-	netB, err := NewP2PNetwork(log, cfg, "", phoneBookAddresses, genesisID, config.Devtestnet, &nopeNodeInfo{})
+	netB, err := NewP2PNetwork(log, cfg, "", phoneBookAddresses, genesisID, config.Devtestnet, &nopeNodeInfo{}, nil)
 	require.NoError(t, err)
 	netB.Start()
 	defer netB.Stop()
@@ -179,7 +179,7 @@ func TestP2PSubmitTXNoGossip(t *testing.T) {
 
 	// run netC in NPN mode (no relay => no gossip sup => no TX receiving)
 	cfg.ForceFetchTransactions = false
-	netC, err := NewP2PNetwork(log, cfg, "", phoneBookAddresses, genesisID, config.Devtestnet, &nopeNodeInfo{})
+	netC, err := NewP2PNetwork(log, cfg, "", phoneBookAddresses, genesisID, config.Devtestnet, &nopeNodeInfo{}, nil)
 	require.NoError(t, err)
 	netC.Start()
 	defer netC.Stop()
@@ -244,7 +244,7 @@ func TestP2PSubmitWS(t *testing.T) {
 
 	cfg := config.GetDefaultLocal()
 	log := logging.TestingLog(t)
-	netA, err := NewP2PNetwork(log, cfg, "", nil, genesisID, config.Devtestnet, &nopeNodeInfo{})
+	netA, err := NewP2PNetwork(log, cfg, "", nil, genesisID, config.Devtestnet, &nopeNodeInfo{}, nil)
 	require.NoError(t, err)
 
 	err = netA.Start()
@@ -258,13 +258,13 @@ func TestP2PSubmitWS(t *testing.T) {
 
 	multiAddrStr := addrsA[0].String()
 	phoneBookAddresses := []string{multiAddrStr}
-	netB, err := NewP2PNetwork(log, cfg, "", phoneBookAddresses, genesisID, config.Devtestnet, &nopeNodeInfo{})
+	netB, err := NewP2PNetwork(log, cfg, "", phoneBookAddresses, genesisID, config.Devtestnet, &nopeNodeInfo{}, nil)
 	require.NoError(t, err)
 	err = netB.Start()
 	require.NoError(t, err)
 	defer netB.Stop()
 
-	netC, err := NewP2PNetwork(log, cfg, "", phoneBookAddresses, genesisID, config.Devtestnet, &nopeNodeInfo{})
+	netC, err := NewP2PNetwork(log, cfg, "", phoneBookAddresses, genesisID, config.Devtestnet, &nopeNodeInfo{}, nil)
 	require.NoError(t, err)
 	err = netC.Start()
 	require.NoError(t, err)
@@ -382,7 +382,7 @@ func TestP2PNetworkAddress(t *testing.T) {
 
 	cfg := config.GetDefaultLocal()
 	log := logging.TestingLog(t)
-	netA, err := NewP2PNetwork(log, cfg, "", nil, genesisID, config.Devtestnet, &nopeNodeInfo{})
+	netA, err := NewP2PNetwork(log, cfg, "", nil, genesisID, config.Devtestnet, &nopeNodeInfo{}, nil)
 	defer netA.Stop()
 	require.NoError(t, err)
 	addrInfo := netA.service.AddrInfo()
@@ -593,7 +593,7 @@ func TestP2PNetworkDHTCapabilities(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			netA, err := NewP2PNetwork(log, cfg, "", nil, genesisID, config.Devtestnet, test.nis[0])
+			netA, err := NewP2PNetwork(log, cfg, "", nil, genesisID, config.Devtestnet, test.nis[0], nil)
 			require.NoError(t, err)
 
 			err = netA.Start()
@@ -607,13 +607,13 @@ func TestP2PNetworkDHTCapabilities(t *testing.T) {
 
 			multiAddrStr := addrsA[0].String()
 			phoneBookAddresses := []string{multiAddrStr}
-			netB, err := NewP2PNetwork(log, cfg, "", phoneBookAddresses, genesisID, config.Devtestnet, test.nis[1])
+			netB, err := NewP2PNetwork(log, cfg, "", phoneBookAddresses, genesisID, config.Devtestnet, test.nis[1], nil)
 			require.NoError(t, err)
 			err = netB.Start()
 			require.NoError(t, err)
 			defer netB.Stop()
 
-			netC, err := NewP2PNetwork(log, cfg, "", phoneBookAddresses, genesisID, config.Devtestnet, test.nis[2])
+			netC, err := NewP2PNetwork(log, cfg, "", phoneBookAddresses, genesisID, config.Devtestnet, test.nis[2], nil)
 			require.NoError(t, err)
 			err = netC.Start()
 			require.NoError(t, err)
@@ -739,7 +739,7 @@ func TestP2PHTTPHandler(t *testing.T) {
 	cfg.GossipFanout = 1
 	log := logging.TestingLog(t)
 
-	netA, err := NewP2PNetwork(log, cfg, "", nil, genesisID, config.Devtestnet, &nopeNodeInfo{})
+	netA, err := NewP2PNetwork(log, cfg, "", nil, genesisID, config.Devtestnet, &nopeNodeInfo{}, nil)
 	require.NoError(t, err)
 
 	h := &p2phttpHandler{t, "hello", nil}
@@ -794,7 +794,7 @@ func TestP2PRelay(t *testing.T) {
 	cfg := config.GetDefaultLocal()
 	cfg.ForceFetchTransactions = true
 	log := logging.TestingLog(t)
-	netA, err := NewP2PNetwork(log, cfg, "", nil, genesisID, config.Devtestnet, &nopeNodeInfo{})
+	netA, err := NewP2PNetwork(log, cfg, "", nil, genesisID, config.Devtestnet, &nopeNodeInfo{}, nil)
 	require.NoError(t, err)
 
 	err = netA.Start()
@@ -809,7 +809,7 @@ func TestP2PRelay(t *testing.T) {
 	multiAddrStr := addrsA[0].String()
 	phoneBookAddresses := []string{multiAddrStr}
 
-	netB, err := NewP2PNetwork(log, cfg, "", phoneBookAddresses, genesisID, config.Devtestnet, &nopeNodeInfo{})
+	netB, err := NewP2PNetwork(log, cfg, "", phoneBookAddresses, genesisID, config.Devtestnet, &nopeNodeInfo{}, nil)
 	require.NoError(t, err)
 	err = netB.Start()
 	require.NoError(t, err)
@@ -872,7 +872,7 @@ func TestP2PRelay(t *testing.T) {
 	// add netC with listening address set, and enable relaying on netB
 	// ensure all messages are received by netA
 	cfg.NetAddress = "127.0.0.1:0"
-	netC, err := NewP2PNetwork(log, cfg, "", phoneBookAddresses, genesisID, config.Devtestnet, &nopeNodeInfo{})
+	netC, err := NewP2PNetwork(log, cfg, "", phoneBookAddresses, genesisID, config.Devtestnet, &nopeNodeInfo{}, nil)
 	require.NoError(t, err)
 	err = netC.Start()
 	require.NoError(t, err)
