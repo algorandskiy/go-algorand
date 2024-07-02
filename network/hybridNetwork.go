@@ -43,6 +43,7 @@ func NewHybridP2PNetwork(log logging.Logger, cfg config.Local, datadir string, p
 	p2pcfg := cfg
 	p2pcfg.NetAddress = cfg.P2PNetAddress
 	identityTracker := NewIdentityTracker()
+	log.Infof("creating HybridP2PNetwork with config: %v", cfg)
 	p2pnet, err := NewP2PNetwork(log, p2pcfg, datadir, phonebookAddresses, genesisID, networkID, nodeInfo, &identityOpts{tracker: identityTracker})
 	if err != nil {
 		return nil, err
@@ -52,6 +53,7 @@ func NewHybridP2PNetwork(log logging.Logger, cfg config.Local, datadir string, p
 		tracker: identityTracker,
 		scheme:  NewIdentityChallengeScheme(NetIdentityDedupNames(cfg.PublicAddress, p2pnet.PeerID().String()), NetIdentitySigner(p2pnet.PeerIDSigner())),
 	}
+	log.Infof("HybridP2PNetwork identityTracker: %p", identityTracker)
 	wsnet, err := NewWebsocketNetwork(log, cfg, phonebookAddresses, genesisID, networkID, nodeInfo, &identOpts)
 	if err != nil {
 		return nil, err

@@ -1070,6 +1070,7 @@ func (wn *WebsocketNetwork) ServeHTTP(response http.ResponseWriter, request *htt
 	if wn.identityScheme != nil {
 		var err error
 		peerIDChallenge, peerID, err = wn.identityScheme.VerifyRequestAndAttachResponse(responseHeader, request.Header)
+		wn.log.Infof("identity challenge chal=%v peerID=%v err=%v", peerIDChallenge, peerID, err)
 		if err != nil {
 			networkPeerIdentityError.Inc(nil)
 			wn.log.With("err", err).With("remote", trackedRequest.remoteAddress()).With("local", localAddr).Warnf("peer (%s) supplied an invalid identity challenge, abandoning peering", trackedRequest.remoteAddr)
@@ -2107,6 +2108,7 @@ func (wn *WebsocketNetwork) tryConnect(netAddr, gossipAddr string) {
 	if wn.identityScheme != nil {
 		theirAddr := strings.ToLower(netAddr)
 		idChallenge = wn.identityScheme.AttachChallenge(requestHeader, theirAddr)
+		wn.log.Infof("tryConnect: attached identity challenge to %s: %v", theirAddr, idChallenge)
 	}
 
 	// for backward compatibility, include the ProtocolVersion header as well.
@@ -2190,6 +2192,7 @@ func (wn *WebsocketNetwork) tryConnect(netAddr, gossipAddr string) {
 	if wn.identityScheme != nil {
 		// if the peer responded with an identity challenge response, but it can't be verified, don't proceed with peering
 		peerID, idVerificationMessage, err = wn.identityScheme.VerifyResponse(response.Header, idChallenge)
+		wn.log.Infof("tryConnect: verified identity challenge %v %v: peerID=%s, msg=%v, err=%v", response.Header, idChallenge, peerID, idVerificationMessage, err)
 		if err != nil {
 			networkPeerIdentityError.Inc(nil)
 			wn.log.With("err", err).With("remote", netAddr).With("local", localAddr).Warn("peer supplied an invalid identity response, abandoning peering")
@@ -2225,6 +2228,7 @@ func (wn *WebsocketNetwork) tryConnect(netAddr, gossipAddr string) {
 	if len(idVerificationMessage) > 0 {
 		peer.identityVerified.Store(uint32(1))
 		wn.peersLock.Lock()
+		wn.log.Infof("tryConnect: setting identity (%v): %v", peer.identity, peer)
 		ok := wn.identityTracker.setIdentity(peer)
 		wn.peersLock.Unlock()
 		if !ok {
@@ -2297,6 +2301,7 @@ func (wn *WebsocketNetwork) SetPeerData(peer Peer, key string, value interface{}
 
 // NewWebsocketNetwork constructor for websockets based gossip network
 func NewWebsocketNetwork(log logging.Logger, config config.Local, phonebookAddresses []string, genesisID string, networkID protocol.NetworkID, nodeInfo NodeInfo, identityOpts *identityOpts) (wn *WebsocketNetwork, err error) {
+	log.Infof("creating WebsocketNetwork with config: %v", config)
 	pb := phonebook.MakePhonebook(config.ConnectionsRateLimitingCount,
 		time.Duration(config.ConnectionsRateLimitingWindowSeconds)*time.Second)
 
@@ -2327,10 +2332,12 @@ func NewWebsocketNetwork(log logging.Logger, config config.Local, phonebookAddre
 	if identityOpts != nil {
 		wn.identityScheme = identityOpts.scheme
 		wn.identityTracker = identityOpts.tracker
+		log.Infof("WebsocketNetwork identityTracker assigned: %p", identityOpts.tracker)
 	}
 	if wn.identityTracker == nil {
 		wn.identityTracker = NewIdentityTracker()
 	}
+	log.Infof("WebsocketNetwork identityTracker: %p", wn.identityTracker)
 
 	wn.setup()
 	return wn, nil

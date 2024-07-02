@@ -22,6 +22,7 @@ import (
 	"net/http"
 
 	"github.com/algorand/go-algorand/crypto"
+	"github.com/algorand/go-algorand/logging"
 	"github.com/algorand/go-algorand/protocol"
 )
 
@@ -221,6 +222,7 @@ func (i identityChallengePublicKeyScheme) AttachChallenge(attachTo http.Header, 
 // or returns empty values if the header did not end up getting set
 func (i identityChallengePublicKeyScheme) VerifyRequestAndAttachResponse(attachTo http.Header, h http.Header) (identityChallengeValue, crypto.PublicKey, error) {
 	// if dedupName is not set, this scheme is not configured to exchange identity
+	logging.Base().Infof("VerifyRequestAndAttachResponse: dedupNames: %v", i.dedupNames)
 	if len(i.dedupNames) == 0 {
 		return identityChallengeValue{}, crypto.PublicKey{}, nil
 	}
@@ -239,6 +241,7 @@ func (i identityChallengePublicKeyScheme) VerifyRequestAndAttachResponse(attachT
 	if err != nil {
 		return identityChallengeValue{}, crypto.PublicKey{}, err
 	}
+	logging.Base().Infof("VerifyRequestAndAttachResponse: idChal: %v", idChal)
 	if !idChal.Verify() {
 		return identityChallengeValue{}, crypto.PublicKey{}, fmt.Errorf("identity challenge incorrectly signed")
 	}
@@ -247,6 +250,7 @@ func (i identityChallengePublicKeyScheme) VerifyRequestAndAttachResponse(attachT
 	// but also do not emit an error. This is because if an operator were to incorrectly
 	// specify their dedupName, it could result in inappropriate disconnections from valid peers
 	if _, ok := i.dedupNames[string(idChal.Msg.PublicAddress)]; !ok {
+		logging.Base().Infof("VerifyRequestAndAttachResponse: %s not found in %v", idChal.Msg.PublicAddress, i.dedupNames)
 		return identityChallengeValue{}, crypto.PublicKey{}, nil
 	}
 	// make the response object, encode it and attach it to the header
@@ -255,6 +259,7 @@ func (i identityChallengePublicKeyScheme) VerifyRequestAndAttachResponse(attachT
 		Challenge:         idChal.Msg.Challenge,
 		ResponseChallenge: newIdentityChallengeValue(),
 	}
+	logging.Base().Infof("VerifyRequestAndAttachResponse: attached %v", r)
 	attachTo.Add(IdentityChallengeHeader, r.signAndEncodeB64(i.identityKeys))
 	return r.ResponseChallenge, idChal.Msg.Key, nil
 }
