@@ -411,6 +411,18 @@ func (n *P2PNetwork) innerStop() {
 func (n *P2PNetwork) meshThreadInner() int {
 	defer n.service.DialPeersUntilTargetCount(n.config.GossipFanout)
 
+	// log what p2p learned about the network
+	ids := n.service.Host().IDService()
+	mas := ids.OwnObservedAddrs()
+	for _, ma := range mas {
+		n.log.Debugf("Observed own address: %s", ma.String())
+	}
+
+	mas = n.service.Host().AllAddrs()
+	for _, ma := range mas {
+		n.log.Debugf("Unfiltered own address: %s", ma.String())
+	}
+
 	// fetch peers from DNS
 	var dnsPeers, dhtPeers []peer.AddrInfo
 	dnsPeers = dnsLookupBootstrapPeers(n.log, n.config, n.networkID, dnsaddr.NewMultiaddrDNSResolveController(n.config.DNSSecurityTXTEnforced(), ""))

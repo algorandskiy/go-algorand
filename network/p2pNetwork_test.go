@@ -45,6 +45,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
+	basichost "github.com/libp2p/go-libp2p/p2p/host/basic"
 	ma "github.com/multiformats/go-multiaddr"
 	"github.com/stretchr/testify/require"
 )
@@ -328,6 +329,10 @@ type mockService struct {
 	id    peer.ID
 	addrs []ma.Multiaddr
 	peers map[peer.ID]peer.AddrInfo
+}
+
+func (s *mockService) Host() *basichost.BasicHost {
+	return nil
 }
 
 func (s *mockService) Start() error {
@@ -989,6 +994,10 @@ func (m *mockSubscription) Next(ctx context.Context) (*pubsub.Message, error) {
 	return &pubsub.Message{ReceivedFrom: m.peerID}, nil
 }
 func (m *mockSubscription) Cancel() {}
+
+func (m *mockSubPService) Host() *basichost.BasicHost {
+	return nil
+}
 
 func (m *mockSubPService) Subscribe(topic string, val pubsub.ValidatorEx) (p2p.SubNextCancellable, error) {
 	m.count.Add(1)

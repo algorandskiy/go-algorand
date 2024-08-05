@@ -39,6 +39,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/core/protocol"
+	basichost "github.com/libp2p/go-libp2p/p2p/host/basic"
 	rcmgr "github.com/libp2p/go-libp2p/p2p/host/resource-manager"
 	"github.com/libp2p/go-libp2p/p2p/muxer/yamux"
 	"github.com/libp2p/go-libp2p/p2p/security/noise"
@@ -60,6 +61,8 @@ type Service interface {
 	ID() peer.ID // return peer.ID for self
 	IDSigner() *PeerIDChallengeSigner
 	AddrInfo() peer.AddrInfo // return addrInfo for self
+
+	Host() *basichost.BasicHost
 
 	DialNode(context.Context, *peer.AddrInfo) error
 	DialPeersUntilTargetCount(targetConnCount int)
@@ -203,6 +206,11 @@ func MakeService(ctx context.Context, log logging.Logger, cfg config.Local, h ho
 		privKey:    h.Peerstore().PrivKey(h.ID()),
 		topics:     make(map[string]*pubsub.Topic),
 	}, nil
+}
+
+func (s *serviceImpl) Host() *basichost.BasicHost {
+	h, _ := s.host.(*basichost.BasicHost)
+	return h
 }
 
 // Start starts the P2P service
