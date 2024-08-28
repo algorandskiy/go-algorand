@@ -83,7 +83,8 @@ type P2PNetwork struct {
 	pstore            *peerstore.PeerStore
 	httpServer        *p2p.HTTPServer
 
-	identityTracker identityTracker
+	identityTracker   identityTracker
+	incomingMsgFilter *messageFilter // message filter to remove duplicate incoming messages from different peers
 }
 
 type bootstrapper struct {
@@ -253,6 +254,9 @@ func NewP2PNetwork(log logging.Logger, cfg config.Local, datadir string, phonebo
 	}
 	if net.identityTracker == nil {
 		net.identityTracker = noopIdentityTracker{}
+	}
+	if cfg.EnableIncomingMessageFilter {
+		net.incomingMsgFilter = makeMessageFilter(cfg.IncomingMessageFilterBucketCount, cfg.IncomingMessageFilterBucketSize)
 	}
 
 	err = p2p.EnableP2PLogging(log, logging.Level(cfg.BaseLoggerDebugLevel))
@@ -792,11 +796,12 @@ func (n *P2PNetwork) wsStreamHandler(ctx context.Context, p2pPeer peer.ID, strea
 	}
 	peerCore := makePeerCore(ctx, n, n.log, n.handler.readBuffer, addr, client, addr)
 	wsp := &wsPeer{
-		wsPeerCore: peerCore,
-		conn:       &wsPeerConnP2P{stream: stream},
-		outgoing:   !incoming,
-		identity:   netIdentPeerID,
-		peerType:   peerTypeP2P,
+		wsPeerCore:        peerCore,
+		incomingMsgFilter: n.incomingMsgFilter,
+		conn:              &wsPeerConnP2P{stream: stream},
+		outgoing:          !incoming,
+		identity:          netIdentPeerID,
+		peerType:          peerTypeP2P,
 	}
 	protos, err := n.pstore.GetProtocols(p2pPeer)
 	if err != nil {
