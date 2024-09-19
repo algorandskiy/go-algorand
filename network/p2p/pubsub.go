@@ -97,7 +97,7 @@ func makePubSub(ctx context.Context, cfg config.Local, host host.Host, metricsTr
 		// pubsub.WithPeerGater(&pubsub.PeerGaterParams{}),
 		pubsub.WithSubscriptionFilter(pubsub.WrapLimitSubscriptionFilter(pubsub.NewAllowlistSubscriptionFilter(TXTopicName), 100)),
 		// pubsub.WithEventTracer(jsonTracer),
-		pubsub.WithValidateQueueSize(256),
+		pubsub.WithValidateQueueSize(8192),
 		pubsub.WithMessageSignaturePolicy(pubsub.StrictNoSign),
 		// pubsub.WithValidateThrottle(cfg.TxBacklogSize),
 		pubsub.WithValidateWorkers(incomingThreads),

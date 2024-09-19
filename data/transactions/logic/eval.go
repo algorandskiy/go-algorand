@@ -449,8 +449,8 @@ func NewSigEvalParams(txgroup []transactions.SignedTxn, proto *config.ConsensusP
 // NewAppEvalParams creates an EvalParams to use while evaluating a top-level txgroup.
 func NewAppEvalParams(txgroup []transactions.SignedTxnWithAD, proto *config.ConsensusParams, specials *transactions.SpecialAddresses) *EvalParams {
 	apps := 0
-	for _, tx := range txgroup {
-		if tx.Txn.Type == protocol.ApplicationCallTx {
+	for i := range txgroup {
+		if txgroup[i].Txn.Type == protocol.ApplicationCallTx {
 			apps++
 		}
 	}
