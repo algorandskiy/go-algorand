@@ -751,7 +751,7 @@ func StartEvaluator(l LedgerForEvaluator, hdr bookkeeping.BlockHeader, evalOpts 
 	// Preallocate space for the payset so that we don't have to
 	// dynamically grow a slice (if evaluating a whole block).
 	if evalOpts.PaysetHint > 0 {
-		maxPaysetHint := evalOpts.MaxTxnBytesPerBlock / averageEncodedTxnSizeHint
+		maxPaysetHint := (evalOpts.MaxTxnBytesPerBlock / averageEncodedTxnSizeHint) * 2
 		if evalOpts.PaysetHint > maxPaysetHint {
 			evalOpts.PaysetHint = maxPaysetHint
 		}
