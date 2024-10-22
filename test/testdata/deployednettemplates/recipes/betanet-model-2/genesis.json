@@ -1,9 +1,9 @@
 {
-	"NetworkName": "betanet-model-2",
+	"NetworkName": "",
 	"VersionModifier": "",
-	"ConsensusProtocol": "future",
+	"ConsensusProtocol": "",
 	"FirstPartKeyRound": 0,
-	"LastPartKeyRound": 50000,
+	"LastPartKeyRound": 3000,
 	"PartKeyDilution": 0,
 	"Wallets": [
 		{
@@ -209,6 +209,7 @@
 	],
 	"FeeSink": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ",
 	"RewardsPool": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ",
+	"RewardsPoolBalance": 125000000000000,
 	"DevMode": false,
 	"Comment": ""
 }
