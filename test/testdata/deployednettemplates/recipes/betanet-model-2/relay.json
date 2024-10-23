@@ -8,6 +8,7 @@
     "EnableMetrics": true,
     "MetricsURI": "{{MetricsURI}}",
     "P2PBootstrap": true,
-    "PublicAddress": false,
-    "ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 5, \"EnableProfiler\": true, \"EnableAccountUpdatesStats\": true,  \"EnableP2P\": true, \"DNSSecurityFlags\": 32768}"
+    "PublicAddress": true,
+    "P2PHybridNetAddress": "{{NetworkPort2}}",
+    "ConfigJSONOverride": "{ \"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"EnableIncomingMessageFilter\": true, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 5, \"EnableProfiler\": true, \"EnableAccountUpdatesStats\": true,  \"EnableP2PHybridMode\": true, \"DNSSecurityFlags\": 32768}"
 }
