@@ -18,6 +18,7 @@ package p2p
 
 import (
 	"context"
+	"path"
 	"time"
 
 	"github.com/algorand/go-algorand/config"
@@ -61,7 +62,8 @@ const incomingThreads = 20 // matches to number wsNetwork workers
 func makePubSub(ctx context.Context, cfg config.Local, host host.Host, metricsTracer pubsub.RawTracer) (*pubsub.PubSub, error) {
 	//defaultParams := pubsub.DefaultGossipSubParams()
 
-	jsonTracer, err := pubsub.NewJSONTracer("/tmp/pubsub-trace.json")
+	// tracer, err := pubsub.NewJSONTracer("/tmp/pubsub-trace.json")
+	tracer, err := pubsub.NewPBTracer(path.Join(config.GetCurrentVersion().DataDirectory, "pubsub-trace.pb"))
 	if err != nil {
 		panic(err)
 	}
@@ -101,7 +103,7 @@ func makePubSub(ctx context.Context, cfg config.Local, host host.Host, metricsTr
 		),
 		// pubsub.WithPeerGater(&pubsub.PeerGaterParams{}),
 		pubsub.WithSubscriptionFilter(pubsub.WrapLimitSubscriptionFilter(pubsub.NewAllowlistSubscriptionFilter(TXTopicName), 100)),
-		pubsub.WithEventTracer(jsonTracer),
+		pubsub.WithEventTracer(tracer),
 		pubsub.WithValidateQueueSize(256),
 		pubsub.WithMessageSignaturePolicy(pubsub.StrictNoSign),
 		// pubsub.WithValidateThrottle(cfg.TxBacklogSize),
