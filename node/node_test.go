@@ -19,9 +19,11 @@ package node
 import (
 	"fmt"
 	"math/rand"
+	randv2 "math/rand/v2"
 	"os"
 	"path/filepath"
 	"runtime"
+	"runtime/pprof"
 	"strconv"
 	"strings"
 	"sync"
@@ -1261,4 +1263,54 @@ func TestNodeHybridP2PGossipSend(t *testing.T) {
 	case <-time.After(1 * time.Minute):
 		require.Fail(t, fmt.Sprintf("no block notification for wallet: %v.", wallets[0]))
 	}
+}
+
+type TestingHashable struct {
+	data []byte
+}
+
+func (s TestingHashable) ToBeHashed() (protocol.HashID, []byte) {
+	return protocol.TestHashable, s.data
+}
+
+func TestCGOThreads(t *testing.T) {
+	t.Parallel()
+
+	p := pprof.Lookup("threadcreate")
+
+	var s crypto.Seed
+	crypto.RandBytes(s[:])
+	var msg [16]byte
+	var seed [32]byte
+	crypto.RandBytes(seed[:])
+	gen := randv2.NewChaCha8(seed)
+	n, err := gen.Read(msg[:])
+	require.NoError(t, err)
+	require.Equal(t, 16, n)
+	message := TestingHashable{msg[:]}
+
+	var wg sync.WaitGroup
+	wg.Add(500)
+
+	for i := 0; i < 500; i++ {
+		go func(num int) {
+			defer wg.Done()
+			for j := 0; j < 1000; j++ {
+				sigSecrets := crypto.GenerateSignatureSecrets(s)
+				sig := sigSecrets.Sign(message)
+				ok := sigSecrets.Verify(message, sig)
+				require.True(t, ok)
+
+				_, _, err := util.GetCurrentProcessTimes()
+				require.NoError(t, err)
+
+				m := util.GetTotalMemory()
+				require.Greater(t, m, uint64(0))
+			}
+		}(i)
+	}
+
+	wg.Wait()
+
+	t.Logf("threadcreate: %d, goroutines: %d", p.Count(), runtime.NumGoroutine())
 }
