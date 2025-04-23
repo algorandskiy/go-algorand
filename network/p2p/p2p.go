@@ -251,6 +251,7 @@ func (s *serviceImpl) DialPeersUntilTargetCount(targetConnCount int) {
 			numOutgoingConns++
 		}
 	}
+	s.log.Debugf("DialPeersUntilTargetCount(%d), total conns %d, num outgoing %d", targetConnCount, len(conns), numOutgoingConns)
 	for _, peerInfo := range addrInfos {
 		// if we are at our target count stop trying to connect
 		if numOutgoingConns >= targetConnCount {
@@ -258,12 +259,14 @@ func (s *serviceImpl) DialPeersUntilTargetCount(targetConnCount int) {
 		}
 		// if we are already connected to this peer, skip it
 		if len(s.host.Network().ConnsToPeer(peerInfo.ID)) > 0 {
+			s.log.Debugf("DialPeersUntilTargetCount(%d), skipping already connected peer %s", targetConnCount, peerInfo.ID)
 			continue
 		}
 		err := s.dialNode(context.Background(), peerInfo) // leaving the calls as blocking for now, to not over-connect beyond fanout
 		if err != nil {
 			s.log.Warnf("failed to connect to peer %s: %v", peerInfo.ID, err)
 		}
+		s.log.Debugf("DialPeersUntilTargetCount(%d), dialled peer %s", targetConnCount, peerInfo.ID)
 	}
 }
 

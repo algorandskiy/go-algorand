@@ -576,6 +576,7 @@ func (n *P2PNetwork) Disconnect(badpeer DisconnectablePeer) {
 		n.log.Warnf("Unknown peer type %T", badpeer)
 		return
 	}
+	n.log.Debugf("Disconnecting from peer %s", peerID)
 	if wsp != nil {
 		wsp.CloseAndWait(time.Now().Add(peerDisconnectionAckDuration))
 		delete(n.wsPeers, peerID)

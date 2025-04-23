@@ -83,6 +83,7 @@ func (n *streamManager) streamHandler(stream network.Stream) {
 			n.streams[stream.Conn().RemotePeer()] = stream
 
 			incoming := stream.Conn().Stat().Direction == network.DirInbound
+			n.log.Debugf("refreshed streamHandler %s (%s)", remotePeer, stream.Conn().RemoteMultiaddr().String())
 			n.handler(n.ctx, remotePeer, stream, incoming)
 			return
 		}
@@ -93,6 +94,7 @@ func (n *streamManager) streamHandler(stream network.Stream) {
 	// no old stream
 	n.streams[stream.Conn().RemotePeer()] = stream
 	incoming := stream.Conn().Stat().Direction == network.DirInbound
+	n.log.Debugf("new stream streamHandler %s (%s)", remotePeer, stream.Conn().RemoteMultiaddr().String())
 	n.handler(n.ctx, remotePeer, stream, incoming)
 }
 
@@ -109,6 +111,7 @@ func (n *streamManager) Connected(net network.Network, conn network.Conn) {
 
 	// ensure that only one of the peers initiates the stream
 	if localPeer > remotePeer {
+		n.log.Debugf("new stream not opened to/from %s (%s)", remotePeer, conn.RemoteMultiaddr().String())
 		return
 	}
 
@@ -130,6 +133,8 @@ func (n *streamManager) Connected(net network.Network, conn network.Conn) {
 		return
 	}
 	n.streams[remotePeer] = stream
+
+	n.log.Debugf("new stream opened to/from %s (%s)", remotePeer, conn.RemoteMultiaddr().String())
 
 	// release the lock to let handler do its thing
 	// otherwise reading/writing to the stream will deadlock

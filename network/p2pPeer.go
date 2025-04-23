@@ -76,10 +76,12 @@ func (c *wsPeerConnP2P) CloseWithMessage([]byte, time.Time) error {
 func (c *wsPeerConnP2P) SetReadLimit(int64) {}
 
 func (c *wsPeerConnP2P) CloseWithoutFlush() error {
+	logging.Base().Debug("CloseWithoutFlush wsPeerConnP2P", c.RemoteAddrString())
 	err := c.stream.Close()
 	if err != nil && err != yamux.ErrStreamClosed && err != yamux.ErrSessionShutdown && err != yamux.ErrStreamReset {
 		return err
 	}
+	c.stream.Conn().Close()
 	return nil
 }
 

@@ -32,6 +32,7 @@ import (
 	"os"
 	"regexp"
 	"runtime"
+	"runtime/pprof"
 	"sort"
 	"strings"
 	"sync"
@@ -4661,4 +4662,55 @@ func TestPeerComparisonInBroadcast(t *testing.T) {
 
 	require.Equal(t, 1, len(testPeer.sendBufferBulk))
 	require.Equal(t, 0, len(exceptPeer.sendBufferBulk))
+}
+
+func Test_GMP(t *testing.T) {
+
+	var threadProfile = pprof.Lookup("threadcreate")
+
+	for _ = range []struct {
+		name string
+	}{
+		{"first batch"},
+		{"second batch"},
+	} {
+		t.Logf("g1 = %d\n", runtime.NumGoroutine())
+		fmt.Printf(("t1: %d\n"), threadProfile.Count())
+
+		goroutineSize := 50
+		done := make(chan error, goroutineSize)
+		for i := 0; i < goroutineSize; i++ {
+			go func() {
+				// do some databases operations...
+				// each goroutine should be blocked here for some time...
+
+				// propogate the result
+				done <- nil
+			}()
+		}
+
+		t.Logf("gs2 = %d\n", runtime.NumGoroutine())
+		fmt.Printf(("ts2: %d\n"), threadProfile.Count())
+		time.Sleep(1 * time.Second)
+		t.Logf("g2 = %d\n", runtime.NumGoroutine())
+		fmt.Printf(("t2: %d\n"), threadProfile.Count())
+
+		for i := 0; i < goroutineSize; i++ {
+			select {
+			case err := <-done:
+				assert.NoError(t, err)
+			case <-time.After(10 * time.Second):
+				t.Fatal("timeout waiting for txFunc goroutine")
+			}
+		}
+		t.Logf("g3 = %d\n", runtime.NumGoroutine())
+		fmt.Printf(("t3: %d\n"), threadProfile.Count())
+
+		close(done)
+	}
+
+	f, err := os.OpenFile("threadProfile.pprof", os.O_RDWR|os.O_CREATE, 0755)
+	require.NoError(t, err)
+	threadProfile.WriteTo(f, 0)
+	f.Close()
 }
