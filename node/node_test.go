@@ -1306,6 +1306,8 @@ func TestCGOThreads(t *testing.T) {
 
 				m := util.GetTotalMemory()
 				require.Greater(t, m, uint64(0))
+
+				util.NanoSleep(1 * time.Nanosecond)
 			}
 		}(i)
 	}
