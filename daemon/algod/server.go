@@ -234,6 +234,8 @@ func (s *Server) Initialize(cfg config.Local, phonebookAddresses []string, genes
 	}
 	s.log.Infoln("++++++++++++++++++++++++++++++++++++++++")
 
+	s.log.Info("Actual config: ", cfg)
+
 	metricLabels := map[string]string{}
 	if s.log.GetTelemetryEnabled() {
 		metricLabels["telemetry_session"] = s.log.GetTelemetrySession()

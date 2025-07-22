@@ -62,6 +62,10 @@ func NewHybridP2PNetwork(log logging.Logger, cfg config.Local, datadir string, p
 		hybridMeshCreator = hybridRelayMeshCreator{}
 	}
 
+	log.Infof(
+		"NewHybridP2PNetwork: creating hybrid network: childWsNetMeshCreator %v, childP2PNetMeshCreator %v, hybridMeshCreator %v",
+		childWsNetMeshCreator, childP2PNetMeshCreator, hybridMeshCreator)
+
 	p2pnet, err := NewP2PNetwork(log, p2pcfg, datadir, phonebookAddresses, genesisInfo, nodeInfo, &identityOpts{tracker: identityTracker}, childP2PNetMeshCreator)
 	if err != nil {
 		return nil, err

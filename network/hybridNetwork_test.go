@@ -17,7 +17,9 @@
 package network
 
 import (
+	"encoding/json"
 	"net/url"
+	"strings"
 	"testing"
 	"time"
 
@@ -280,4 +282,25 @@ func TestHybridNetwork_HybridRelayStrategy(t *testing.T) {
 	wsPeersB := netB.wsNetwork.GetPeers(PeersConnectedIn, PeersConnectedOut)
 	require.Len(t, wsPeersA, 2)
 	require.Len(t, wsPeersB, 2)
+}
+
+func TestHybridNetworkConfig(t *testing.T) {
+	partitiontest.PartitionTest(t)
+	t.Parallel()
+
+	cfg := config.GetDefaultLocal()
+	overrideJSON := "{\"TxPoolExponentialIncreaseFactor\": 1, \"DNSBootstrapID\": \"<network>.algodev.network\", \"DeadlockDetection\": -1, \"CadaverSizeTarget\": 0, \"PeerPingPeriodSeconds\": 30, \"EnableAgreementReporting\": true, \"EnableAgreementTimeMetrics\": true, \"EnableAssembleStats\": true, \"EnableProcessBlockStats\": true, \"BaseLoggerDebugLevel\": 4, \"EnableProfiler\": true, \"EnableRuntimeMetrics\": true, \"EnableExperimentalAPI\": true, \"EnableAccountUpdatesStats\": true, \"EnableNetDevMetrics\":true, \"DNSSecurityFlags\": 32768, \"EnableP2PHybridMode\": true}"
+
+	reader := strings.NewReader(overrideJSON)
+	dec := json.NewDecoder(reader)
+	err := dec.Decode(&cfg)
+	require.NoError(t, err)
+
+	cfg.NetAddress = ":4560"
+	cfg.P2PHybridNetAddress = ":4561"
+	cfg.PublicAddress = "mynode.algodev.network:4560"
+
+	net, err := NewHybridP2PNetwork(logging.TestingLog(t), cfg, "", nil, GenesisInfo{genesisID, "net"}, &nopeNodeInfo{}, nil)
+	require.NoError(t, err)
+	require.NotNil(t, net)
 }

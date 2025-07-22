@@ -493,6 +493,7 @@ func (n *P2PNetwork) innerStop() {
 
 // meshThreadInner fetches nodes from DHT and attempts to connect to them
 func (n *P2PNetwork) meshThreadInner() bool {
+	n.log.Infof("Running p2p mesh thread inner")
 	defer n.service.DialPeersUntilTargetCount(n.config.GossipFanout)
 
 	// fetch peers from DNS
@@ -531,6 +532,7 @@ func (n *P2PNetwork) meshThreadInner() bool {
 		replace[i] = &peers[i]
 	}
 	if len(peers) > 0 {
+		n.log.Infof("Found %d peers from DNS and DHT: %v", len(peers), peers)
 		n.pstore.ReplacePeerList(replace, string(n.genesisInfo.NetworkID), phonebook.RelayRole)
 	}
 	return len(peers) > 0
