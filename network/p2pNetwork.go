@@ -380,7 +380,9 @@ func (n *P2PNetwork) setup() error {
 }
 
 func (n *P2PNetwork) p2pRelayPeerFilter(checker peerstore.RoleChecker, pid peer.ID) bool {
-	return !checker.HasRole(pid, phonebook.RelayRole)
+	val := !checker.HasRole(pid, phonebook.RelayRole)
+	n.log.Infof("p2pRelayPeerFilter: peer %s filter status: %t", pid, val)
+	return val
 }
 
 // PeerID returns this node's peer ID.

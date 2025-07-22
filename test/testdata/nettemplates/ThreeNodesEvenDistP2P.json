@@ -24,7 +24,7 @@
         {
             "Name": "Primary",
             "IsRelay": true,
-            "ConfigJSONOverride": "{\"EnableP2P\":true}",
+            "ConfigJSONOverride": "{\"EnableP2PHybridMode\":true, \"NetAddress\": \":0\", \"P2PHybridNetAddress\": \":0\", \"PublicAddress\": \"primary\"}",
             "Wallets": [
                 { "Name": "Wallet1",
                   "ParticipationOnly": false }
@@ -32,7 +32,8 @@
         },
         {
             "Name": "Node1",
-            "ConfigJSONOverride": "{\"EnableP2P\":true}",
+            "IsRelay": true,
+            "ConfigJSONOverride": "{\"EnableP2PHybridMode\":true, \"NetAddress\": \":0\", \"P2PHybridNetAddress\": \":0\", \"PublicAddress\": \"node1\"}",
             "Wallets": [
                 { "Name": "Wallet2",
                   "ParticipationOnly": false }
@@ -40,7 +41,8 @@
         },
         {
             "Name": "Node2",
-            "ConfigJSONOverride": "{\"EnableP2P\":true}",
+            "IsRelay": true,
+            "ConfigJSONOverride": "{\"EnableP2PHybridMode\":true, \"NetAddress\": \":0\", \"P2PHybridNetAddress\": \":0\", \"PublicAddress\": \"node1\"}}",
             "Wallets": [
                 { "Name": "Wallet3",
                     "ParticipationOnly": false }
