@@ -50,7 +50,7 @@ const (
 )
 
 const operationTimeout = time.Second * 5
-const maxAdvertisementInterval = time.Hour * 22
+const maxAdvertisementInterval = time.Second * 10
 
 // CapabilitiesDiscovery exposes Discovery interfaces and wraps underlying DHT methods to provide capabilities advertisement for the node
 type CapabilitiesDiscovery struct {
@@ -141,10 +141,12 @@ func (c *CapabilitiesDiscovery) AdvertiseCapabilities(capabilities ...Capability
 			}
 			select {
 			case <-c.dht.Context().Done():
+				c.log.Infof("advertising done")
 				return
 			case <-nextExecution:
 				var err error
 				advertisementInterval := maxAdvertisementInterval
+				c.log.Infof("going to advertise capabilities: %v", capabilities)
 				for _, capa := range capabilities {
 					ttl, err0 := c.advertise(c.dht.Context(), string(capa))
 					if err0 != nil {
@@ -164,11 +166,14 @@ func (c *CapabilitiesDiscovery) AdvertiseCapabilities(capabilities ...Capability
 				}
 				// If we failed to advertise, retry every according to exp jitter delays until successful
 				if err != nil {
-					nextExecution = time.After(eb.Delay())
+					delay := eb.Delay()
+					nextExecution = time.After(delay)
+					c.log.Infof("next advertisement in %d seconds after an error", delay*time.Second)
 				} else {
 					// Otherwise, ensure we're at the correct interval
 					nextExecution = time.After(advertisementInterval)
 					eb.Reset()
+					c.log.Infof("next advertisement in %d seconds, backoff reset", advertisementInterval*time.Second)
 				}
 			}
 		}
