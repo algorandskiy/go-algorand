@@ -196,6 +196,10 @@ func (n *HybridP2PNetwork) RequestConnectOutgoing(replace bool, quit <-chan stru
 	})
 }
 
+func (n *HybridP2PNetwork) Ready() bool {
+	return n.p2pNetwork.Ready() && n.wsNetwork.Ready()
+}
+
 // GetPeers implements GossipNode
 func (n *HybridP2PNetwork) GetPeers(options ...PeerOption) []Peer {
 	// TODO better way of combining data from peerstore and returning in GetPeers

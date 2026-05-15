@@ -43,6 +43,7 @@ type Service struct {
 	quit   chan struct{}
 	wg     sync.WaitGroup
 	quitFn context.CancelFunc // TODO instead of storing this, pass a context into Start()
+	ctx    context.Context
 
 	// external events
 	demux    *demux
@@ -125,6 +126,9 @@ func MakeService(p Parameters) (*Service, error) {
 
 	s.historicalClocks = make(map[round]roundStartTimer)
 
+	s.ctx, s.quitFn = context.WithCancel(context.Background())
+	s.parameters.Network.Start(s.ctx)
+
 	return s, nil
 }
 
@@ -135,9 +139,7 @@ func (s *Service) SetTracerFilename(filename string) {
 
 // Start executing the agreement protocol.
 func (s *Service) Start() {
-	ctx, quitFn := context.WithCancel(context.Background())
-	s.quitFn = quitFn
-	s.parameters.Network.Start(ctx)
+	// s.parameters.Network.Start(s.ctx)
 
 	s.quit = make(chan struct{})
 
@@ -166,7 +168,7 @@ func (s *Service) Start() {
 	output := make(chan []action)
 	ready := make(chan externalDemuxSignals)
 	s.wg.Add(2)
-	go s.demuxLoop(ctx, input, output, ready)
+	go s.demuxLoop(s.ctx, input, output, ready)
 	go s.mainLoop(input, output, ready)
 }
 

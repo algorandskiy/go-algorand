@@ -421,7 +421,6 @@ func (node *AlgorandFullNode) Start() error {
 		}
 	} else {
 		node.catchupService.Start()
-		node.agreementService.Start()
 		node.txPoolSyncerService.Start(node.catchupService.InitialSyncDone)
 		node.blockService.Start()
 		node.ledgerService.Start()
@@ -430,6 +429,28 @@ func (node *AlgorandFullNode) Start() error {
 		node.heartbeatService.Start()
 		if err := startNetwork(); err != nil {
 			return err
+		}
+
+		if node.net.Ready() {
+			node.agreementService.Start()
+		} else {
+			go func() {
+				// Wait for the network to be ready before starting agreement
+				const iterDelay = 500 * time.Millisecond
+				const maxIter = int(30 * time.Second / iterDelay)
+				for i := 0; i < maxIter; i++ {
+					if node.net.Ready() {
+						node.agreementService.Start()
+						return
+					}
+					if node.ctx.Err() != nil {
+						return
+					}
+					time.Sleep(iterDelay)
+				}
+				node.log.Warnf("network not ready after %d seconds, starting agreement service anyway", maxIter/2)
+				node.agreementService.Start()
+			}()
 		}
 
 		node.startMonitoringRoutines()

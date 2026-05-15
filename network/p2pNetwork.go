@@ -765,6 +765,25 @@ func addrInfoToWsPeerCore(n *P2PNetwork, addrInfo *peer.AddrInfo) (wsPeerCore, b
 	return peerCore, true
 }
 
+// Ready returns whether the network is ready to send messages.
+func (n *P2PNetwork) Ready() bool {
+	if len(n.pstore.Peers()) == 0 {
+		// no peers, trivial node
+		return true
+	}
+
+	hasWsPeers := len(n.GetPeers(PeersConnectedOut, PeersConnectedIn)) > 0
+	if !hasWsPeers {
+		return false
+	}
+	for topic := range gossipSubTopics {
+		if len(n.service.ListPeersForTopic(topic)) == 0 {
+			return false
+		}
+	}
+	return true
+}
+
 // GetPeers returns a list of Peers we could potentially send a direct message to.
 func (n *P2PNetwork) GetPeers(options ...PeerOption) []Peer {
 	peers := make([]Peer, 0)

@@ -153,7 +153,7 @@ func TestRateLimiting(t *testing.T) {
 		time.Sleep(100 * time.Millisecond)
 		for i := 0; i < clientsCount; i++ {
 			// check if the channel is ready.
-			readyCh := networks[i].Ready()
+			readyCh := networks[i].isReady()
 			select {
 			case <-readyCh:
 				// it's closed, so this client got connected.

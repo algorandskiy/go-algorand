@@ -55,6 +55,11 @@ func (network *MockNetwork) Start() error {
 func (network *MockNetwork) Stop() {
 }
 
+// Ready - always ready
+func (network *MockNetwork) Ready() bool {
+	return true
+}
+
 // RequestConnectOutgoing - unused function
 func (network *MockNetwork) RequestConnectOutgoing(replace bool, quit <-chan struct{}) {
 }
@@ -74,13 +79,6 @@ func (network *MockNetwork) RegisterRPCName(name string, rcvr interface{}) {
 // GetPeers - unused function
 func (network *MockNetwork) GetPeers(options ...network.PeerOption) []network.Peer {
 	return nil
-}
-
-// Ready - always ready
-func (network *MockNetwork) Ready() chan struct{} {
-	c := make(chan struct{})
-	close(c)
-	return c
 }
 
 // RegisterHandlers - empty implementation.

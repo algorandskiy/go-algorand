@@ -258,10 +258,15 @@ func (n *NetworkFacade) Start() error { return nil }
 func (n *NetworkFacade) Stop() {}
 
 // Ready - always ready
-func (n *NetworkFacade) Ready() chan struct{} {
-	c := make(chan struct{})
-	close(c)
-	return c
+// func (n *NetworkFacade) Ready() chan struct{} {
+// 	c := make(chan struct{})
+// 	close(c)
+// 	return c
+// }
+
+// Ready - always ready
+func (n *NetworkFacade) Ready() bool {
+	return true
 }
 
 // RegisterHandlers

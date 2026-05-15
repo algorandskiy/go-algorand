@@ -174,16 +174,6 @@ func WrapNetwork(net network.GossipNode, log logging.Logger, cfg config.Local) a
 	i.net = net
 	i.log = log
 
-	return i
-}
-
-// SetTrace modifies the result of WrapNetwork to add network propagation tracing
-func SetTrace(net agreement.Network, trace messagetracer.MessageTracer) {
-	i := net.(*networkImpl)
-	i.trace = trace
-}
-
-func (i *networkImpl) Start(ctx context.Context) {
 	handlers := []network.TaggedMessageHandler{
 		{Tag: protocol.AgreementVoteTag, MessageHandler: network.HandlerFunc(i.processVoteMessage)},
 		{Tag: protocol.ProposalPayloadTag, MessageHandler: network.HandlerFunc(i.processProposalMessage)},
@@ -197,6 +187,17 @@ func (i *networkImpl) Start(ctx context.Context) {
 		{Tag: protocol.VoteBundleTag, MessageHandler: network.ValidateHandleFunc(i.processValidateBundleMessage)},
 	}
 	i.net.RegisterValidatorHandlers(validateHandlers)
+
+	return i
+}
+
+// SetTrace modifies the result of WrapNetwork to add network propagation tracing
+func SetTrace(net agreement.Network, trace messagetracer.MessageTracer) {
+	i := net.(*networkImpl)
+	i.trace = trace
+}
+
+func (i *networkImpl) Start(ctx context.Context) {
 	i.ctx = ctx
 }
 

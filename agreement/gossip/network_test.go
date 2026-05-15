@@ -62,6 +62,10 @@ type whiteholeNetwork struct {
 	log          logging.Logger
 }
 
+func (d *whiteholeDomain) Ready() bool {
+	return true
+}
+
 func (d *whiteholeDomain) syncNetwork(networks ...*whiteholeNetwork) {
 	// find the greatest network.
 	d.messagesMu.Lock()
@@ -150,9 +154,6 @@ func (w *whiteholeNetwork) Disconnect(badnode network.DisconnectablePeer) {
 }
 func (w *whiteholeNetwork) DisconnectPeers() {
 	return
-}
-func (w *whiteholeNetwork) Ready() chan struct{} {
-	return make(chan struct{})
 }
 func (w *whiteholeNetwork) RegisterRPCName(name string, rcvr interface{}) {
 	return

@@ -300,7 +300,7 @@ func TestWebsocketNetworkStartZeroIncomingDoesNotListen(t *testing.T) {
 
 func waitReady(t testing.TB, wn *WebsocketNetwork, timeout <-chan time.Time) bool {
 	select {
-	case <-wn.Ready():
+	case <-wn.isReady():
 		return true
 	case <-timeout:
 		_, file, line, _ := runtime.Caller(1)
@@ -811,7 +811,7 @@ func waitNodesReady(t *testing.T, nodes []*WebsocketNetwork, timeout time.Durati
 	tc := time.After(timeout)
 	for i, node := range nodes {
 		select {
-		case <-node.Ready():
+		case <-node.isReady():
 		case <-tc:
 			t.Fatalf("node[%d] not ready at timeout", i)
 		}

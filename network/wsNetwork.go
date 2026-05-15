@@ -470,9 +470,26 @@ func (wn *WebsocketNetwork) DisconnectPeers() {
 	closeGroup.Wait()
 }
 
-// Ready returns a chan that will be closed when we have a minimum number of peer connections active
-func (wn *WebsocketNetwork) Ready() chan struct{} {
+// isReady returns a chan that will be closed when we have a minimum number of peer connections active
+func (wn *WebsocketNetwork) isReady() chan struct{} {
 	return wn.readyChan
+}
+
+func (wn *WebsocketNetwork) Ready() bool {
+	if len(wn.phonebook.GetAddresses(1, phonebook.RelayRole)) == 0 {
+		// no peers, trivial node
+		return true
+	}
+
+	if wn.ready.Load() > 0 {
+		return true
+	}
+	select {
+	case <-wn.readyChan:
+		return true
+	default:
+		return false
+	}
 }
 
 // RegisterHTTPHandler path accepts gorilla/mux path annotations

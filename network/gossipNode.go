@@ -101,6 +101,9 @@ type GossipNode interface {
 	// Close sockets. Stop threads.
 	Stop()
 
+	// Ready returns true if the network is ready to send and receive messages.
+	Ready() bool
+
 	// RegisterHandlers adds to the set of given message handlers.
 	RegisterHandlers(dispatch []TaggedMessageHandler)
 
