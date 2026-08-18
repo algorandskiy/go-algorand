@@ -24,6 +24,7 @@ import (
 	"maps"
 	"strings"
 
+	"github.com/algorand/go-algorand/crypto"
 	"github.com/algorand/go-algorand/data/basics"
 	"github.com/algorand/go-algorand/protocol"
 )
@@ -135,14 +136,16 @@ func (r *registerOp) apply(db *participationDB) error {
 func (i *insertOp) apply(db *participationDB) (err error) {
 	var rawVRF []byte
 	var rawVoting []byte
+	var votingBatches, votingOffsets []crypto.KeyedSubkey
 	var rawStateProofContext []byte
 
 	if i.record.VRF != nil {
 		rawVRF = protocol.Encode(i.record.VRF)
 	}
 	if i.record.Voting != nil {
-		voting := i.record.Voting.Snapshot()
-		rawVoting = protocol.Encode(&voting)
+		var scalars crypto.OneTimeSignatureSecretsPersistent
+		scalars, votingBatches, votingOffsets = i.record.Voting.PersistentParts()
+		rawVoting = protocol.Encode(&scalars)
 	}
 
 	// This contains all the state proof data except for the actual secret keys (stored in a different table)
@@ -170,7 +173,20 @@ func (i *insertOp) apply(db *participationDB) (err error) {
 
 		// Create Rolling entry
 		result, err2 = tx.Exec(insertRollingQuery, pk, rawVoting)
-		return verifyExecWithOneRowEffected(err2, result, "insert rolling")
+		if err2 = verifyExecWithOneRowEffected(err2, result, "insert rolling"); err2 != nil {
+			return err2
+		}
+
+		// Per-subkey voting rows (a mid-life key carries offsets too)
+		err2 = insertKeyedSubkeys(tx, "INSERT INTO VotingBatches (pk, batch, data) VALUES (?, ?, ?)", []interface{}{pk}, votingBatches)
+		if err2 != nil {
+			return fmt.Errorf("unable to insert voting batch subkeys: %w", err2)
+		}
+		err2 = insertKeyedSubkeys(tx, "INSERT INTO VotingOffsets (pk, off, data) VALUES (?, ?, ?)", []interface{}{pk}, votingOffsets)
+		if err2 != nil {
+			return fmt.Errorf("unable to insert voting offset subkeys: %w", err2)
+		}
+		return nil
 	})
 	return err
 }
@@ -201,6 +217,16 @@ func (d *deleteOp) apply(db *participationDB) error {
 		}
 
 		_, err = tx.Exec(deleteStateProofByPK, pk)
+		if err != nil {
+			return err
+		}
+
+		_, err = tx.Exec(deleteVotingBatchesPK, pk)
+		if err != nil {
+			return err
+		}
+
+		_, err = tx.Exec(deleteVotingOffsetsPK, pk)
 		if err != nil {
 			return err
 		}

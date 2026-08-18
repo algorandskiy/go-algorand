@@ -18,6 +18,8 @@ package node
 
 import (
 	"bytes"
+	"context"
+	"database/sql"
 	"fmt"
 	"math/rand"
 	"os"
@@ -671,6 +673,47 @@ func TestDefaultResourcePaths(t *testing.T) {
 	require.NoError(t, err)
 	_, err = os.Stat(filepath.Join(testDirectory, genesis.ID(), "crash.sqlite"))
 	require.NoError(t, err)
+}
+
+// TestLoadParticipationKeysRenamesUnsupported confirms that a participation
+// key file with an unsupported (future) schema version is renamed to
+// <name>.old and does not prevent the node from starting.
+func TestLoadParticipationKeysRenamesUnsupported(t *testing.T) {
+	partitiontest.PartitionTest(t)
+
+	testDirectory := t.TempDir()
+
+	genesis := bookkeeping.Genesis{
+		SchemaID:    "gen",
+		Proto:       protocol.ConsensusCurrentVersion,
+		Network:     config.Devtestnet,
+		FeeSink:     sinkAddr.String(),
+		RewardsPool: poolAddr.String(),
+	}
+
+	// plant a partkey file with a schema version from the future
+	genesisDir := filepath.Join(testDirectory, genesis.ID())
+	require.NoError(t, os.MkdirAll(genesisDir, 0700))
+	partfile := filepath.Join(genesisDir, config.PartKeyFilename("unsupported", 0, 3000))
+	partdb, err := db.MakeErasableAccessor(partfile)
+	require.NoError(t, err)
+	err = partdb.Atomic(func(ctx context.Context, tx *sql.Tx) error {
+		if _, err := tx.Exec(`CREATE TABLE schema (tablename TEXT PRIMARY KEY, version INTEGER);`); err != nil {
+			return err
+		}
+		_, err := tx.Exec("INSERT INTO schema (tablename, version) VALUES (?, ?)", account.PartTableSchemaName, 99)
+		return err
+	})
+	require.NoError(t, err)
+	partdb.Close()
+
+	n, err := MakeFull(logging.TestingLog(t), testDirectory, config.GetDefaultLocal(), []string{}, genesis)
+	require.NoError(t, err)
+	require.NoError(t, n.Start())
+	n.Stop()
+
+	require.NoFileExists(t, partfile)
+	require.FileExists(t, partfile+".old")
 }
 
 // TestConfiguredDataDirs tests to see that when HotDataDir and ColdDataDir are set, underlying resources are created in the correct locations

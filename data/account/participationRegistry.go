@@ -286,6 +286,7 @@ func makeParticipationRegistry(accessor db.Pair, log logging.Logger) (*participa
 
 	migrations := []db.Migration{
 		dbSchemaUpgrade0,
+		dbSchemaUpgrade1,
 	}
 
 	err := db.Initialize(accessor.Wdb, migrations)
@@ -347,6 +348,22 @@ const (
 			key   BLOB    NOT NULL, --*  msgpack encoding of ParticipationAccount.BlockProof.SignatureAlgorithm
 			PRIMARY KEY (pk, round)
 		)`
+
+	// VotingBatches/VotingOffsets hold one row per ephemeral voting subkey,
+	// so per-round key deletion is a row delete instead of a rewrite of the
+	// whole keyset (Rolling.voting holds only the scalar fields).
+	createVotingBatches = `CREATE TABLE VotingBatches (
+			pk    INTEGER NOT NULL,
+			batch INTEGER NOT NULL, --* absolute batch number
+			data  BLOB    NOT NULL, --* msgpack encoding of the batch subkey
+			PRIMARY KEY (pk, batch)
+		)`
+	createVotingOffsets = `CREATE TABLE VotingOffsets (
+			pk   INTEGER NOT NULL,
+			off  INTEGER NOT NULL, --* absolute offset within batch FirstBatch-1
+			data BLOB    NOT NULL, --* msgpack encoding of the offset subkey
+			PRIMARY KEY (pk, off)
+		)`
 	insertKeysetQuery         = `INSERT INTO Keysets (participationID, account, firstValidRound, lastValidRound, keyDilution, vrf, stateProof) VALUES (?, ?, ?, ?, ?, ?, ?)`
 	insertRollingQuery        = `INSERT INTO Rolling (pk, voting) VALUES (?, ?)`
 	appendStateProofKeysQuery = `INSERT INTO StateProofKeys (pk, round, key) VALUES(?, ?, ?)`
@@ -356,7 +373,7 @@ const (
 	selectPK      = `SELECT pk FROM Keysets WHERE participationID = ? LIMIT 1`
 	selectLastPK  = `SELECT pk FROM Keysets ORDER BY pk DESC LIMIT 1`
 	selectRecords = `SELECT
-			k.participationID, k.account, k.firstValidRound,
+			k.pk, k.participationID, k.account, k.firstValidRound,
        		k.lastValidRound, k.keyDilution, k.vrf, k.stateProof,
 			r.lastVoteRound, r.lastBlockProposalRound, r.lastStateProofRound,
 			r.effectiveFirstRound, r.effectiveLastRound, r.voting
@@ -368,17 +385,23 @@ const (
 		FROM StateProofKeys s
 		WHERE round=?
 		   AND pk IN (SELECT pk FROM Keysets WHERE participationID=?)`
+	selectRollingVotingByID = `SELECT r.pk, r.voting
+		FROM Rolling r
+		WHERE r.pk IN (SELECT pk FROM Keysets WHERE participationID=?)`
+	selectVotingBatches    = `SELECT batch, data FROM VotingBatches WHERE pk=? ORDER BY batch`
+	selectVotingOffsets    = `SELECT off, data FROM VotingOffsets WHERE pk=? ORDER BY off`
 	deleteKeysets          = `DELETE FROM Keysets WHERE pk=?`
 	deleteRolling          = `DELETE FROM Rolling WHERE pk=?`
 	deleteStateProofByPK   = `DELETE FROM StateProofKeys WHERE pk=?`
+	deleteVotingBatchesPK  = `DELETE FROM VotingBatches WHERE pk=?`
+	deleteVotingOffsetsPK  = `DELETE FROM VotingOffsets WHERE pk=?`
 	updateRollingFieldsSQL = `UPDATE Rolling
 		 SET lastVoteRound=?,
 		     lastBlockProposalRound=?,
 		     lastStateProofRound=?,
 		     effectiveFirstRound=?,
-		     effectiveLastRound=?,
-		     voting=?
-		 WHERE pk IN (SELECT pk FROM Keysets WHERE participationID=?)`
+		     effectiveLastRound=?
+		 WHERE pk=?`
 )
 
 // dbSchemaUpgrade0 initialize the tables.
@@ -399,6 +422,61 @@ func dbSchemaUpgrade0(ctx context.Context, tx *sql.Tx, newDatabase bool) error {
 	_, err = tx.Exec(createStateProof)
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// dbSchemaUpgrade1 moves the voting subkeys out of the Rolling.voting blob
+// into per-subkey rows, leaving only the scalar fields in the blob.
+func dbSchemaUpgrade1(ctx context.Context, tx *sql.Tx, newDatabase bool) error {
+	_, err := tx.Exec(createVotingBatches)
+	if err != nil {
+		return err
+	}
+	_, err = tx.Exec(createVotingOffsets)
+	if err != nil {
+		return err
+	}
+
+	if newDatabase {
+		return nil
+	}
+
+	// convert every existing whole-secrets blob into rows
+	type pkVoting struct {
+		pk        int64
+		rawVoting []byte
+	}
+	var blobs []pkVoting
+	rows, err := tx.Query("SELECT pk, voting FROM Rolling")
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var entry pkVoting
+		if err := rows.Scan(&entry.pk, &entry.rawVoting); err != nil {
+			return err
+		}
+		blobs = append(blobs, entry)
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	rows.Close()
+
+	for _, entry := range blobs {
+		if len(entry.rawVoting) == 0 {
+			continue
+		}
+		voting := &crypto.OneTimeSignatureSecrets{}
+		if err := protocol.Decode(entry.rawVoting, voting); err != nil {
+			return fmt.Errorf("dbSchemaUpgrade1: failed to decode voting blob for pk %d: %w", entry.pk, err)
+		}
+		if err := applyVotingDeltaToRegistry(tx, entry.pk, computeVotingDelta(nil, voting)); err != nil {
+			return fmt.Errorf("dbSchemaUpgrade1: failed to convert voting blob for pk %d: %w", entry.pk, err)
+		}
 	}
 
 	return nil
@@ -621,9 +699,13 @@ func (db *participationDB) DeleteExpired(latestRound basics.Round, agreementProt
 }
 
 // scanRecords is a helper to manage scanning participation records.
-func scanRecords(rows *sql.Rows) ([]ParticipationRecord, error) {
+// It returns the records along with their Rolling/Keysets primary keys,
+// which callers use to load the per-subkey voting rows.
+func scanRecords(rows *sql.Rows) ([]ParticipationRecord, []int64, error) {
 	results := make([]ParticipationRecord, 0)
+	pks := make([]int64, 0)
 	for rows.Next() {
+		var pk int64
 		var record ParticipationRecord
 		var rawParticipation []byte
 		var rawAccount []byte
@@ -638,6 +720,7 @@ func scanRecords(rows *sql.Rows) ([]ParticipationRecord, error) {
 		var effectiveLast sql.NullInt64
 
 		err := rows.Scan(
+			&pk,
 			&rawParticipation,
 			&rawAccount,
 			&record.FirstValid,
@@ -653,7 +736,7 @@ func scanRecords(rows *sql.Rows) ([]ParticipationRecord, error) {
 			&rawVoting,
 		)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		copy(record.ParticipationID[:], rawParticipation)
@@ -663,7 +746,7 @@ func scanRecords(rows *sql.Rows) ([]ParticipationRecord, error) {
 			record.VRF = &crypto.VRFSecrets{}
 			err = protocol.Decode(rawVRF, record.VRF)
 			if err != nil {
-				return nil, fmt.Errorf("unable to decode VRF: %w", err)
+				return nil, nil, fmt.Errorf("unable to decode VRF: %w", err)
 			}
 		}
 
@@ -671,7 +754,7 @@ func scanRecords(rows *sql.Rows) ([]ParticipationRecord, error) {
 			stateProof := merklesignature.Signer{}
 			err = protocol.Decode(rawStateProof, &stateProof.SignerContext)
 			if err != nil {
-				return nil, fmt.Errorf("unable to decode stateproof: %w", err)
+				return nil, nil, fmt.Errorf("unable to decode stateproof: %w", err)
 			}
 			var stateProofVerifer merklesignature.Verifier
 			copy(stateProofVerifer.Commitment[:], stateProof.GetVerifier().Commitment[:])
@@ -683,7 +766,7 @@ func scanRecords(rows *sql.Rows) ([]ParticipationRecord, error) {
 			record.Voting = &crypto.OneTimeSignatureSecrets{}
 			err = protocol.Decode(rawVoting, record.Voting)
 			if err != nil {
-				return nil, fmt.Errorf("unable to decode Voting: %w", err)
+				return nil, nil, fmt.Errorf("unable to decode Voting: %w", err)
 			}
 		}
 
@@ -709,9 +792,10 @@ func scanRecords(rows *sql.Rows) ([]ParticipationRecord, error) {
 		}
 
 		results = append(results, record)
+		pks = append(pks, pk)
 	}
 
-	return results, nil
+	return results, pks, nil
 }
 
 func (db *participationDB) getAllFromDB() (records []ParticipationRecord, err error) {
@@ -721,10 +805,39 @@ func (db *participationDB) getAllFromDB() (records []ParticipationRecord, err er
 			return fmt.Errorf("unable to query records: %w", err)
 		}
 
-		records, err = scanRecords(rows)
+		var pks []int64
+		records, pks, err = scanRecords(rows)
 		if err != nil {
 			records = nil
 			return fmt.Errorf("problem scanning records: %w", err)
+		}
+		rows.Close()
+
+		// reattach the per-subkey voting rows; a blob that itself carries
+		// subkeys is a legacy whole-secrets encoding and is used as-is
+		for i := range records {
+			voting := records[i].Voting
+			if voting == nil || len(voting.Batches) != 0 || len(voting.Offsets) != 0 {
+				continue
+			}
+			batches, err := readKeyedSubkeys(tx, selectVotingBatches, pks[i])
+			if err != nil {
+				records = nil
+				return fmt.Errorf("unable to read voting batch subkeys for pk %d: %w", pks[i], err)
+			}
+			offsets, err := readKeyedSubkeys(tx, selectVotingOffsets, pks[i])
+			if err != nil {
+				records = nil
+				return fmt.Errorf("unable to read voting offset subkeys for pk %d: %w", pks[i], err)
+			}
+			if len(batches) == 0 && len(offsets) == 0 {
+				continue
+			}
+			records[i].Voting, err = crypto.OneTimeSignatureSecretsFromParts(voting.OneTimeSignatureSecretsPersistent, batches, offsets)
+			if err != nil {
+				records = nil
+				return fmt.Errorf("unable to reassemble voting secrets for pk %d: %w", pks[i], err)
+			}
 		}
 
 		return nil
@@ -849,10 +962,38 @@ func (db *participationDB) GetForRound(id ParticipationID, round basics.Round) (
 	return result, nil
 }
 
-// updateRollingFields sets all of the rolling fields according to the record object.
+// updateRollingFields sets all of the rolling fields according to the record
+// object, persisting the voting secrets incrementally: the last-persisted
+// scalars are compared against the record's secrets and only the difference
+// (consumed subkey rows, refreshed offsets, new scalars) is written.
 func updateRollingFields(ctx context.Context, tx *sql.Tx, record ParticipationRecord) error {
-	voting := record.Voting.Snapshot()
-	encodedVotingSecrets := protocol.Encode(&voting)
+	// resolve the primary key and last-persisted voting scalars, keeping the
+	// legacy ErrNoKeyForID/ErrMultipleKeysForID semantics
+	rows, err := tx.QueryContext(ctx, selectRollingVotingByID, record.ParticipationID[:])
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	var pk int64
+	var rawVoting []byte
+	numRows := 0
+	for rows.Next() {
+		if err := rows.Scan(&pk, &rawVoting); err != nil {
+			return err
+		}
+		numRows++
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	if numRows > 1 {
+		return ErrMultipleKeysForID
+	}
+	if numRows < 1 {
+		return ErrNoKeyForID
+	}
+	rows.Close()
 
 	result, err := tx.ExecContext(ctx, updateRollingFieldsSQL,
 		record.LastVote,
@@ -860,27 +1001,26 @@ func updateRollingFields(ctx context.Context, tx *sql.Tx, record ParticipationRe
 		record.LastStateProof,
 		record.EffectiveFirst,
 		record.EffectiveLast,
-		encodedVotingSecrets,
-		record.ParticipationID[:])
-
+		pk)
 	if err != nil {
 		return err
 	}
-
-	numRows, err := result.RowsAffected()
-	if err != nil {
+	if err := verifyExecWithOneRowEffected(err, result, "update rolling fields"); err != nil {
 		return err
 	}
 
-	if numRows > 1 {
-		return ErrMultipleKeysForID
+	if record.Voting == nil {
+		return nil
 	}
 
-	if numRows < 1 {
-		return ErrNoKeyForID
+	var old *crypto.OneTimeSignatureSecretsPersistent
+	if len(rawVoting) > 0 {
+		var decoded crypto.OneTimeSignatureSecrets
+		if protocol.Decode(rawVoting, &decoded) == nil {
+			old = &decoded.OneTimeSignatureSecretsPersistent
+		}
 	}
-
-	return nil
+	return applyVotingDeltaToRegistry(tx, pk, computeVotingDelta(old, record.Voting))
 }
 
 func recordActive(record ParticipationRecord, on basics.Round) bool {

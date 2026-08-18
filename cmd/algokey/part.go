@@ -17,15 +17,19 @@
 package main
 
 import (
+	"bytes"
 	"encoding/base64"
 	"fmt"
+	"io"
 	"os"
+	"time"
 
 	"github.com/spf13/cobra"
 
 	"github.com/algorand/go-algorand/config"
 	"github.com/algorand/go-algorand/data/account"
 	"github.com/algorand/go-algorand/data/basics"
+	"github.com/algorand/go-algorand/protocol"
 	"github.com/algorand/go-algorand/util"
 	"github.com/algorand/go-algorand/util/db"
 )
@@ -35,6 +39,7 @@ var partFirstRound basics.Round
 var partLastRound basics.Round
 var partKeyDilution uint64
 var partParent string
+var partNoValidation bool
 
 var partCmd = &cobra.Command{
 	Use:   "part",
@@ -163,6 +168,128 @@ var partReparentCmd = &cobra.Command{
 	},
 }
 
+var partMigrateCmd = &cobra.Command{
+	Use:   "migrate",
+	Short: "Migrate a participation key file to the latest schema version",
+	Long: `Migrate a copy of a participation key file to the latest schema version.
+
+The original file is never modified: the migrated database is written to
+<keyfile>.new.  The time spent in the migration itself is printed, which is
+approximately what algod will spend migrating the file automatically at
+startup.  Unless --no-validation is given, the keys reconstructed from the
+migrated copy are validated against the ones in the original file.`,
+	Args: cobra.NoArgs,
+	Run: func(cmd *cobra.Command, _ []string) {
+		partkey, migrated, err := runPartMigrate(partKeyfile, partNoValidation, os.Stdout)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%v\n", err)
+			os.Exit(1)
+		}
+		if migrated {
+			fmt.Println()
+			printPartkey(partkey)
+		}
+	},
+}
+
+// runPartMigrate migrates a copy of keyfile to <keyfile>.new and optionally
+// validates the copy against the original.  It returns the migrated key
+// (valid only when migrated is true).
+func runPartMigrate(keyfile string, noValidation bool, out io.Writer) (partkey account.Participation, migrated bool, err error) {
+	origdb, err := db.MakeErasableAccessor(keyfile)
+	if err != nil {
+		return partkey, false, fmt.Errorf("cannot open partkey database %s: %v", keyfile, err)
+	}
+	defer origdb.Close()
+
+	version, err := account.PartkeySchemaVersion(origdb)
+	if err != nil {
+		return partkey, false, fmt.Errorf("cannot read schema version of %s: %v", keyfile, err)
+	}
+	fmt.Fprintf(out, "Current schema version of %s: %d\n", keyfile, version)
+	if version == account.PartTableSchemaVersion {
+		fmt.Fprintf(out, "Already at the latest schema version; nothing to do.\n")
+		return partkey, false, nil
+	}
+	if version < 1 || version > account.PartTableSchemaVersion {
+		return partkey, false, fmt.Errorf("unsupported schema version %d (this algokey supports up to %d)", version, account.PartTableSchemaVersion)
+	}
+
+	newFile := keyfile + ".new"
+	if _, statErr := os.Stat(newFile); statErr == nil {
+		return partkey, false, fmt.Errorf("%s already exists; remove it before migrating", newFile)
+	}
+	if _, err = util.CopyFile(keyfile, newFile); err != nil {
+		return partkey, false, fmt.Errorf("cannot copy %s to %s: %v", keyfile, newFile, err)
+	}
+	// copy WAL siblings so SQLite recovers an unclean close in the copy, not the original
+	for _, ext := range []string{"-wal", "-shm"} {
+		if _, statErr := os.Stat(keyfile + ext); statErr == nil {
+			if _, err = util.CopyFile(keyfile+ext, newFile+ext); err != nil {
+				return partkey, false, fmt.Errorf("cannot copy %s to %s: %v", keyfile+ext, newFile+ext, err)
+			}
+		}
+	}
+
+	newdb, err := db.MakeErasableAccessor(newFile)
+	if err != nil {
+		return partkey, false, fmt.Errorf("cannot open copied partkey database %s: %v", newFile, err)
+	}
+	defer newdb.Close()
+
+	start := time.Now()
+	err = account.Migrate(newdb)
+	migrationTime := time.Since(start)
+	if err != nil {
+		return partkey, false, fmt.Errorf("migration of %s failed: %v", newFile, err)
+	}
+	fmt.Fprintf(out, "Migrated %s to schema version %d\n", newFile, account.PartTableSchemaVersion)
+	fmt.Fprintf(out, "Pure migration time: %v (approximately what algod will spend migrating this file at startup)\n", migrationTime)
+
+	restored, err := account.RestoreParticipation(newdb)
+	if err != nil {
+		return partkey, false, fmt.Errorf("cannot load migrated partkey database %s: %v", newFile, err)
+	}
+	partkey = restored.Participation
+
+	if noValidation {
+		return partkey, true, nil
+	}
+
+	original, err := account.RestoreParticipationUnmigrated(origdb)
+	if err != nil {
+		return partkey, false, fmt.Errorf("cannot load original partkey database %s for validation: %v", keyfile, err)
+	}
+	if err = comparePartkeys(original.Participation, partkey); err != nil {
+		return partkey, false, fmt.Errorf("validation FAILED: migrated keys differ from the original: %v", err)
+	}
+	fmt.Fprintf(out, "Validation PASSED: keys reconstructed from %s match the original\n", newFile)
+	return partkey, true, nil
+}
+
+// comparePartkeys verifies two participation keys carry identical key
+// material and metadata.
+func comparePartkeys(expected, actual account.Participation) error {
+	if expected.Parent != actual.Parent {
+		return fmt.Errorf("parent address mismatch")
+	}
+	if expected.FirstValid != actual.FirstValid || expected.LastValid != actual.LastValid || expected.KeyDilution != actual.KeyDilution {
+		return fmt.Errorf("validity metadata mismatch")
+	}
+	if !bytes.Equal(protocol.Encode(expected.VRF), protocol.Encode(actual.VRF)) {
+		return fmt.Errorf("VRF secrets mismatch")
+	}
+	expectedVoting := expected.Voting.Snapshot()
+	actualVoting := actual.Voting.Snapshot()
+	if !bytes.Equal(protocol.Encode(&expectedVoting), protocol.Encode(&actualVoting)) {
+		return fmt.Errorf("voting secrets mismatch")
+	}
+	if !bytes.Equal(protocol.Encode(expected.StateProofSecrets), protocol.Encode(actual.StateProofSecrets)) {
+		return fmt.Errorf("state proof secrets mismatch")
+	}
+	return nil
+}
+
 func printPartkey(partkey account.Participation) {
 	fmt.Printf("Parent address:    %s\n", partkey.Parent.String())
 	fmt.Printf("VRF public key:    %s\n", base64.StdEncoding.EncodeToString(partkey.VRF.PK[:]))
@@ -182,6 +309,7 @@ func init() {
 	partCmd.AddCommand(partGenerateCmd)
 	partCmd.AddCommand(partInfoCmd)
 	partCmd.AddCommand(partReparentCmd)
+	partCmd.AddCommand(partMigrateCmd)
 	partCmd.AddCommand(keyregCmd)
 
 	partGenerateCmd.Flags().StringVar(&partKeyfile, "keyfile", "", "Participation key filename")
@@ -200,4 +328,8 @@ func init() {
 	partReparentCmd.Flags().StringVar(&partParent, "parent", "", "Address of parent account")
 	partReparentCmd.MarkFlagRequired("keyfile")
 	partReparentCmd.MarkFlagRequired("parent")
+
+	partMigrateCmd.Flags().StringVar(&partKeyfile, "keyfile", "", "Participation key filename")
+	partMigrateCmd.Flags().BoolVar(&partNoValidation, "no-validation", false, "Skip validating the migrated keys against the original file")
+	partMigrateCmd.MarkFlagRequired("keyfile")
 }

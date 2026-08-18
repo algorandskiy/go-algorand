@@ -134,14 +134,34 @@ func (root Root) Address() basics.Address {
 }
 
 // RestoreParticipation restores a Participation from a database
-// handle.
+// handle.  The file is migrated to the latest schema version first.
 func RestoreParticipation(store db.Accessor) (acc PersistedParticipation, err error) {
-	var rawParent, rawVRF, rawVoting, rawStateProof []byte
-
 	err = Migrate(store)
 	if err != nil {
-		return
+		return PersistedParticipation{}, err
 	}
+
+	return restoreParticipationAtVersion(store, PartTableSchemaVersion)
+}
+
+// RestoreParticipationUnmigrated restores a Participation without migrating
+// the file, reading whichever supported schema version it is at.  This keeps
+// the file byte-identical, e.g. for validating a migration against the
+// original.
+func RestoreParticipationUnmigrated(store db.Accessor) (PersistedParticipation, error) {
+	version, err := PartkeySchemaVersion(store)
+	if err != nil {
+		return PersistedParticipation{}, err
+	}
+	if version < 1 || version > PartTableSchemaVersion {
+		return PersistedParticipation{}, ErrUnsupportedSchema
+	}
+	return restoreParticipationAtVersion(store, version)
+}
+
+func restoreParticipationAtVersion(store db.Accessor, version int) (acc PersistedParticipation, err error) {
+	var rawParent, rawVRF, rawVoting, rawStateProof []byte
+	var batches, offsets []crypto.KeyedSubkey
 
 	err = store.Atomic(func(ctx context.Context, tx *sql.Tx) error {
 		var nrows int
@@ -154,11 +174,28 @@ func RestoreParticipation(store db.Accessor) (acc PersistedParticipation, err er
 			logging.Base().Infof("RestoreParticipation: state not found (n = %v)", nrows)
 		}
 
-		row = tx.QueryRow("select parent, vrf, voting, firstValid, lastValid, keyDilution, stateProof from ParticipationAccount")
+		columns := "parent, vrf, voting, firstValid, lastValid"
+		dest := []interface{}{&rawParent, &rawVRF, &rawVoting, &acc.FirstValid, &acc.LastValid}
+		if version >= 2 {
+			columns += ", keyDilution"
+			dest = append(dest, &acc.KeyDilution)
+		}
+		if version >= 3 {
+			columns += ", stateProof"
+			dest = append(dest, &rawStateProof)
+		}
+		row = tx.QueryRow("select " + columns + " from ParticipationAccount")
 
-		err1 = row.Scan(&rawParent, &rawVRF, &rawVoting, &acc.FirstValid, &acc.LastValid, &acc.KeyDilution, &rawStateProof)
+		err1 = row.Scan(dest...)
 		if err1 != nil {
 			return fmt.Errorf("RestoreParticipation: could not read account raw data: %v", err1)
+		}
+
+		if version >= 4 {
+			batches, offsets, err1 = readVotingRowsFromPartkeyFile(tx)
+			if err1 != nil {
+				return fmt.Errorf("RestoreParticipation: could not read voting subkey rows: %v", err1)
+			}
 		}
 
 		copy(acc.Parent[:32], rawParent)
@@ -176,8 +213,7 @@ func RestoreParticipation(store db.Accessor) (acc PersistedParticipation, err er
 		return PersistedParticipation{}, err
 	}
 
-	acc.Voting = &crypto.OneTimeSignatureSecrets{}
-	err = protocol.Decode(rawVoting, acc.Voting)
+	acc.Voting, err = decodeRowOrientedVoting(rawVoting, batches, offsets)
 	if err != nil {
 		return PersistedParticipation{}, err
 	}
@@ -192,6 +228,21 @@ func RestoreParticipation(store db.Accessor) (acc PersistedParticipation, err er
 	}
 
 	return acc, nil
+}
+
+// decodeRowOrientedVoting reconstructs voting secrets from a voting blob plus
+// subkey rows.  A blob that itself carries subkeys is a legacy whole-secrets
+// encoding and is used as-is.
+func decodeRowOrientedVoting(rawVoting []byte, batches, offsets []crypto.KeyedSubkey) (*crypto.OneTimeSignatureSecrets, error) {
+	voting := &crypto.OneTimeSignatureSecrets{}
+	err := protocol.Decode(rawVoting, voting)
+	if err != nil {
+		return nil, err
+	}
+	if len(voting.Batches) != 0 || len(voting.Offsets) != 0 || (len(batches) == 0 && len(offsets) == 0) {
+		return voting, nil
+	}
+	return crypto.OneTimeSignatureSecretsFromParts(voting.OneTimeSignatureSecretsPersistent, batches, offsets)
 }
 
 // RestoreParticipationWithSecrets restores a Participation from a database

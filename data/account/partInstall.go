@@ -17,15 +17,20 @@
 package account
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
+
+	"github.com/algorand/go-algorand/crypto"
+	"github.com/algorand/go-algorand/protocol"
+	"github.com/algorand/go-algorand/util/db"
 )
 
 // PartTableSchemaName is the name of the table in the Schema Versions table storing the table + version details
 const PartTableSchemaName = "parttable"
 
 // PartTableSchemaVersion is the latest version of the PartTable schema
-const PartTableSchemaVersion = 3
+const PartTableSchemaVersion = 4
 
 // ErrUnsupportedSchema is the error returned when the PartTable schema version is wrong.
 var ErrUnsupportedSchema = fmt.Errorf("unsupported participation file schema version (expected %d)", PartTableSchemaVersion)
@@ -38,7 +43,7 @@ func partInstallDatabase(tx *sql.Tx) error {
 
 		--* participation keys
 		vrf BLOB,         --*  msgpack encoding of ParticipationAccount.vrf
-		voting BLOB,      --*  msgpack encoding of ParticipationAccount.voting
+		voting BLOB,      --*  msgpack encoding of the voting key scalars (whole secrets before schema v4)
 
 		firstValid INTEGER,
 		lastValid INTEGER,
@@ -46,6 +51,11 @@ func partInstallDatabase(tx *sql.Tx) error {
 		keyDilution INTEGER NOT NULL DEFAULT 0,
 		stateProof BLOB  --*  msgpack encoding of ParticipationAccount.StateProof
 	);`)
+	if err != nil {
+		return err
+	}
+
+	err = createVotingSubkeyTables(tx)
 	if err != nil {
 		return err
 	}
@@ -133,5 +143,77 @@ func updateDB(tx *sql.Tx, partVersion int) (int, error) {
 			return 0, err
 		}
 	}
+
+	if partVersion == 3 {
+		err := migrateVotingBlobToRows(tx)
+		if err != nil {
+			return 0, err
+		}
+
+		partVersion = 4
+		_, err = tx.Exec("UPDATE schema SET version=? WHERE tablename=?", partVersion, PartTableSchemaName)
+		if err != nil {
+			return 0, err
+		}
+	}
 	return partVersion, nil
+}
+
+func createVotingSubkeyTables(tx *sql.Tx) error {
+	_, err := tx.Exec(`CREATE TABLE OtsBatches (
+		batch INTEGER PRIMARY KEY, --* absolute batch number
+		data BLOB NOT NULL         --* msgpack encoding of the batch subkey
+	);`)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec(`CREATE TABLE OtsOffsets (
+		off INTEGER PRIMARY KEY, --* absolute offset within batch FirstBatch-1
+		data BLOB NOT NULL       --* msgpack encoding of the offset subkey
+	);`)
+	return err
+}
+
+// migrateVotingBlobToRows converts the whole-secrets voting blob into
+// per-subkey rows, leaving only the scalar fields in the voting column.
+func migrateVotingBlobToRows(tx *sql.Tx) error {
+	err := createVotingSubkeyTables(tx)
+	if err != nil {
+		return err
+	}
+
+	var rawVoting []byte
+	err = tx.QueryRow("SELECT voting FROM ParticipationAccount").Scan(&rawVoting)
+	if err == sql.ErrNoRows {
+		// no account row (partially initialized file); nothing to convert
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	if len(rawVoting) == 0 {
+		return nil
+	}
+
+	voting := &crypto.OneTimeSignatureSecrets{}
+	err = protocol.Decode(rawVoting, voting)
+	if err != nil {
+		return fmt.Errorf("migrateVotingBlobToRows: failed to decode voting blob: %w", err)
+	}
+
+	return applyVotingDeltaToPartkeyFile(tx, computeVotingDelta(nil, voting))
+}
+
+// PartkeySchemaVersion reads the participation file's schema version without
+// migrating it.  Returns ErrUnsupportedSchema if no version is recorded.
+func PartkeySchemaVersion(store db.Accessor) (version int, err error) {
+	err = store.Atomic(func(ctx context.Context, tx *sql.Tx) error {
+		serr := tx.QueryRow("SELECT version FROM schema WHERE tablename=?", PartTableSchemaName).Scan(&version)
+		if serr == sql.ErrNoRows {
+			return ErrUnsupportedSchema
+		}
+		return serr
+	})
+	return version, err
 }
