@@ -487,14 +487,14 @@ func dbSchemaUpgrade1(ctx context.Context, tx *sql.Tx, newDatabase bool) error {
 		if err != nil {
 			return fmt.Errorf("dbSchemaUpgrade1: failed to compute conversion for pk %d: %w", entry.pk, err)
 		}
-		if err := applyVotingDeltaToRegistry(tx, entry.pk, delta); err != nil {
+		if err = applyVotingDeltaToRegistry(tx, entry.pk, delta); err != nil {
 			return fmt.Errorf("dbSchemaUpgrade1: failed to convert voting blob for pk %d: %w", entry.pk, err)
 		}
 
 		// validate inside the transaction: reconstruct from what was written
 		// and compare the complete key material against the original blob
 		var storedScalars []byte
-		if err := tx.QueryRow("SELECT voting FROM Rolling WHERE pk=?", entry.pk).Scan(&storedScalars); err != nil {
+		if err = tx.QueryRow("SELECT voting FROM Rolling WHERE pk=?", entry.pk).Scan(&storedScalars); err != nil {
 			return fmt.Errorf("dbSchemaUpgrade1: failed to read back scalars for pk %d: %w", entry.pk, err)
 		}
 		batches, err := readKeyedSubkeys(tx, selectVotingBatches, entry.pk)
@@ -881,12 +881,12 @@ func (db *participationDB) getAllFromDB() (records []ParticipationRecord, err er
 			offsets := offsetsByPK[pks[i]]
 
 			scalars := &voting.OneTimeSignatureSecretsPersistent
-			if err := validateOffsetRowBatches(scalars, offsets.batches); err != nil {
+			if err = validateOffsetRowBatches(scalars, offsets.batches); err != nil {
 				err = fmt.Errorf("voting rows for key %s (pk %d) are corrupt: %w", records[i].ParticipationID, pks[i], err)
 				records = nil
 				return err
 			}
-			if err := validateVotingRowCounts(scalars, records[i].LastValid, records[i].KeyDilution, len(batches.subkeys), len(offsets.subkeys)); err != nil {
+			if err = validateVotingRowCounts(scalars, records[i].LastValid, records[i].KeyDilution, len(batches.subkeys), len(offsets.subkeys)); err != nil {
 				err = fmt.Errorf("voting rows for key %s (pk %d) are corrupt: %w", records[i].ParticipationID, pks[i], err)
 				records = nil
 				return err
