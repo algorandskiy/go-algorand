@@ -174,11 +174,10 @@ var partMigrateCmd = &cobra.Command{
 	Short: "Migrate a participation key file to the latest schema version",
 	Long: `Migrate a copy of a participation key file to the latest schema version.
 
-The original file is never modified: the migrated database is written to
-<keyfile>.new.  The time spent in the migration itself is printed, which is
-approximately what algod will spend migrating the file automatically at
-startup.  Unless --no-validation is given, the keys reconstructed from the
-migrated copy are validated against the ones in the original file.`,
+The original file is not modified: the migrated database is written to <keyfile>.new.
+Prints out migration time in order to estimate algod's auto-migration time at startup.
+Unless --no-validation is given, the keys reconstructed from the migrated copy are validated
+against the ones in the original file.`,
 	Args: cobra.NoArgs,
 	Run: func(cmd *cobra.Command, _ []string) {
 		partkey, migrated, err := runPartMigrate(partKeyfile, partNoValidation, os.Stdout)
@@ -212,8 +211,8 @@ func runPartMigrate(keyfile string, noValidation bool, out io.Writer) (partkey a
 		fmt.Fprintf(out, "Already at the latest schema version; nothing to do.\n")
 		return partkey, false, nil
 	}
-	if version < 1 || version > account.PartTableSchemaVersion {
-		return partkey, false, fmt.Errorf("unsupported schema version %d (this algokey supports up to %d)", version, account.PartTableSchemaVersion)
+	if version != account.PartTableSchemaVersion-1 {
+		return partkey, false, fmt.Errorf("unsupported schema version %d: only version %d files can be migrated (versions 1 and 2 predate state proofs and their keys expired long ago)", version, account.PartTableSchemaVersion-1)
 	}
 
 	newFile := keyfile + ".new"

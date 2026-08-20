@@ -77,9 +77,11 @@ This row-per-subkey layout means the per-round forward-security deletion of
 used keys is a small row delete instead of a rewrite of the whole keyset.
 State proof keys follow the same row-per-key pattern in their own table.
 
-Files created by older releases (schema version 3 and below) stored the whole
-voting keyset as one BLOB; they are migrated in place automatically whenever
-they are opened (by **algod**, **goal**, or **algokey**). To rehearse that
+Files created by older releases (schema version 3) stored the whole voting
+keyset as one BLOB; they are migrated in place automatically whenever they
+are opened (by **algod**, **goal**, or **algokey**). Schema versions 1 and 2
+predate state proofs — any key stored in such a file expired years ago — and
+are no longer readable; the node renames them to `*.old` and skips them. To rehearse that
 migration without touching the original file — and to see how long algod will
 spend doing it at startup — use:
 ```

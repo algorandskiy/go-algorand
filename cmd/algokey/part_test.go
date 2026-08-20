@@ -36,8 +36,7 @@ import (
 )
 
 type legacyPartkeyOptions struct {
-	version        int  // 1 or 3
-	mangleVoting   bool // truncate the voting blob so migration fails
+	version        int  // schema version to record; the table shape is always v3
 	nullStateProof bool // v3 file with a NULL stateProof column (upgraded from v1/v2 by old code)
 }
 
@@ -62,7 +61,7 @@ func makeLegacyPartkeyFile(t *testing.T, keyfile string, opts legacyPartkeyOptio
 		VRF:         crypto.GenerateVRFSecrets(),
 	}
 	crypto.RandBytes(part.Parent[:])
-	if opts.version >= 3 && !opts.nullStateProof {
+	if !opts.nullStateProof {
 		stateProofSecrets, err := merklesignature.New(first, last, (last+1)/2)
 		a.NoError(err)
 		part.StateProofSecrets = stateProofSecrets
@@ -70,9 +69,6 @@ func makeLegacyPartkeyFile(t *testing.T, keyfile string, opts legacyPartkeyOptio
 
 	voting := part.Voting.Snapshot()
 	rawVoting := protocol.Encode(&voting)
-	if opts.mangleVoting {
-		rawVoting = rawVoting[:len(rawVoting)/2]
-	}
 
 	partdb, err := db.MakeErasableAccessor(keyfile)
 	a.NoError(err)
@@ -83,16 +79,6 @@ func makeLegacyPartkeyFile(t *testing.T, keyfile string, opts legacyPartkeyOptio
 			return err
 		}
 		if _, err := tx.Exec("INSERT INTO schema (tablename, version) VALUES (?, ?)", account.PartTableSchemaName, opts.version); err != nil {
-			return err
-		}
-		if opts.version == 1 {
-			if _, err := tx.Exec(`CREATE TABLE ParticipationAccount (
-				parent BLOB, vrf BLOB, voting BLOB,
-				firstValid INTEGER, lastValid INTEGER);`); err != nil {
-				return err
-			}
-			_, err := tx.Exec("INSERT INTO ParticipationAccount (parent, vrf, voting, firstValid, lastValid) VALUES (?, ?, ?, ?, ?)",
-				part.Parent[:], protocol.Encode(part.VRF), rawVoting, part.FirstValid, part.LastValid)
 			return err
 		}
 		if _, err := tx.Exec(`CREATE TABLE ParticipationAccount (
@@ -119,9 +105,9 @@ func makeLegacyPartkeyFile(t *testing.T, keyfile string, opts legacyPartkeyOptio
 	return part
 }
 
-func makeV3PartkeyFile(t *testing.T, keyfile string, mangleVoting bool) account.Participation {
+func makeV3PartkeyFile(t *testing.T, keyfile string) account.Participation {
 	t.Helper()
-	return makeLegacyPartkeyFile(t, keyfile, legacyPartkeyOptions{version: 3, mangleVoting: mangleVoting})
+	return makeLegacyPartkeyFile(t, keyfile, legacyPartkeyOptions{version: 3})
 }
 
 func TestPartMigrate(t *testing.T) {
@@ -130,7 +116,7 @@ func TestPartMigrate(t *testing.T) {
 	a := require.New(t)
 
 	keyfile := filepath.Join(t.TempDir(), "test.partkey")
-	original := makeV3PartkeyFile(t, keyfile, false)
+	original := makeV3PartkeyFile(t, keyfile)
 
 	bytesBefore, err := os.ReadFile(keyfile)
 	a.NoError(err)
@@ -161,35 +147,49 @@ func TestPartMigrate(t *testing.T) {
 	a.Contains(out.String(), "Validation PASSED")
 }
 
-// TestPartMigrateNilStateProof covers the file populations with no state
-// proof secrets: v1 files, and v3 files whose stateProof column is NULL
-// (upgraded from v1/v2 by old releases). Validation must not crash on them.
+// TestPartMigrateNilStateProof covers v3 files whose stateProof column is
+// NULL (upgraded from v1/v2 by old releases). Validation must not crash on
+// them.
 func TestPartMigrateNilStateProof(t *testing.T) {
 	partitiontest.PartitionTest(t)
 	t.Parallel()
 	a := require.New(t)
 
-	for name, opts := range map[string]legacyPartkeyOptions{
-		"v1":               {version: 1},
-		"v3NullStateProof": {version: 3, nullStateProof: true},
-	} {
-		keyfile := filepath.Join(t.TempDir(), name+".partkey")
-		makeLegacyPartkeyFile(t, keyfile, opts)
+	keyfile := filepath.Join(t.TempDir(), "v3null.partkey")
+	makeLegacyPartkeyFile(t, keyfile, legacyPartkeyOptions{version: 3, nullStateProof: true})
+
+	var out bytes.Buffer
+	partkey, migrated, err := runPartMigrate(keyfile, false, &out)
+	a.NoError(err)
+	a.True(migrated)
+	a.Nil(partkey.StateProofSecrets)
+	a.Contains(out.String(), "Validation PASSED")
+
+	// validation reads the original without migrating it
+	origdb, err := db.MakeErasableAccessor(keyfile)
+	a.NoError(err)
+	version, err := account.PartkeySchemaVersion(origdb)
+	origdb.Close()
+	a.NoError(err)
+	a.Equal(3, version)
+}
+
+// TestPartMigrateRejectsPreStateProofVersions verifies schema versions 1 and
+// 2 (whose keys expired years ago) are refused rather than migrated.
+func TestPartMigrateRejectsPreStateProofVersions(t *testing.T) {
+	partitiontest.PartitionTest(t)
+	t.Parallel()
+	a := require.New(t)
+
+	for _, version := range []int{1, 2} {
+		keyfile := filepath.Join(t.TempDir(), "old.partkey")
+		makeLegacyPartkeyFile(t, keyfile, legacyPartkeyOptions{version: version})
 
 		var out bytes.Buffer
-		partkey, migrated, err := runPartMigrate(keyfile, false, &out)
-		a.NoError(err, name)
-		a.True(migrated, name)
-		a.Nil(partkey.StateProofSecrets, name)
-		a.Contains(out.String(), "Validation PASSED", name)
-
-		// validation reads the original without migrating it
-		origdb, err := db.MakeErasableAccessor(keyfile)
-		a.NoError(err)
-		version, err := account.PartkeySchemaVersion(origdb)
-		origdb.Close()
-		a.NoError(err)
-		a.Equal(opts.version, version, name)
+		_, _, err := runPartMigrate(keyfile, false, &out)
+		a.ErrorContains(err, "unsupported schema version", "version %d", version)
+		_, statErr := os.Stat(keyfile + ".new")
+		a.True(os.IsNotExist(statErr), "version %d", version)
 	}
 }
 
@@ -201,7 +201,7 @@ func TestPartMigratePreservesPermissions(t *testing.T) {
 	a := require.New(t)
 
 	keyfile := filepath.Join(t.TempDir(), "test.partkey")
-	makeV3PartkeyFile(t, keyfile, false)
+	makeV3PartkeyFile(t, keyfile)
 	a.NoError(os.Chmod(keyfile, 0600))
 
 	var out bytes.Buffer
@@ -214,18 +214,28 @@ func TestPartMigratePreservesPermissions(t *testing.T) {
 	a.Equal(os.FileMode(0600), info.Mode().Perm())
 }
 
-// TestComparePartkeysMissingStateProofKeys verifies validation detects a copy
-// whose state proof secret keys are missing, even though the Participation
-// encoding itself covers only the SignerContext.
-func TestComparePartkeysMissingStateProofKeys(t *testing.T) {
+// TestComparePartkeys covers the validation comparator: whole-key and
+// metadata mismatches, and a copy whose state proof secret keys are missing
+// (the Participation encoding itself covers only the SignerContext).
+func TestComparePartkeys(t *testing.T) {
 	partitiontest.PartitionTest(t)
 	t.Parallel()
 	a := require.New(t)
 
-	keyfile := filepath.Join(t.TempDir(), "test.partkey")
-	makeV3PartkeyFile(t, keyfile, false)
+	dir := t.TempDir()
+	p1 := makeV3PartkeyFile(t, filepath.Join(dir, "a.partkey"))
+	p2 := makeV3PartkeyFile(t, filepath.Join(dir, "b.partkey"))
 
-	partdb, err := db.MakeErasableAccessor(keyfile)
+	a.NoError(comparePartkeys(p1, p1))
+	a.Error(comparePartkeys(p1, p2))
+
+	tweaked := p1
+	tweaked.KeyDilution++
+	a.ErrorContains(comparePartkeys(p1, tweaked), "metadata")
+
+	// state proof secret keys live in their own table and are compared only
+	// when loaded; a copy missing them must be detected
+	partdb, err := db.MakeErasableAccessor(filepath.Join(dir, "a.partkey"))
 	a.NoError(err)
 	defer partdb.Close()
 
@@ -238,24 +248,7 @@ func TestComparePartkeysMissingStateProofKeys(t *testing.T) {
 	a.NoError(err)
 	a.Empty(withoutKeys.StateProofSecrets.GetAllKeys())
 
-	a.NoError(comparePartkeys(withKeys.Participation, withKeys.Participation))
 	a.ErrorContains(comparePartkeys(withKeys.Participation, withoutKeys.Participation), "state proof key count mismatch")
-}
-
-func TestPartMigrateNoValidation(t *testing.T) {
-	partitiontest.PartitionTest(t)
-	t.Parallel()
-	a := require.New(t)
-
-	keyfile := filepath.Join(t.TempDir(), "test.partkey")
-	makeV3PartkeyFile(t, keyfile, false)
-
-	var out bytes.Buffer
-	_, migrated, err := runPartMigrate(keyfile, true, &out)
-	a.NoError(err)
-	a.True(migrated)
-	a.NotContains(out.String(), "Validation PASSED")
-	a.NotContains(out.String(), "Validation FAILED")
 }
 
 func TestPartMigrateNoopOnLatest(t *testing.T) {
@@ -287,48 +280,10 @@ func TestPartMigrateRefusesExistingNew(t *testing.T) {
 	a := require.New(t)
 
 	keyfile := filepath.Join(t.TempDir(), "test.partkey")
-	makeV3PartkeyFile(t, keyfile, false)
+	makeV3PartkeyFile(t, keyfile)
 	a.NoError(os.WriteFile(keyfile+".new", []byte("occupied"), 0600))
 
 	var out bytes.Buffer
 	_, _, err := runPartMigrate(keyfile, false, &out)
 	a.ErrorContains(err, "already exists")
-}
-
-func TestPartMigrateCorruptVotingBlob(t *testing.T) {
-	partitiontest.PartitionTest(t)
-	t.Parallel()
-	a := require.New(t)
-
-	keyfile := filepath.Join(t.TempDir(), "test.partkey")
-	makeV3PartkeyFile(t, keyfile, true)
-
-	var out bytes.Buffer
-	_, _, err := runPartMigrate(keyfile, false, &out)
-	a.ErrorContains(err, "migration")
-
-	// original still untouched at version 3
-	origdb, err := db.MakeErasableAccessor(keyfile)
-	a.NoError(err)
-	version, err := account.PartkeySchemaVersion(origdb)
-	origdb.Close()
-	a.NoError(err)
-	a.Equal(3, version)
-}
-
-func TestComparePartkeysMismatch(t *testing.T) {
-	partitiontest.PartitionTest(t)
-	t.Parallel()
-	a := require.New(t)
-
-	dir := t.TempDir()
-	p1 := makeV3PartkeyFile(t, filepath.Join(dir, "a.partkey"), false)
-	p2 := makeV3PartkeyFile(t, filepath.Join(dir, "b.partkey"), false)
-
-	a.NoError(comparePartkeys(p1, p1))
-	a.Error(comparePartkeys(p1, p2))
-
-	tweaked := p1
-	tweaked.KeyDilution++
-	a.ErrorContains(comparePartkeys(p1, tweaked), "metadata")
 }

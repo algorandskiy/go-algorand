@@ -134,7 +134,7 @@ func (root Root) Address() basics.Address {
 }
 
 // RestoreParticipation restores a Participation from a database
-// handle.  The file is migrated to the latest schema version first.
+// handle. The file is migrated to the latest schema version first.
 func RestoreParticipation(store db.Accessor) (acc PersistedParticipation, err error) {
 	err = Migrate(store)
 	if err != nil {
@@ -145,15 +145,15 @@ func RestoreParticipation(store db.Accessor) (acc PersistedParticipation, err er
 }
 
 // RestoreParticipationUnmigrated restores a Participation without migrating
-// the file, reading whichever supported schema version it is at.  This keeps
-// the file byte-identical, e.g. for validating a migration against the
-// original.
+// the file, reading whichever supported schema version (3 or 4) it is at.
+// This keeps the file byte-identical, e.g. for validating a migration
+// against the original.
 func RestoreParticipationUnmigrated(store db.Accessor) (PersistedParticipation, error) {
 	version, err := PartkeySchemaVersion(store)
 	if err != nil {
 		return PersistedParticipation{}, err
 	}
-	if version < 1 || version > PartTableSchemaVersion {
+	if version != PartTableSchemaVersion && version != PartTableSchemaVersion-1 {
 		return PersistedParticipation{}, ErrUnsupportedSchema
 	}
 	return restoreParticipationAtVersion(store, version)
@@ -175,19 +175,9 @@ func restoreParticipationAtVersion(store db.Accessor, version int) (acc Persiste
 			return fmt.Errorf("RestoreParticipation: expected exactly one account row, found %d", nrows)
 		}
 
-		columns := "parent, vrf, voting, firstValid, lastValid"
-		dest := []any{&rawParent, &rawVRF, &rawVoting, &acc.FirstValid, &acc.LastValid}
-		if version >= 2 {
-			columns += ", keyDilution"
-			dest = append(dest, &acc.KeyDilution)
-		}
-		if version >= 3 {
-			columns += ", stateProof"
-			dest = append(dest, &rawStateProof)
-		}
-		row = tx.QueryRow("select " + columns + " from ParticipationAccount")
+		row = tx.QueryRow("select parent, vrf, voting, firstValid, lastValid, keyDilution, stateProof from ParticipationAccount")
 
-		err1 = row.Scan(dest...)
+		err1 = row.Scan(&rawParent, &rawVRF, &rawVoting, &acc.FirstValid, &acc.LastValid, &acc.KeyDilution, &rawStateProof)
 		if err1 != nil {
 			return fmt.Errorf("RestoreParticipation: could not read account raw data: %v", err1)
 		}

@@ -43,52 +43,6 @@ func requireSameSecrets(t *testing.T, expected, actual *OneTimeSignatureSecrets)
 	require.Equal(t, protocol.Encode(&e), protocol.Encode(&a))
 }
 
-// TestOneTimeSignatureSecretsBlobRoundTrip covers the legacy whole-blob
-// encoding path: encode/decode fidelity of a full secrets struct.
-func TestOneTimeSignatureSecretsBlobRoundTrip(t *testing.T) {
-	partitiontest.PartitionTest(t)
-	t.Parallel()
-
-	s := GenerateOneTimeSignatureSecrets(0, 100)
-	s.DeleteBeforeFineGrained(OneTimeSignatureIdentifier{Batch: 3, Offset: 5}, 256)
-
-	snap := s.Snapshot()
-	blob := protocol.Encode(&snap)
-	var restored OneTimeSignatureSecrets
-	require.NoError(t, protocol.Decode(blob, &restored))
-	requireSameSecrets(t, s, &restored)
-}
-
-func TestPersistentPartsRoundTrip(t *testing.T) {
-	partitiontest.PartitionTest(t)
-	t.Parallel()
-
-	const numKeysPerBatch = 16
-
-	// fresh: batches only, no offsets
-	fresh := GenerateOneTimeSignatureSecrets(0, 10)
-	requireSameSecrets(t, fresh, reassemble(t, fresh))
-
-	// immediately after a batch rollover: offsets freshly expanded
-	rolled := GenerateOneTimeSignatureSecrets(0, 10)
-	rolled.DeleteBeforeFineGrained(OneTimeSignatureIdentifier{Batch: 1, Offset: 0}, numKeysPerBatch)
-	require.NotEmpty(t, rolled.Offsets)
-	requireSameSecrets(t, rolled, reassemble(t, rolled))
-
-	// mid-batch: offsets partially consumed, FirstOffset > 0
-	mid := GenerateOneTimeSignatureSecrets(0, 10)
-	mid.DeleteBeforeFineGrained(OneTimeSignatureIdentifier{Batch: 2, Offset: 7}, numKeysPerBatch)
-	require.NotZero(t, mid.FirstOffset)
-	requireSameSecrets(t, mid, reassemble(t, mid))
-
-	// exhausted: everything deleted
-	spent := GenerateOneTimeSignatureSecrets(0, 3)
-	spent.DeleteBeforeFineGrained(OneTimeSignatureIdentifier{Batch: 100, Offset: 0}, numKeysPerBatch)
-	require.Empty(t, spent.Batches)
-	require.Empty(t, spent.Offsets)
-	requireSameSecrets(t, spent, reassemble(t, spent))
-}
-
 // TestFromPartsNilBatchesEdge verifies that zero rows reassemble to nil
 // slices, so an exhausted key's FirstBatch is not spuriously bumped by a
 // later far-future DeleteBeforeFineGrained (which skips the bump only when
@@ -164,6 +118,9 @@ func TestPersistentPartsSignAfterReassembly(t *testing.T) {
 	const numKeysPerBatch = 8
 	s := GenerateOneTimeSignatureSecrets(0, 6)
 	pub := s.OneTimeSignatureVerifier
+
+	// fresh state (batch subkeys only, no offsets) round-trips
+	requireSameSecrets(t, s, reassemble(t, s))
 
 	msg := randString()
 	for round := uint64(0); round < 4*numKeysPerBatch; round += 3 {

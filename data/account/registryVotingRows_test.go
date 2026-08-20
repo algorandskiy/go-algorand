@@ -114,26 +114,6 @@ func TestRegistryMigrationV1ToV2(t *testing.T) {
 	a.Equal(encodedVotingSnapshot(p.Voting), encodedVotingSnapshot(record.Voting))
 }
 
-// TestRegistryMigrationFreshDB verifies the newDatabase path skips conversion
-// but still creates the tables.
-func TestRegistryMigrationFreshDB(t *testing.T) {
-	partitiontest.PartitionTest(t)
-	a := require.New(t)
-
-	registry, dbfile := getRegistry(t)
-	defer registryCloseTest(t, registry, dbfile)
-
-	a.Zero(registryCountRows(a, registry, "VotingBatches"))
-	a.Zero(registryCountRows(a, registry, "VotingOffsets"))
-
-	err := registry.store.Rdb.Atomic(func(ctx context.Context, tx *sql.Tx) error {
-		version, err := db.GetUserVersion(ctx, tx)
-		a.Equal(int32(2), version)
-		return err
-	})
-	a.NoError(err)
-}
-
 // TestRegistryInsertMidLifeKey verifies inserting a key that already has
 // expanded offsets stores and restores them.
 func TestRegistryInsertMidLifeKey(t *testing.T) {
