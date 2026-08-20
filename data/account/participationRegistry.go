@@ -979,12 +979,12 @@ func updateRollingFields(ctx context.Context, tx *sql.Tx, record ParticipationRe
 	var rawVoting []byte
 	numRows := 0
 	for rows.Next() {
-		if err := rows.Scan(&pk, &rawVoting); err != nil {
+		if err = rows.Scan(&pk, &rawVoting); err != nil {
 			return err
 		}
 		numRows++
 	}
-	if err := rows.Err(); err != nil {
+	if err = rows.Err(); err != nil {
 		return err
 	}
 	if numRows > 1 {
@@ -1005,7 +1005,7 @@ func updateRollingFields(ctx context.Context, tx *sql.Tx, record ParticipationRe
 	if err != nil {
 		return err
 	}
-	if err := verifyExecWithOneRowEffected(err, result, "update rolling fields"); err != nil {
+	if err = verifyExecWithOneRowEffected(err, result, "update rolling fields"); err != nil {
 		return err
 	}
 

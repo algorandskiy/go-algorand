@@ -178,11 +178,11 @@ func (i *insertOp) apply(db *participationDB) (err error) {
 		}
 
 		// Per-subkey voting rows (a mid-life key carries offsets too)
-		err2 = insertKeyedSubkeys(tx, "INSERT INTO VotingBatches (pk, batch, data) VALUES (?, ?, ?)", []interface{}{pk}, votingBatches)
+		err2 = insertKeyedSubkeys(tx, "INSERT INTO VotingBatches (pk, batch, data) VALUES (?, ?, ?)", []any{pk}, votingBatches)
 		if err2 != nil {
 			return fmt.Errorf("unable to insert voting batch subkeys: %w", err2)
 		}
-		err2 = insertKeyedSubkeys(tx, "INSERT INTO VotingOffsets (pk, off, data) VALUES (?, ?, ?)", []interface{}{pk}, votingOffsets)
+		err2 = insertKeyedSubkeys(tx, "INSERT INTO VotingOffsets (pk, off, data) VALUES (?, ?, ?)", []any{pk}, votingOffsets)
 		if err2 != nil {
 			return fmt.Errorf("unable to insert voting offset subkeys: %w", err2)
 		}

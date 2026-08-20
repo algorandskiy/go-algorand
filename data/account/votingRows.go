@@ -111,7 +111,7 @@ func computeVotingDelta(old *crypto.OneTimeSignatureSecretsPersistent, secrets *
 
 // insertKeyedSubkeys bulk-inserts rows with a single prepared statement.
 // insertSQL must take (prefixArgs..., index, data).
-func insertKeyedSubkeys(tx *sql.Tx, insertSQL string, prefixArgs []interface{}, rows []crypto.KeyedSubkey) error {
+func insertKeyedSubkeys(tx *sql.Tx, insertSQL string, prefixArgs []any, rows []crypto.KeyedSubkey) error {
 	if len(rows) == 0 {
 		return nil
 	}
@@ -120,7 +120,7 @@ func insertKeyedSubkeys(tx *sql.Tx, insertSQL string, prefixArgs []interface{}, 
 		return err
 	}
 	defer stmt.Close()
-	args := make([]interface{}, len(prefixArgs)+2)
+	args := make([]any, len(prefixArgs)+2)
 	copy(args, prefixArgs)
 	for _, row := range rows {
 		args[len(prefixArgs)] = row.Index
@@ -199,10 +199,10 @@ func applyVotingDeltaToRegistry(tx *sql.Tx, pk int64, d votingDelta) error {
 		}
 	}
 
-	if err := insertKeyedSubkeys(tx, "INSERT INTO VotingBatches (pk, batch, data) VALUES (?, ?, ?)", []interface{}{pk}, d.insertBatches); err != nil {
+	if err := insertKeyedSubkeys(tx, "INSERT INTO VotingBatches (pk, batch, data) VALUES (?, ?, ?)", []any{pk}, d.insertBatches); err != nil {
 		return fmt.Errorf("applyVotingDeltaToRegistry: failed to insert batches: %w", err)
 	}
-	if err := insertKeyedSubkeys(tx, "INSERT INTO VotingOffsets (pk, off, data) VALUES (?, ?, ?)", []interface{}{pk}, d.insertOffsets); err != nil {
+	if err := insertKeyedSubkeys(tx, "INSERT INTO VotingOffsets (pk, off, data) VALUES (?, ?, ?)", []any{pk}, d.insertOffsets); err != nil {
 		return fmt.Errorf("applyVotingDeltaToRegistry: failed to insert offsets: %w", err)
 	}
 
@@ -226,7 +226,7 @@ func readVotingRowsFromPartkeyFile(tx *sql.Tx) (batches, offsets []crypto.KeyedS
 	return batches, offsets, nil
 }
 
-func readKeyedSubkeys(tx *sql.Tx, query string, args ...interface{}) ([]crypto.KeyedSubkey, error) {
+func readKeyedSubkeys(tx *sql.Tx, query string, args ...any) ([]crypto.KeyedSubkey, error) {
 	rows, err := tx.Query(query, args...)
 	if err != nil {
 		return nil, err

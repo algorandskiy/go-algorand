@@ -175,7 +175,7 @@ func restoreParticipationAtVersion(store db.Accessor, version int) (acc Persiste
 		}
 
 		columns := "parent, vrf, voting, firstValid, lastValid"
-		dest := []interface{}{&rawParent, &rawVRF, &rawVoting, &acc.FirstValid, &acc.LastValid}
+		dest := []any{&rawParent, &rawVRF, &rawVoting, &acc.FirstValid, &acc.LastValid}
 		if version >= 2 {
 			columns += ", keyDilution"
 			dest = append(dest, &acc.KeyDilution)
