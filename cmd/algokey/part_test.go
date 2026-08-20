@@ -111,6 +111,11 @@ func makeLegacyPartkeyFile(t *testing.T, keyfile string, opts legacyPartkeyOptio
 		return err
 	})
 	a.NoError(err)
+
+	// real v3 files carry the state proof secret keys in their own table
+	if part.StateProofSecrets != nil {
+		a.NoError(part.StateProofSecrets.Persist(partdb))
+	}
 	return part
 }
 
@@ -186,6 +191,55 @@ func TestPartMigrateNilStateProof(t *testing.T) {
 		a.NoError(err)
 		a.Equal(opts.version, version, name)
 	}
+}
+
+// TestPartMigratePreservesPermissions verifies the snapshot is not more
+// permissive than the original key file.
+func TestPartMigratePreservesPermissions(t *testing.T) {
+	partitiontest.PartitionTest(t)
+	t.Parallel()
+	a := require.New(t)
+
+	keyfile := filepath.Join(t.TempDir(), "test.partkey")
+	makeV3PartkeyFile(t, keyfile, false)
+	a.NoError(os.Chmod(keyfile, 0600))
+
+	var out bytes.Buffer
+	_, migrated, err := runPartMigrate(keyfile, false, &out)
+	a.NoError(err)
+	a.True(migrated)
+
+	info, err := os.Stat(keyfile + ".new")
+	a.NoError(err)
+	a.Equal(os.FileMode(0600), info.Mode().Perm())
+}
+
+// TestComparePartkeysMissingStateProofKeys verifies validation detects a copy
+// whose state proof secret keys are missing, even though the Participation
+// encoding itself covers only the SignerContext.
+func TestComparePartkeysMissingStateProofKeys(t *testing.T) {
+	partitiontest.PartitionTest(t)
+	t.Parallel()
+	a := require.New(t)
+
+	keyfile := filepath.Join(t.TempDir(), "test.partkey")
+	makeV3PartkeyFile(t, keyfile, false)
+
+	partdb, err := db.MakeErasableAccessor(keyfile)
+	a.NoError(err)
+	defer partdb.Close()
+
+	withKeys, err := account.RestoreParticipationUnmigrated(partdb)
+	a.NoError(err)
+	a.NoError(withKeys.StateProofSecrets.RestoreAllSecrets(partdb))
+	a.NotEmpty(withKeys.StateProofSecrets.GetAllKeys())
+
+	withoutKeys, err := account.RestoreParticipationUnmigrated(partdb)
+	a.NoError(err)
+	a.Empty(withoutKeys.StateProofSecrets.GetAllKeys())
+
+	a.NoError(comparePartkeys(withKeys.Participation, withKeys.Participation))
+	a.ErrorContains(comparePartkeys(withKeys.Participation, withoutKeys.Participation), "state proof key count mismatch")
 }
 
 func TestPartMigrateNoValidation(t *testing.T) {

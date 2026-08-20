@@ -85,9 +85,12 @@ spend doing it at startup — use:
 ```
 algokey part migrate --keyfile keys.db
 ```
-This writes a migrated copy to **keys.db.new**, prints the pure migration
-time, and validates the migrated keys against the original (skippable with
-`--no-validation`). Note that once a file is migrated, older releases cannot
+This writes a migrated copy to **keys.db.new** (taken as an atomic SQLite
+snapshot, so it is consistent even if algod has the file open), prints the
+pure migration time, and validates the migrated keys — including the state
+proof secret keys — against the original (skippable with `--no-validation`).
+If algod advances the keys while the validation is running, the comparison
+can report a spurious mismatch; prefer running it against a stopped node. Note that once a file is migrated, older releases cannot
 read it (the node renames such files to `*.old` and skips them); rolling back
 to an older release requires a pre-upgrade backup of the file, or generating
 and registering fresh keys.

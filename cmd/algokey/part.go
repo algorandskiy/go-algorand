@@ -220,22 +220,30 @@ func runPartMigrate(keyfile string, noValidation bool, out io.Writer) (partkey a
 	if _, statErr := os.Stat(newFile); statErr == nil {
 		return partkey, false, fmt.Errorf("%s already exists; remove it before migrating", newFile)
 	}
-	// drop stale sidecars a previous failed run may have left, so they cannot
-	// be replayed into the fresh copy
+	// drop stale sidecars a previous failed run may have left, so SQLite
+	// cannot replay them into the fresh snapshot
 	for _, ext := range []string{"-wal", "-shm"} {
 		if err = os.Remove(newFile + ext); err != nil && !os.IsNotExist(err) {
 			return partkey, false, fmt.Errorf("cannot remove stale %s: %v", newFile+ext, err)
 		}
 	}
-	if _, err = util.CopyFile(keyfile, newFile); err != nil {
-		return partkey, false, fmt.Errorf("cannot copy %s to %s: %v", keyfile, newFile, err)
+	// VACUUM INTO takes one transactionally consistent snapshot through
+	// SQLite itself, so a concurrently writing algod (which updates the file
+	// every round) cannot produce a torn copy the way independent file
+	// copies of the database and its WAL could.
+	if _, err = origdb.Handle.Exec("VACUUM INTO ?", newFile); err != nil {
+		return partkey, false, fmt.Errorf("cannot snapshot %s to %s: %v", keyfile, newFile, err)
 	}
-	// copy the WAL too so SQLite recovers an unclean close in the copy, not
-	// the original; the volatile -shm index is rebuilt by SQLite on open
-	if _, statErr := os.Stat(keyfile + "-wal"); statErr == nil {
-		if _, err = util.CopyFile(keyfile+"-wal", newFile+"-wal"); err != nil {
-			return partkey, false, fmt.Errorf("cannot copy %s to %s: %v", keyfile+"-wal", newFile+"-wal", err)
-		}
+	// participation keys are secret material: the snapshot must not be more
+	// permissive than the original.  Setting this before the copy is first
+	// opened also makes SQLite create its -wal/-shm sidecars with the same
+	// permissions.
+	srcInfo, err := os.Stat(keyfile)
+	if err != nil {
+		return partkey, false, fmt.Errorf("cannot stat %s: %v", keyfile, err)
+	}
+	if err = os.Chmod(newFile, srcInfo.Mode().Perm()); err != nil {
+		return partkey, false, fmt.Errorf("cannot set permissions on %s: %v", newFile, err)
 	}
 
 	newdb, err := db.MakeErasableAccessor(newFile)
@@ -253,7 +261,8 @@ func runPartMigrate(keyfile string, noValidation bool, out io.Writer) (partkey a
 	fmt.Fprintf(out, "Migrated %s to schema version %d\n", newFile, account.PartTableSchemaVersion)
 	fmt.Fprintf(out, "Pure migration time: %v (approximately what algod will spend migrating this file at startup)\n", migrationTime)
 
-	restored, err := account.RestoreParticipation(newdb)
+	// load the state proof secret keys too, so validation covers them
+	restored, err := account.RestoreParticipationWithSecrets(newdb)
 	if err != nil {
 		return partkey, false, fmt.Errorf("cannot load migrated partkey database %s: %v", newFile, err)
 	}
@@ -266,6 +275,11 @@ func runPartMigrate(keyfile string, noValidation bool, out io.Writer) (partkey a
 	original, err := account.RestoreParticipationUnmigrated(origdb)
 	if err != nil {
 		return partkey, false, fmt.Errorf("cannot load original partkey database %s for validation: %v", keyfile, err)
+	}
+	if original.StateProofSecrets != nil {
+		if err = original.StateProofSecrets.RestoreAllSecrets(origdb); err != nil {
+			return partkey, false, fmt.Errorf("cannot load state proof keys from %s for validation: %v", keyfile, err)
+		}
 	}
 	if err = comparePartkeys(original.Participation, partkey); err != nil {
 		return partkey, false, fmt.Errorf("validation FAILED: migrated keys differ from the original: %v", err)
@@ -295,9 +309,23 @@ func comparePartkeys(expected, actual account.Participation) error {
 	if (expected.StateProofSecrets == nil) != (actual.StateProofSecrets == nil) {
 		return fmt.Errorf("state proof secrets presence mismatch")
 	}
-	if expected.StateProofSecrets != nil &&
-		!bytes.Equal(protocol.Encode(expected.StateProofSecrets), protocol.Encode(actual.StateProofSecrets)) {
-		return fmt.Errorf("state proof secrets mismatch")
+	if expected.StateProofSecrets != nil {
+		// the encoding covers the SignerContext only
+		if !bytes.Equal(protocol.Encode(expected.StateProofSecrets), protocol.Encode(actual.StateProofSecrets)) {
+			return fmt.Errorf("state proof secrets mismatch")
+		}
+		// the secret keys live in their own table and must be compared
+		// explicitly (callers load them with RestoreAllSecrets)
+		expectedKeys := expected.StateProofSecrets.GetAllKeys()
+		actualKeys := actual.StateProofSecrets.GetAllKeys()
+		if len(expectedKeys) != len(actualKeys) {
+			return fmt.Errorf("state proof key count mismatch (%d != %d)", len(expectedKeys), len(actualKeys))
+		}
+		for i := range expectedKeys {
+			if !bytes.Equal(protocol.Encode(&expectedKeys[i]), protocol.Encode(&actualKeys[i])) {
+				return fmt.Errorf("state proof key %d mismatch", i)
+			}
+		}
 	}
 	return nil
 }

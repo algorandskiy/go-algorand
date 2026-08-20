@@ -707,6 +707,10 @@ func TestLoadParticipationKeysRenamesUnsupported(t *testing.T) {
 	require.NoError(t, err)
 	partdb.Close()
 
+	// a backup from an earlier rename must not be clobbered
+	previousBackup := []byte("previous unsupported key backup")
+	require.NoError(t, os.WriteFile(partfile+".old", previousBackup, 0600))
+
 	n, err := MakeFull(logging.TestingLog(t), testDirectory, config.GetDefaultLocal(), []string{}, genesis)
 	require.NoError(t, err)
 	err = n.Start()
@@ -716,7 +720,10 @@ func TestLoadParticipationKeysRenamesUnsupported(t *testing.T) {
 	require.NoError(t, err)
 
 	require.NoFileExists(t, partfile)
-	require.FileExists(t, partfile+".old")
+	require.FileExists(t, partfile+".old.1")
+	preserved, err := os.ReadFile(partfile + ".old")
+	require.NoError(t, err)
+	require.Equal(t, previousBackup, preserved)
 }
 
 // TestConfiguredDataDirs tests to see that when HotDataDir and ColdDataDir are set, underlying resources are created in the correct locations
