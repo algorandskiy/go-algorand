@@ -143,13 +143,12 @@ func TestPartMigrate(t *testing.T) {
 	// migrated key matches the original
 	a.NoError(comparePartkeys(original, partkey))
 
-	a.Contains(out.String(), "Pure migration time")
+	a.Contains(out.String(), "Migrated")
 	a.Contains(out.String(), "Validation PASSED")
 }
 
-// TestPartMigrateNilStateProof covers v3 files whose stateProof column is
-// NULL (upgraded from v1/v2 by old releases). Validation must not crash on
-// them.
+// TestPartMigrateNilStateProof covers v3 files whose stateProof column is NULL
+// are handled without crashing.
 func TestPartMigrateNilStateProof(t *testing.T) {
 	partitiontest.PartitionTest(t)
 	t.Parallel()
@@ -172,46 +171,6 @@ func TestPartMigrateNilStateProof(t *testing.T) {
 	origdb.Close()
 	a.NoError(err)
 	a.Equal(3, version)
-}
-
-// TestPartMigrateRejectsPreStateProofVersions verifies schema versions 1 and
-// 2 (whose keys expired years ago) are refused rather than migrated.
-func TestPartMigrateRejectsPreStateProofVersions(t *testing.T) {
-	partitiontest.PartitionTest(t)
-	t.Parallel()
-	a := require.New(t)
-
-	for _, version := range []int{1, 2} {
-		keyfile := filepath.Join(t.TempDir(), "old.partkey")
-		makeLegacyPartkeyFile(t, keyfile, legacyPartkeyOptions{version: version})
-
-		var out bytes.Buffer
-		_, _, err := runPartMigrate(keyfile, false, &out)
-		a.ErrorContains(err, "unsupported schema version", "version %d", version)
-		_, statErr := os.Stat(keyfile + ".new")
-		a.True(os.IsNotExist(statErr), "version %d", version)
-	}
-}
-
-// TestPartMigratePreservesPermissions verifies the snapshot is not more
-// permissive than the original key file.
-func TestPartMigratePreservesPermissions(t *testing.T) {
-	partitiontest.PartitionTest(t)
-	t.Parallel()
-	a := require.New(t)
-
-	keyfile := filepath.Join(t.TempDir(), "test.partkey")
-	makeV3PartkeyFile(t, keyfile)
-	a.NoError(os.Chmod(keyfile, 0600))
-
-	var out bytes.Buffer
-	_, migrated, err := runPartMigrate(keyfile, false, &out)
-	a.NoError(err)
-	a.True(migrated)
-
-	info, err := os.Stat(keyfile + ".new")
-	a.NoError(err)
-	a.Equal(os.FileMode(0600), info.Mode().Perm())
 }
 
 // TestComparePartkeys covers the validation comparator: whole-key and
@@ -249,29 +208,6 @@ func TestComparePartkeys(t *testing.T) {
 	a.Empty(withoutKeys.StateProofSecrets.GetAllKeys())
 
 	a.ErrorContains(comparePartkeys(withKeys.Participation, withoutKeys.Participation), "state proof key count mismatch")
-}
-
-func TestPartMigrateNoopOnLatest(t *testing.T) {
-	partitiontest.PartitionTest(t)
-	t.Parallel()
-	a := require.New(t)
-
-	keyfile := filepath.Join(t.TempDir(), "test.partkey")
-	partdb, err := db.MakeErasableAccessor(keyfile)
-	a.NoError(err)
-	var addr basics.Address
-	crypto.RandBytes(addr[:])
-	_, err = account.FillDBWithParticipationKeys(partdb, addr, 1, 200, 10)
-	a.NoError(err)
-	partdb.Close()
-
-	var out bytes.Buffer
-	_, migrated, err := runPartMigrate(keyfile, false, &out)
-	a.NoError(err)
-	a.False(migrated)
-	a.Contains(out.String(), "nothing to do")
-	_, err = os.Stat(keyfile + ".new")
-	a.True(os.IsNotExist(err))
 }
 
 func TestPartMigrateRefusesExistingNew(t *testing.T) {

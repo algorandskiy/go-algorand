@@ -211,8 +211,8 @@ func runPartMigrate(keyfile string, noValidation bool, out io.Writer) (partkey a
 		fmt.Fprintf(out, "Already at the latest schema version; nothing to do.\n")
 		return partkey, false, nil
 	}
-	if version != account.PartTableSchemaVersion-1 {
-		return partkey, false, fmt.Errorf("unsupported schema version %d: only version %d files can be migrated (versions 1 and 2 predate state proofs and their keys expired long ago)", version, account.PartTableSchemaVersion-1)
+	if version != account.PartTableSchemaVersionVotingSplit-1 {
+		return partkey, false, fmt.Errorf("unsupported schema version %d: only version %d files can be migrated", version, account.PartTableSchemaVersionVotingSplit-1)
 	}
 
 	newFile := keyfile + ".new"
@@ -233,10 +233,6 @@ func runPartMigrate(keyfile string, noValidation bool, out io.Writer) (partkey a
 	if _, err = origdb.Handle.Exec("VACUUM INTO ?", newFile); err != nil {
 		return partkey, false, fmt.Errorf("cannot snapshot %s to %s: %v", keyfile, newFile, err)
 	}
-	// participation keys are secret material: the snapshot must not be more
-	// permissive than the original.  Setting this before the copy is first
-	// opened also makes SQLite create its -wal/-shm sidecars with the same
-	// permissions.
 	srcInfo, err := os.Stat(keyfile)
 	if err != nil {
 		return partkey, false, fmt.Errorf("cannot stat %s: %v", keyfile, err)
@@ -257,8 +253,7 @@ func runPartMigrate(keyfile string, noValidation bool, out io.Writer) (partkey a
 	if err != nil {
 		return partkey, false, fmt.Errorf("migration of %s failed: %v", newFile, err)
 	}
-	fmt.Fprintf(out, "Migrated %s to schema version %d\n", newFile, account.PartTableSchemaVersion)
-	fmt.Fprintf(out, "Pure migration time: %v (approximately what algod will spend migrating this file at startup)\n", migrationTime)
+	fmt.Fprintf(out, "Migrated %s to schema version %d, spent %v\n", newFile, account.PartTableSchemaVersion, migrationTime)
 
 	// load the state proof secret keys too, so validation covers them
 	restored, err := account.RestoreParticipationWithSecrets(newdb)

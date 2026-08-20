@@ -32,6 +32,7 @@ const PartTableSchemaName = "parttable"
 
 // PartTableSchemaVersion is the latest version of the PartTable schema
 const PartTableSchemaVersion = 4
+const PartTableSchemaVersionVotingSplit = 4
 
 // ErrUnsupportedSchema is the error returned when the PartTable schema version is wrong.
 var ErrUnsupportedSchema = fmt.Errorf("unsupported participation file schema version (expected %d)", PartTableSchemaVersion)
