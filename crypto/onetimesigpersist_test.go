@@ -187,9 +187,10 @@ func TestPersistentPartsConcurrentDelete(t *testing.T) {
 
 	const numKeysPerBatch = 8
 	s := GenerateOneTimeSignatureSecrets(0, 64)
+	msg := randString()
 
 	var wg sync.WaitGroup
-	wg.Add(2)
+	wg.Add(3)
 	go func() {
 		defer wg.Done()
 		for round := uint64(0); round < 32*numKeysPerBatch; round++ {
@@ -203,6 +204,15 @@ func TestPersistentPartsConcurrentDelete(t *testing.T) {
 			scalars, batches, offsets := s.PersistentParts()
 			_, err := OneTimeSignatureSecretsFromParts(scalars, batches, offsets)
 			require.NoError(t, err)
+		}
+	}()
+	go func() {
+		defer wg.Done()
+		// signing (as agreement does) must be safe against concurrent
+		// deletion and persistence snapshots
+		for round := uint64(0); round < 16*numKeysPerBatch; round++ {
+			id := OneTimeSignatureIdentifier{Batch: round / numKeysPerBatch, Offset: round % numKeysPerBatch}
+			s.Sign(id, msg)
 		}
 	}()
 	wg.Wait()

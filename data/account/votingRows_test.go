@@ -173,17 +173,20 @@ func TestComputeVotingDelta(t *testing.T) {
 	current, _, _ := secrets.PersistentState()
 
 	// noop: persisted state matches memory
-	d := computeVotingDelta(&current, secrets)
+	d, err := computeVotingDelta(&current, secrets)
+	a.NoError(err)
 	a.True(d.noop)
 
 	// same-batch advance
 	older := current
 	older.FirstOffset = current.FirstOffset - 2
-	d = computeVotingDelta(&older, secrets)
+	d, err = computeVotingDelta(&older, secrets)
+	a.NoError(err)
 	a.False(d.noop)
 	a.False(d.fullRewrite)
 	a.False(d.replaceAllOffsets)
 	a.Equal(current.FirstOffset, d.deleteOffsetsBelow)
+	a.Equal(int64(2), d.expectedOffsetDeletes)
 	a.Zero(d.deleteBatchesBelow)
 	a.Empty(d.insertBatches)
 	a.Empty(d.insertOffsets)
@@ -193,33 +196,49 @@ func TestComputeVotingDelta(t *testing.T) {
 	prevBatch := current
 	prevBatch.FirstBatch = current.FirstBatch - 2
 	prevBatch.FirstOffset = 5
-	d = computeVotingDelta(&prevBatch, secrets)
+	d, err = computeVotingDelta(&prevBatch, secrets)
+	a.NoError(err)
 	a.False(d.noop)
 	a.False(d.fullRewrite)
 	a.True(d.replaceAllOffsets)
 	a.Equal(current.FirstBatch, d.deleteBatchesBelow)
+	a.Equal(int64(2), d.expectedBatchDeletes)
 	a.Empty(d.insertBatches)
 	a.Equal(len(secrets.Offsets), len(d.insertOffsets))
+	a.Equal(current.FirstBatch-1, d.offsetsBatch)
 	a.NotNil(d.newScalars)
 
 	// nil old: full rewrite
-	d = computeVotingDelta(nil, secrets)
+	d, err = computeVotingDelta(nil, secrets)
+	a.NoError(err)
 	a.True(d.fullRewrite)
 	a.Equal(len(secrets.Batches), len(d.insertBatches))
 	a.Equal(len(secrets.Offsets), len(d.insertOffsets))
+	a.Equal(current.FirstBatch-1, d.offsetsBatch)
 	a.NotNil(d.newScalars)
 
 	// legacy whole-blob persisted state: full rewrite
 	legacy := secrets.Snapshot().OneTimeSignatureSecretsPersistent
 	a.NotEmpty(legacy.Batches)
-	d = computeVotingDelta(&legacy, secrets)
+	d, err = computeVotingDelta(&legacy, secrets)
+	a.NoError(err)
 	a.True(d.fullRewrite)
 
-	// persisted state ahead of memory: full rewrite
+	// persisted state ahead of memory: forward security forbids moving the
+	// deletion cursor backward, so this is an error rather than a rewrite
 	ahead := current
 	ahead.FirstBatch = current.FirstBatch + 1
-	d = computeVotingDelta(&ahead, secrets)
-	a.True(d.fullRewrite)
+	_, err = computeVotingDelta(&ahead, secrets)
+	a.ErrorContains(err, "refusing to resurrect")
+	aheadOffset := current
+	aheadOffset.FirstOffset = current.FirstOffset + 1
+	_, err = computeVotingDelta(&aheadOffset, secrets)
+	a.ErrorContains(err, "refusing to resurrect")
+	// a legacy blob ahead of memory is refused as well
+	legacyAhead := legacy
+	legacyAhead.FirstBatch = current.FirstBatch + 1
+	_, err = computeVotingDelta(&legacyAhead, secrets)
+	a.ErrorContains(err, "refusing to resurrect")
 
 	// end-of-key-life: DeleteBeforeFineGrained clears the remaining subkeys
 	// of a key on its last batch without advancing either scalar; the delta
@@ -234,7 +253,8 @@ func TestComputeVotingDelta(t *testing.T) {
 	afterState, _, _ := spent.PersistentState()
 	a.Equal(persisted.FirstBatch, afterState.FirstBatch) // scalars did not move
 	a.Equal(persisted.FirstOffset, afterState.FirstOffset)
-	d = computeVotingDelta(&persisted, spent)
+	d, err = computeVotingDelta(&persisted, spent)
+	a.NoError(err)
 	a.False(d.noop)
 	a.True(d.clearAllRows)
 	a.Nil(d.newScalars)
@@ -330,6 +350,131 @@ func TestDeleteOldKeysEndOfLife(t *testing.T) {
 	// subsequent rounds on the dead key stay cheap and consistent
 	a.NoError(<-part.DeleteOldKeys(basics.Round(315), proto))
 	a.Zero(countTableRows(a, partDB, "OtsOffsets"))
+}
+
+// TestDeleteOldKeysRefusesStaleDisk verifies the forward-security monotonic
+// guard: when the persisted deletion cursor is ahead of memory, the write is
+// refused instead of resurrecting deleted keys.
+func TestDeleteOldKeysRefusesStaleDisk(t *testing.T) {
+	partitiontest.PartitionTest(t)
+
+	a := require.New(t)
+	const dilution = 10
+	part, partDB := makeSmallTestKey(t, a, 0, 300, dilution)
+	defer closeDBS(partDB)
+
+	proto := config.Consensus[protocol.ConsensusCurrentVersion]
+	a.NoError(<-part.DeleteOldKeys(basics.Round(25), proto))
+	batchRows := countTableRows(a, partDB, "OtsBatches")
+	offsetRows := countTableRows(a, partDB, "OtsOffsets")
+
+	// plant a persisted cursor from the future
+	future, _, _ := part.Voting.PersistentState()
+	future.FirstBatch += 5
+	err := partDB.Atomic(func(ctx context.Context, tx *sql.Tx) error {
+		_, err := tx.Exec("UPDATE ParticipationAccount SET voting=?", protocol.Encode(&future))
+		return err
+	})
+	a.NoError(err)
+
+	err = <-part.DeleteOldKeys(basics.Round(26), proto)
+	a.ErrorContains(err, "refusing to resurrect")
+
+	// nothing was written
+	a.Equal(batchRows, countTableRows(a, partDB, "OtsBatches"))
+	a.Equal(offsetRows, countTableRows(a, partDB, "OtsOffsets"))
+}
+
+// TestRestoreDetectsMissingRows verifies truncated subkey tables are reported
+// as corruption instead of loading a key that silently cannot vote.
+func TestRestoreDetectsMissingRows(t *testing.T) {
+	partitiontest.PartitionTest(t)
+
+	a := require.New(t)
+	const dilution = 10
+	part, partDB := makeSmallTestKey(t, a, 0, 300, dilution)
+	defer closeDBS(partDB)
+
+	proto := config.Consensus[protocol.ConsensusCurrentVersion]
+	a.NoError(<-part.DeleteOldKeys(basics.Round(25), proto))
+
+	// sanity: loads fine before the damage
+	_, err := RestoreParticipationUnmigrated(partDB)
+	a.NoError(err)
+
+	// drop the last batch row: count check fires
+	err = partDB.Atomic(func(ctx context.Context, tx *sql.Tx) error {
+		_, err := tx.Exec("DELETE FROM OtsBatches WHERE batch=(SELECT MAX(batch) FROM OtsBatches)")
+		return err
+	})
+	a.NoError(err)
+	_, err = RestoreParticipationUnmigrated(partDB)
+	a.ErrorContains(err, "missing or extra rows")
+}
+
+// TestRestoreDetectsWrongOffsetBatch verifies an offset row attributed to the
+// wrong batch is reported as corruption.
+func TestRestoreDetectsWrongOffsetBatch(t *testing.T) {
+	partitiontest.PartitionTest(t)
+
+	a := require.New(t)
+	const dilution = 10
+	part, partDB := makeSmallTestKey(t, a, 0, 300, dilution)
+	defer closeDBS(partDB)
+
+	proto := config.Consensus[protocol.ConsensusCurrentVersion]
+	a.NoError(<-part.DeleteOldKeys(basics.Round(25), proto))
+	a.NotZero(countTableRows(a, partDB, "OtsOffsets"))
+
+	err := partDB.Atomic(func(ctx context.Context, tx *sql.Tx) error {
+		_, err := tx.Exec("UPDATE OtsOffsets SET batch=batch+1 WHERE off=(SELECT MIN(off) FROM OtsOffsets)")
+		return err
+	})
+	a.NoError(err)
+	_, err = RestoreParticipationUnmigrated(partDB)
+	a.ErrorContains(err, "expected batch")
+}
+
+// TestMigrationRollsBackOnFailure verifies a failing v3-to-v4 migration
+// leaves the file at version 3 with none of the new tables behind.
+func TestMigrationRollsBackOnFailure(t *testing.T) {
+	partitiontest.PartitionTest(t)
+
+	a := require.New(t)
+	part, tmpDB := makeSmallTestKey(t, a, 0, 300, 10)
+	defer closeDBS(tmpDB)
+
+	partDB, err := db.MakeAccessor(t.Name()+"_v3", false, true)
+	a.NoError(err)
+	defer closeDBS(partDB)
+	a.NoError(setupTestDBAtVer3(partDB, part.Participation))
+
+	// mangle the voting blob so the conversion fails mid-transaction
+	err = partDB.Atomic(func(ctx context.Context, tx *sql.Tx) error {
+		var raw []byte
+		if err := tx.QueryRow("SELECT voting FROM ParticipationAccount").Scan(&raw); err != nil {
+			return err
+		}
+		_, err := tx.Exec("UPDATE ParticipationAccount SET voting=?", raw[:len(raw)/2])
+		return err
+	})
+	a.NoError(err)
+
+	a.Error(Migrate(partDB))
+
+	// the whole migration transaction rolled back
+	versions, err := getSchemaVersions(partDB)
+	a.NoError(err)
+	a.Equal(3, versions[PartTableSchemaName])
+	err = partDB.Atomic(func(ctx context.Context, tx *sql.Tx) error {
+		var n int
+		if err := tx.QueryRow("SELECT count(*) FROM sqlite_master WHERE type='table' AND name IN ('OtsBatches', 'OtsOffsets')").Scan(&n); err != nil {
+			return err
+		}
+		require.Zero(t, n, "migration tables survived the rollback")
+		return nil
+	})
+	a.NoError(err)
 }
 
 // TestDeleteOldKeysLegacyBlobSelfHeals plants a legacy whole-secrets blob in

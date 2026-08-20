@@ -17,6 +17,7 @@
 package account
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"fmt"
@@ -169,14 +170,18 @@ func createVotingSubkeyTables(tx *sql.Tx) error {
 	}
 
 	_, err = tx.Exec(`CREATE TABLE OtsOffsets (
-		off INTEGER PRIMARY KEY, --* absolute offset within batch FirstBatch-1
-		data BLOB NOT NULL       --* msgpack encoding of the offset subkey
+		batch INTEGER NOT NULL, --* the batch these offsets belong to (FirstBatch-1)
+		off INTEGER NOT NULL,   --* absolute offset within batch
+		data BLOB NOT NULL,     --* msgpack encoding of the offset subkey
+		PRIMARY KEY (batch, off)
 	);`)
 	return err
 }
 
 // migrateVotingBlobToRows converts the whole-secrets voting blob into
-// per-subkey rows, leaving only the scalar fields in the voting column.
+// per-subkey rows, leaving only the scalar fields in the voting column.  The
+// converted state is read back and compared against the original key
+// material before the transaction is allowed to commit.
 func migrateVotingBlobToRows(tx *sql.Tx) error {
 	err := createVotingSubkeyTables(tx)
 	if err != nil {
@@ -202,7 +207,36 @@ func migrateVotingBlobToRows(tx *sql.Tx) error {
 		return fmt.Errorf("migrateVotingBlobToRows: failed to decode voting blob: %w", err)
 	}
 
-	return applyVotingDeltaToPartkeyFile(tx, computeVotingDelta(nil, voting))
+	delta, err := computeVotingDelta(nil, voting)
+	if err != nil {
+		return fmt.Errorf("migrateVotingBlobToRows: %w", err)
+	}
+	err = applyVotingDeltaToPartkeyFile(tx, delta)
+	if err != nil {
+		return err
+	}
+
+	// validate inside the transaction: reconstruct from what was written and
+	// compare the complete key material against the original blob
+	var storedScalars []byte
+	err = tx.QueryRow("SELECT voting FROM ParticipationAccount").Scan(&storedScalars)
+	if err != nil {
+		return fmt.Errorf("migrateVotingBlobToRows: failed to read back scalars: %w", err)
+	}
+	batches, offsets, offsetBatches, err := readVotingRowsFromPartkeyFile(tx)
+	if err != nil {
+		return fmt.Errorf("migrateVotingBlobToRows: failed to read back subkey rows: %w", err)
+	}
+	reconstructed, rowBased, err := decodeRowOrientedVoting(storedScalars, batches, offsets, offsetBatches)
+	if err != nil || !rowBased {
+		return fmt.Errorf("migrateVotingBlobToRows: reconstruction of the converted state failed: %v", err)
+	}
+	origSnap := voting.Snapshot()
+	newSnap := reconstructed.Snapshot()
+	if !bytes.Equal(protocol.Encode(&origSnap), protocol.Encode(&newSnap)) {
+		return fmt.Errorf("migrateVotingBlobToRows: converted state does not match the original key material")
+	}
+	return nil
 }
 
 // PartkeySchemaVersion reads the participation file's schema version without

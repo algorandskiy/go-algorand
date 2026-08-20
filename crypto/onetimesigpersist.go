@@ -80,6 +80,13 @@ func (s *OneTimeSignatureSecrets) encodedOffsetsLocked() []KeyedSubkey {
 	return offsets
 }
 
+// OffsetsExpanded returns whether a batch has ever been expanded into offset
+// subkeys: OffsetsPK2 is set on the first expansion and never cleared.  A key
+// that was never expanded legitimately has no offset subkeys.
+func (s *OneTimeSignatureSecretsPersistent) OffsetsExpanded() bool {
+	return s.OffsetsPK2 != (ed25519PublicKey{})
+}
+
 // PersistentParts returns the scalar fields plus every subkey encoded as its
 // own row, all captured atomically under a single lock acquisition so the
 // scalars and rows are mutually consistent even while DeleteBefore* runs

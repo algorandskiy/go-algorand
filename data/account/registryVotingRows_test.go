@@ -232,6 +232,31 @@ func TestRegistryEndOfLifeClearsRows(t *testing.T) {
 	a.Empty(record.Voting.Batches)
 }
 
+// TestRegistryDetectsMissingRows verifies a registry whose subkey rows were
+// lost fails the cache load as corruption instead of silently producing a
+// key that cannot vote.
+func TestRegistryDetectsMissingRows(t *testing.T) {
+	partitiontest.PartitionTest(t)
+	a := require.New(t)
+
+	registry, dbfile := getRegistry(t)
+	defer registryCloseTest(t, registry, dbfile)
+
+	p := makeTestParticipation(a, 1, 1, 200, 10)
+	_, err := registry.Insert(p)
+	a.NoError(err)
+	a.NoError(registry.Flush(defaultTimeout))
+	a.NoError(registry.initializeCache())
+
+	err = registry.store.Wdb.Atomic(func(ctx context.Context, tx *sql.Tx) error {
+		_, err := tx.Exec("DELETE FROM VotingBatches WHERE batch=(SELECT MAX(batch) FROM VotingBatches)")
+		return err
+	})
+	a.NoError(err)
+
+	a.ErrorContains(registry.initializeCache(), "missing or extra rows")
+}
+
 // TestFlushWritesDeltaOnly verifies a flush with no voting-key progress
 // leaves the voting blob and subkey rows untouched.
 func TestFlushWritesDeltaOnly(t *testing.T) {

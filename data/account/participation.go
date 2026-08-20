@@ -208,7 +208,11 @@ func (part PersistedParticipation) DeleteOldKeys(current basics.Round, proto con
 					old = &decoded.OneTimeSignatureSecretsPersistent
 				}
 			}
-			err = applyVotingDeltaToPartkeyFile(tx, computeVotingDelta(old, part.Voting))
+			delta, err := computeVotingDelta(old, part.Voting)
+			if err != nil {
+				return fmt.Errorf("Participation.DeleteOldKeys: %v", err)
+			}
+			err = applyVotingDeltaToPartkeyFile(tx, delta)
 			if err != nil {
 				return fmt.Errorf("Participation.DeleteOldKeys: failed to update account: %v", err)
 			}
@@ -312,9 +316,12 @@ func (part PersistedParticipation) Persist() error {
 		if err != nil {
 			return fmt.Errorf("failed to insert voting batch subkeys: %w", err)
 		}
-		err = insertKeyedSubkeys(tx, "INSERT INTO OtsOffsets (off, data) VALUES (?, ?)", nil, offsets)
-		if err != nil {
-			return fmt.Errorf("failed to insert voting offset subkeys: %w", err)
+		if len(offsets) > 0 {
+			// offset subkeys belong to the batch preceding FirstBatch
+			err = insertKeyedSubkeys(tx, "INSERT INTO OtsOffsets (batch, off, data) VALUES (?, ?, ?)", []any{scalars.FirstBatch - 1}, offsets)
+			if err != nil {
+				return fmt.Errorf("failed to insert voting offset subkeys: %w", err)
+			}
 		}
 		return nil
 	})

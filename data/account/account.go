@@ -162,6 +162,7 @@ func RestoreParticipationUnmigrated(store db.Accessor) (PersistedParticipation, 
 func restoreParticipationAtVersion(store db.Accessor, version int) (acc PersistedParticipation, err error) {
 	var rawParent, rawVRF, rawVoting, rawStateProof []byte
 	var batches, offsets []crypto.KeyedSubkey
+	var offsetBatches []uint64
 
 	err = store.Atomic(func(ctx context.Context, tx *sql.Tx) error {
 		var nrows int
@@ -171,7 +172,7 @@ func restoreParticipationAtVersion(store db.Accessor, version int) (acc Persiste
 			return fmt.Errorf("RestoreParticipation: could not query storage: %v", err1)
 		}
 		if nrows != 1 {
-			logging.Base().Infof("RestoreParticipation: state not found (n = %v)", nrows)
+			return fmt.Errorf("RestoreParticipation: expected exactly one account row, found %d", nrows)
 		}
 
 		columns := "parent, vrf, voting, firstValid, lastValid"
@@ -192,7 +193,7 @@ func restoreParticipationAtVersion(store db.Accessor, version int) (acc Persiste
 		}
 
 		if version >= 4 {
-			batches, offsets, err1 = readVotingRowsFromPartkeyFile(tx)
+			batches, offsets, offsetBatches, err1 = readVotingRowsFromPartkeyFile(tx)
 			if err1 != nil {
 				return fmt.Errorf("RestoreParticipation: could not read voting subkey rows: %v", err1)
 			}
@@ -213,9 +214,16 @@ func restoreParticipationAtVersion(store db.Accessor, version int) (acc Persiste
 		return PersistedParticipation{}, err
 	}
 
-	acc.Voting, err = decodeRowOrientedVoting(rawVoting, batches, offsets)
+	var rowBased bool
+	acc.Voting, rowBased, err = decodeRowOrientedVoting(rawVoting, batches, offsets, offsetBatches)
 	if err != nil {
 		return PersistedParticipation{}, err
+	}
+	if rowBased {
+		err = validateVotingRowCounts(&acc.Voting.OneTimeSignatureSecretsPersistent, acc.LastValid, acc.KeyDilution, len(batches), len(offsets))
+		if err != nil {
+			return PersistedParticipation{}, fmt.Errorf("RestoreParticipation: %v", err)
+		}
 	}
 
 	if len(rawStateProof) == 0 {
@@ -232,17 +240,25 @@ func restoreParticipationAtVersion(store db.Accessor, version int) (acc Persiste
 
 // decodeRowOrientedVoting reconstructs voting secrets from a voting blob plus
 // subkey rows.  A blob that itself carries subkeys is a legacy whole-secrets
-// encoding and is used as-is.
-func decodeRowOrientedVoting(rawVoting []byte, batches, offsets []crypto.KeyedSubkey) (*crypto.OneTimeSignatureSecrets, error) {
-	voting := &crypto.OneTimeSignatureSecrets{}
-	err := protocol.Decode(rawVoting, voting)
+// encoding and is used as-is (rowBased false); otherwise the rows are
+// validated against the scalars and reassembled.
+func decodeRowOrientedVoting(rawVoting []byte, batches, offsets []crypto.KeyedSubkey, offsetBatches []uint64) (voting *crypto.OneTimeSignatureSecrets, rowBased bool, err error) {
+	voting = &crypto.OneTimeSignatureSecrets{}
+	err = protocol.Decode(rawVoting, voting)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
-	if len(voting.Batches) != 0 || len(voting.Offsets) != 0 || (len(batches) == 0 && len(offsets) == 0) {
-		return voting, nil
+	if len(voting.Batches) != 0 || len(voting.Offsets) != 0 {
+		return voting, false, nil
 	}
-	return crypto.OneTimeSignatureSecretsFromParts(voting.OneTimeSignatureSecretsPersistent, batches, offsets)
+	if err = validateOffsetRowBatches(&voting.OneTimeSignatureSecretsPersistent, offsetBatches); err != nil {
+		return nil, false, err
+	}
+	if len(batches) == 0 && len(offsets) == 0 {
+		return voting, true, nil
+	}
+	voting, err = crypto.OneTimeSignatureSecretsFromParts(voting.OneTimeSignatureSecretsPersistent, batches, offsets)
+	return voting, true, err
 }
 
 // RestoreParticipationWithSecrets restores a Participation from a database

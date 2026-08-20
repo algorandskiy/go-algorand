@@ -17,6 +17,7 @@
 package account
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"encoding/base32"
@@ -359,10 +360,11 @@ const (
 			PRIMARY KEY (pk, batch)
 		)`
 	createVotingOffsets = `CREATE TABLE VotingOffsets (
-			pk   INTEGER NOT NULL,
-			off  INTEGER NOT NULL, --* absolute offset within batch FirstBatch-1
-			data BLOB    NOT NULL, --* msgpack encoding of the offset subkey
-			PRIMARY KEY (pk, off)
+			pk    INTEGER NOT NULL,
+			batch INTEGER NOT NULL, --* the batch these offsets belong to (FirstBatch-1)
+			off   INTEGER NOT NULL, --* absolute offset within batch
+			data  BLOB    NOT NULL, --* msgpack encoding of the offset subkey
+			PRIMARY KEY (pk, batch, off)
 		)`
 	insertKeysetQuery         = `INSERT INTO Keysets (participationID, account, firstValidRound, lastValidRound, keyDilution, vrf, stateProof) VALUES (?, ?, ?, ?, ?, ?, ?)`
 	insertRollingQuery        = `INSERT INTO Rolling (pk, voting) VALUES (?, ?)`
@@ -389,7 +391,9 @@ const (
 		FROM Rolling r
 		WHERE r.pk IN (SELECT pk FROM Keysets WHERE participationID=?)`
 	selectVotingBatches    = `SELECT batch, data FROM VotingBatches WHERE pk=? ORDER BY batch`
-	selectVotingOffsets    = `SELECT off, data FROM VotingOffsets WHERE pk=? ORDER BY off`
+	selectVotingOffsets    = `SELECT batch, off, data FROM VotingOffsets WHERE pk=? ORDER BY off`
+	selectAllVotingBatches = `SELECT pk, batch, data FROM VotingBatches ORDER BY pk, batch`
+	selectAllVotingOffsets = `SELECT pk, batch, off, data FROM VotingOffsets ORDER BY pk, off`
 	deleteKeysets          = `DELETE FROM Keysets WHERE pk=?`
 	deleteRolling          = `DELETE FROM Rolling WHERE pk=?`
 	deleteStateProofByPK   = `DELETE FROM StateProofKeys WHERE pk=?`
@@ -479,8 +483,36 @@ func dbSchemaUpgrade1(ctx context.Context, tx *sql.Tx, newDatabase bool) error {
 			// converted lazily by the next flush.
 			continue
 		}
-		if err := applyVotingDeltaToRegistry(tx, entry.pk, computeVotingDelta(nil, voting)); err != nil {
+		delta, err := computeVotingDelta(nil, voting)
+		if err != nil {
+			return fmt.Errorf("dbSchemaUpgrade1: failed to compute conversion for pk %d: %w", entry.pk, err)
+		}
+		if err := applyVotingDeltaToRegistry(tx, entry.pk, delta); err != nil {
 			return fmt.Errorf("dbSchemaUpgrade1: failed to convert voting blob for pk %d: %w", entry.pk, err)
+		}
+
+		// validate inside the transaction: reconstruct from what was written
+		// and compare the complete key material against the original blob
+		var storedScalars []byte
+		if err := tx.QueryRow("SELECT voting FROM Rolling WHERE pk=?", entry.pk).Scan(&storedScalars); err != nil {
+			return fmt.Errorf("dbSchemaUpgrade1: failed to read back scalars for pk %d: %w", entry.pk, err)
+		}
+		batches, err := readKeyedSubkeys(tx, selectVotingBatches, entry.pk)
+		if err != nil {
+			return fmt.Errorf("dbSchemaUpgrade1: failed to read back batch subkeys for pk %d: %w", entry.pk, err)
+		}
+		offsets, offsetBatches, err := readOffsetSubkeys(tx, selectVotingOffsets, entry.pk)
+		if err != nil {
+			return fmt.Errorf("dbSchemaUpgrade1: failed to read back offset subkeys for pk %d: %w", entry.pk, err)
+		}
+		reconstructed, rowBased, err := decodeRowOrientedVoting(storedScalars, batches, offsets, offsetBatches)
+		if err != nil || !rowBased {
+			return fmt.Errorf("dbSchemaUpgrade1: reconstruction of converted state for pk %d failed: %v", entry.pk, err)
+		}
+		origSnap := voting.Snapshot()
+		newSnap := reconstructed.Snapshot()
+		if !bytes.Equal(protocol.Encode(&origSnap), protocol.Encode(&newSnap)) {
+			return fmt.Errorf("dbSchemaUpgrade1: converted state for pk %d does not match the original key material", entry.pk)
 		}
 	}
 
@@ -823,8 +855,20 @@ func (db *participationDB) getAllFromDB() (records []ParticipationRecord, err er
 			records = nil
 			return fmt.Errorf("problem scanning records: %w", err)
 		}
-		// release the cursor before issuing the per-subkey queries below
+		// release the cursor before issuing the subkey queries below
 		rows.Close()
+
+		// load every subkey row in two queries and group by pk
+		batchesByPK, err := readGroupedSubkeys(tx, selectAllVotingBatches, false)
+		if err != nil {
+			records = nil
+			return fmt.Errorf("unable to read voting batch subkeys: %w", err)
+		}
+		offsetsByPK, err := readGroupedSubkeys(tx, selectAllVotingOffsets, true)
+		if err != nil {
+			records = nil
+			return fmt.Errorf("unable to read voting offset subkeys: %w", err)
+		}
 
 		// reattach the per-subkey voting rows; a blob that itself carries
 		// subkeys is a legacy whole-secrets encoding and is used as-is
@@ -833,27 +877,24 @@ func (db *participationDB) getAllFromDB() (records []ParticipationRecord, err er
 			if voting == nil || len(voting.Batches) != 0 || len(voting.Offsets) != 0 {
 				continue
 			}
-			batches, err := readKeyedSubkeys(tx, selectVotingBatches, pks[i])
-			if err != nil {
+			batches := batchesByPK[pks[i]]
+			offsets := offsetsByPK[pks[i]]
+
+			scalars := &voting.OneTimeSignatureSecretsPersistent
+			if err := validateOffsetRowBatches(scalars, offsets.batches); err != nil {
+				err = fmt.Errorf("voting rows for key %s (pk %d) are corrupt: %w", records[i].ParticipationID, pks[i], err)
 				records = nil
-				return fmt.Errorf("unable to read voting batch subkeys for pk %d: %w", pks[i], err)
+				return err
 			}
-			offsets, err := readKeyedSubkeys(tx, selectVotingOffsets, pks[i])
-			if err != nil {
+			if err := validateVotingRowCounts(scalars, records[i].LastValid, records[i].KeyDilution, len(batches.subkeys), len(offsets.subkeys)); err != nil {
+				err = fmt.Errorf("voting rows for key %s (pk %d) are corrupt: %w", records[i].ParticipationID, pks[i], err)
 				records = nil
-				return fmt.Errorf("unable to read voting offset subkeys for pk %d: %w", pks[i], err)
+				return err
 			}
-			if len(batches) == 0 && len(offsets) == 0 {
-				// a key that should still hold subkeys but has no rows would
-				// look valid yet be unable to vote; make that loud
-				if dilution := records[i].KeyDilution; dilution > 0 &&
-					voting.FirstBatch <= basics.OneTimeIDForRound(records[i].LastValid, dilution).Batch {
-					db.log.Warnf("participationDB: key %s has no voting subkey rows but is valid through round %d; it will not be able to vote",
-						records[i].ParticipationID, records[i].LastValid)
-				}
+			if len(batches.subkeys) == 0 && len(offsets.subkeys) == 0 {
 				continue
 			}
-			records[i].Voting, err = crypto.OneTimeSignatureSecretsFromParts(voting.OneTimeSignatureSecretsPersistent, batches, offsets)
+			records[i].Voting, err = crypto.OneTimeSignatureSecretsFromParts(voting.OneTimeSignatureSecretsPersistent, batches.subkeys, offsets.subkeys)
 			if err != nil {
 				records = nil
 				return fmt.Errorf("unable to reassemble voting secrets for pk %d: %w", pks[i], err)
@@ -1037,7 +1078,11 @@ func updateRollingFields(ctx context.Context, tx *sql.Tx, record ParticipationRe
 			old = &decoded.OneTimeSignatureSecretsPersistent
 		}
 	}
-	return applyVotingDeltaToRegistry(tx, pk, computeVotingDelta(old, record.Voting))
+	delta, err := computeVotingDelta(old, record.Voting)
+	if err != nil {
+		return err
+	}
+	return applyVotingDeltaToRegistry(tx, pk, delta)
 }
 
 func recordActive(record ParticipationRecord, on basics.Round) bool {

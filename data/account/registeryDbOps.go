@@ -142,10 +142,15 @@ func (i *insertOp) apply(db *participationDB) (err error) {
 	if i.record.VRF != nil {
 		rawVRF = protocol.Encode(i.record.VRF)
 	}
+	var votingOffsetsBatch uint64
 	if i.record.Voting != nil {
 		var scalars crypto.OneTimeSignatureSecretsPersistent
 		scalars, votingBatches, votingOffsets = i.record.Voting.PersistentParts()
 		rawVoting = protocol.Encode(&scalars)
+		if len(votingOffsets) > 0 {
+			// offset subkeys belong to the batch preceding FirstBatch
+			votingOffsetsBatch = scalars.FirstBatch - 1
+		}
 	}
 
 	// This contains all the state proof data except for the actual secret keys (stored in a different table)
@@ -182,7 +187,7 @@ func (i *insertOp) apply(db *participationDB) (err error) {
 		if err2 != nil {
 			return fmt.Errorf("unable to insert voting batch subkeys: %w", err2)
 		}
-		err2 = insertKeyedSubkeys(tx, "INSERT INTO VotingOffsets (pk, off, data) VALUES (?, ?, ?)", []any{pk}, votingOffsets)
+		err2 = insertKeyedSubkeys(tx, "INSERT INTO VotingOffsets (pk, batch, off, data) VALUES (?, ?, ?, ?)", []any{pk, votingOffsetsBatch}, votingOffsets)
 		if err2 != nil {
 			return fmt.Errorf("unable to insert voting offset subkeys: %w", err2)
 		}
