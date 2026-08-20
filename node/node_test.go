@@ -709,8 +709,11 @@ func TestLoadParticipationKeysRenamesUnsupported(t *testing.T) {
 
 	n, err := MakeFull(logging.TestingLog(t), testDirectory, config.GetDefaultLocal(), []string{}, genesis)
 	require.NoError(t, err)
-	require.NoError(t, n.Start())
-	n.Stop()
+	err = n.Start()
+	if err == nil {
+		defer n.Stop()
+	}
+	require.NoError(t, err)
 
 	require.NoFileExists(t, partfile)
 	require.FileExists(t, partfile+".old")

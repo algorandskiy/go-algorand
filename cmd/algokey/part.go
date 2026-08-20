@@ -120,7 +120,8 @@ var partInfoCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		partkey, err := account.RestoreParticipation(partdb)
+		// read-only: do not migrate the file as a side effect of printing info
+		partkey, err := account.RestoreParticipationUnmigrated(partdb)
 		partdb.Close()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Cannot load partkey database %s: %v\n", partKeyfile, err)
@@ -219,15 +220,21 @@ func runPartMigrate(keyfile string, noValidation bool, out io.Writer) (partkey a
 	if _, statErr := os.Stat(newFile); statErr == nil {
 		return partkey, false, fmt.Errorf("%s already exists; remove it before migrating", newFile)
 	}
+	// drop stale sidecars a previous failed run may have left, so they cannot
+	// be replayed into the fresh copy
+	for _, ext := range []string{"-wal", "-shm"} {
+		if err = os.Remove(newFile + ext); err != nil && !os.IsNotExist(err) {
+			return partkey, false, fmt.Errorf("cannot remove stale %s: %v", newFile+ext, err)
+		}
+	}
 	if _, err = util.CopyFile(keyfile, newFile); err != nil {
 		return partkey, false, fmt.Errorf("cannot copy %s to %s: %v", keyfile, newFile, err)
 	}
-	// copy WAL siblings so SQLite recovers an unclean close in the copy, not the original
-	for _, ext := range []string{"-wal", "-shm"} {
-		if _, statErr := os.Stat(keyfile + ext); statErr == nil {
-			if _, err = util.CopyFile(keyfile+ext, newFile+ext); err != nil {
-				return partkey, false, fmt.Errorf("cannot copy %s to %s: %v", keyfile+ext, newFile+ext, err)
-			}
+	// copy the WAL too so SQLite recovers an unclean close in the copy, not
+	// the original; the volatile -shm index is rebuilt by SQLite on open
+	if _, statErr := os.Stat(keyfile + "-wal"); statErr == nil {
+		if _, err = util.CopyFile(keyfile+"-wal", newFile+"-wal"); err != nil {
+			return partkey, false, fmt.Errorf("cannot copy %s to %s: %v", keyfile+"-wal", newFile+"-wal", err)
 		}
 	}
 
@@ -284,7 +291,12 @@ func comparePartkeys(expected, actual account.Participation) error {
 	if !bytes.Equal(protocol.Encode(&expectedVoting), protocol.Encode(&actualVoting)) {
 		return fmt.Errorf("voting secrets mismatch")
 	}
-	if !bytes.Equal(protocol.Encode(expected.StateProofSecrets), protocol.Encode(actual.StateProofSecrets)) {
+	// v1/v2 files (and v3 files upgraded from them) have no state proof secrets
+	if (expected.StateProofSecrets == nil) != (actual.StateProofSecrets == nil) {
+		return fmt.Errorf("state proof secrets presence mismatch")
+	}
+	if expected.StateProofSecrets != nil &&
+		!bytes.Equal(protocol.Encode(expected.StateProofSecrets), protocol.Encode(actual.StateProofSecrets)) {
 		return fmt.Errorf("state proof secrets mismatch")
 	}
 	return nil

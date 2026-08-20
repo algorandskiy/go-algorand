@@ -472,7 +472,12 @@ func dbSchemaUpgrade1(ctx context.Context, tx *sql.Tx, newDatabase bool) error {
 		}
 		voting := &crypto.OneTimeSignatureSecrets{}
 		if err := protocol.Decode(entry.rawVoting, voting); err != nil {
-			return fmt.Errorf("dbSchemaUpgrade1: failed to decode voting blob for pk %d: %w", entry.pk, err)
+			// Leave an undecodable blob in place rather than failing the
+			// whole migration (db.Initialize would mask this error as a
+			// generic upgrade failure with no quarantine path).  The record
+			// stays readable through the legacy whole-blob tolerance and is
+			// converted lazily by the next flush.
+			continue
 		}
 		if err := applyVotingDeltaToRegistry(tx, entry.pk, computeVotingDelta(nil, voting)); err != nil {
 			return fmt.Errorf("dbSchemaUpgrade1: failed to convert voting blob for pk %d: %w", entry.pk, err)
@@ -795,6 +800,12 @@ func scanRecords(rows *sql.Rows) ([]ParticipationRecord, []int64, error) {
 		pks = append(pks, pk)
 	}
 
+	// an iteration error ends the loop the same way exhaustion does; without
+	// this check it would silently truncate the result set
+	if err := rows.Err(); err != nil {
+		return nil, nil, err
+	}
+
 	return results, pks, nil
 }
 
@@ -804,6 +815,7 @@ func (db *participationDB) getAllFromDB() (records []ParticipationRecord, err er
 		if err != nil {
 			return fmt.Errorf("unable to query records: %w", err)
 		}
+		defer rows.Close()
 
 		var pks []int64
 		records, pks, err = scanRecords(rows)
@@ -811,6 +823,7 @@ func (db *participationDB) getAllFromDB() (records []ParticipationRecord, err er
 			records = nil
 			return fmt.Errorf("problem scanning records: %w", err)
 		}
+		// release the cursor before issuing the per-subkey queries below
 		rows.Close()
 
 		// reattach the per-subkey voting rows; a blob that itself carries
@@ -831,6 +844,13 @@ func (db *participationDB) getAllFromDB() (records []ParticipationRecord, err er
 				return fmt.Errorf("unable to read voting offset subkeys for pk %d: %w", pks[i], err)
 			}
 			if len(batches) == 0 && len(offsets) == 0 {
+				// a key that should still hold subkeys but has no rows would
+				// look valid yet be unable to vote; make that loud
+				if dilution := records[i].KeyDilution; dilution > 0 &&
+					voting.FirstBatch <= basics.OneTimeIDForRound(records[i].LastValid, dilution).Batch {
+					db.log.Warnf("participationDB: key %s has no voting subkey rows but is valid through round %d; it will not be able to vote",
+						records[i].ParticipationID, records[i].LastValid)
+				}
 				continue
 			}
 			records[i].Voting, err = crypto.OneTimeSignatureSecretsFromParts(voting.OneTimeSignatureSecretsPersistent, batches, offsets)
@@ -1002,9 +1022,6 @@ func updateRollingFields(ctx context.Context, tx *sql.Tx, record ParticipationRe
 		record.EffectiveFirst,
 		record.EffectiveLast,
 		pk)
-	if err != nil {
-		return err
-	}
 	if err = verifyExecWithOneRowEffected(err, result, "update rolling fields"); err != nil {
 		return err
 	}

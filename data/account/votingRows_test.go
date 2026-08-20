@@ -170,7 +170,7 @@ func TestComputeVotingDelta(t *testing.T) {
 
 	secrets := crypto.GenerateOneTimeSignatureSecrets(0, 10)
 	secrets.DeleteBeforeFineGrained(crypto.OneTimeSignatureIdentifier{Batch: 2, Offset: 3}, dilution)
-	current := secrets.PersistentScalars()
+	current, _, _ := secrets.PersistentState()
 
 	// noop: persisted state matches memory
 	d := computeVotingDelta(&current, secrets)
@@ -220,6 +220,24 @@ func TestComputeVotingDelta(t *testing.T) {
 	ahead.FirstBatch = current.FirstBatch + 1
 	d = computeVotingDelta(&ahead, secrets)
 	a.True(d.fullRewrite)
+
+	// end-of-key-life: DeleteBeforeFineGrained clears the remaining subkeys
+	// of a key on its last batch without advancing either scalar; the delta
+	// must clear the rows rather than report a noop
+	spent := crypto.GenerateOneTimeSignatureSecrets(0, 4)
+	spent.DeleteBeforeFineGrained(crypto.OneTimeSignatureIdentifier{Batch: 3, Offset: 2}, dilution)
+	a.NotEmpty(spent.Offsets) // final batch expanded
+	a.Empty(spent.Batches)
+	persisted, _, _ := spent.PersistentState()
+	spent.DeleteBeforeFineGrained(crypto.OneTimeSignatureIdentifier{Batch: 4, Offset: 0}, dilution)
+	a.Empty(spent.Offsets)
+	afterState, _, _ := spent.PersistentState()
+	a.Equal(persisted.FirstBatch, afterState.FirstBatch) // scalars did not move
+	a.Equal(persisted.FirstOffset, afterState.FirstOffset)
+	d = computeVotingDelta(&persisted, spent)
+	a.False(d.noop)
+	a.True(d.clearAllRows)
+	a.Nil(d.newScalars)
 }
 
 func TestDeleteOldKeysIncremental(t *testing.T) {
@@ -274,6 +292,44 @@ func TestDeleteOldKeysBatchRollover(t *testing.T) {
 	restored, err := RestoreParticipationUnmigrated(partDB)
 	a.NoError(err)
 	a.Equal(encodedVotingSnapshot(part.Voting), encodedVotingSnapshot(restored.Voting))
+}
+
+// TestDeleteOldKeysEndOfLife walks a key past its final batch and verifies
+// every subkey row is erased from the file — the forward-security guarantee
+// at the end-of-key-life transition, where DeleteBeforeFineGrained clears the
+// remaining offsets without advancing the scalars.
+func TestDeleteOldKeysEndOfLife(t *testing.T) {
+	partitiontest.PartitionTest(t)
+
+	a := require.New(t)
+	const dilution = 10
+	part, partDB := makeSmallTestKey(t, a, 0, 300, dilution) // batches 0..30, coverage through round 309
+	defer closeDBS(partDB)
+
+	proto := config.Consensus[protocol.ConsensusCurrentVersion]
+
+	// expand the final batch, then move past the end of the key
+	a.NoError(<-part.DeleteOldKeys(basics.Round(305), proto))
+	a.NotZero(countTableRows(a, partDB, "OtsOffsets"))
+	a.NoError(<-part.DeleteOldKeys(basics.Round(311), proto))
+
+	a.Empty(part.Voting.Offsets)
+	a.Zero(countTableRows(a, partDB, "OtsOffsets"), "retired offset subkeys survived on disk")
+	a.Zero(countTableRows(a, partDB, "OtsBatches"))
+
+	// a fresh restore must not resurrect any signing capability
+	restored, err := RestoreParticipationUnmigrated(partDB)
+	a.NoError(err)
+	a.Empty(restored.Voting.Offsets)
+	a.Empty(restored.Voting.Batches)
+	id := basics.OneTimeIDForRound(305, dilution)
+	msg := crypto.OneTimeSignatureSubkeyBatchID{Batch: 1}
+	sig := restored.Voting.Sign(id, msg)
+	a.False(part.Voting.OneTimeSignatureVerifier.Verify(id, msg, sig), "restored secrets signed a retired round")
+
+	// subsequent rounds on the dead key stay cheap and consistent
+	a.NoError(<-part.DeleteOldKeys(basics.Round(315), proto))
+	a.Zero(countTableRows(a, partDB, "OtsOffsets"))
 }
 
 // TestDeleteOldKeysLegacyBlobSelfHeals plants a legacy whole-secrets blob in

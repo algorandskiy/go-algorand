@@ -35,16 +35,19 @@ import (
 	"github.com/algorand/go-algorand/util/db"
 )
 
-// makeV3PartkeyFile creates a legacy (schema version 3) participation key
-// file, as an old algokey would have written it, and returns the key.
-func makeV3PartkeyFile(t *testing.T, keyfile string, mangleVoting bool) account.Participation {
+type legacyPartkeyOptions struct {
+	version        int  // 1 or 3
+	mangleVoting   bool // truncate the voting blob so migration fails
+	nullStateProof bool // v3 file with a NULL stateProof column (upgraded from v1/v2 by old code)
+}
+
+// makeLegacyPartkeyFile creates an old-schema participation key file, as an
+// old algokey would have written it, and returns the key.
+func makeLegacyPartkeyFile(t *testing.T, keyfile string, opts legacyPartkeyOptions) account.Participation {
 	t.Helper()
 	a := require.New(t)
 
 	const first, last, dilution = 1, 200, 10
-	stateProofSecrets, err := merklesignature.New(first, last, (last+1)/2)
-	a.NoError(err)
-
 	firstID := basics.OneTimeIDForRound(first, dilution)
 	lastID := basics.OneTimeIDForRound(last, dilution)
 	votingSecrets := crypto.GenerateOneTimeSignatureSecrets(firstID.Batch, lastID.Batch-firstID.Batch+1)
@@ -52,18 +55,22 @@ func makeV3PartkeyFile(t *testing.T, keyfile string, mangleVoting bool) account.
 	votingSecrets.DeleteBeforeFineGrained(basics.OneTimeIDForRound(42, dilution), dilution)
 
 	part := account.Participation{
-		FirstValid:        first,
-		LastValid:         last,
-		KeyDilution:       dilution,
-		Voting:            votingSecrets,
-		VRF:               crypto.GenerateVRFSecrets(),
-		StateProofSecrets: stateProofSecrets,
+		FirstValid:  first,
+		LastValid:   last,
+		KeyDilution: dilution,
+		Voting:      votingSecrets,
+		VRF:         crypto.GenerateVRFSecrets(),
 	}
 	crypto.RandBytes(part.Parent[:])
+	if opts.version >= 3 && !opts.nullStateProof {
+		stateProofSecrets, err := merklesignature.New(first, last, (last+1)/2)
+		a.NoError(err)
+		part.StateProofSecrets = stateProofSecrets
+	}
 
 	voting := part.Voting.Snapshot()
 	rawVoting := protocol.Encode(&voting)
-	if mangleVoting {
+	if opts.mangleVoting {
 		rawVoting = rawVoting[:len(rawVoting)/2]
 	}
 
@@ -72,25 +79,44 @@ func makeV3PartkeyFile(t *testing.T, keyfile string, mangleVoting bool) account.
 	defer partdb.Close()
 
 	err = partdb.Atomic(func(ctx context.Context, tx *sql.Tx) error {
+		if _, err := tx.Exec(`CREATE TABLE schema (tablename TEXT PRIMARY KEY, version INTEGER);`); err != nil {
+			return err
+		}
+		if _, err := tx.Exec("INSERT INTO schema (tablename, version) VALUES (?, ?)", account.PartTableSchemaName, opts.version); err != nil {
+			return err
+		}
+		if opts.version == 1 {
+			if _, err := tx.Exec(`CREATE TABLE ParticipationAccount (
+				parent BLOB, vrf BLOB, voting BLOB,
+				firstValid INTEGER, lastValid INTEGER);`); err != nil {
+				return err
+			}
+			_, err := tx.Exec("INSERT INTO ParticipationAccount (parent, vrf, voting, firstValid, lastValid) VALUES (?, ?, ?, ?, ?)",
+				part.Parent[:], protocol.Encode(part.VRF), rawVoting, part.FirstValid, part.LastValid)
+			return err
+		}
 		if _, err := tx.Exec(`CREATE TABLE ParticipationAccount (
 			parent BLOB, vrf BLOB, voting BLOB,
 			firstValid INTEGER, lastValid INTEGER,
 			keyDilution INTEGER NOT NULL DEFAULT 0, stateProof BLOB);`); err != nil {
 			return err
 		}
-		if _, err := tx.Exec(`CREATE TABLE schema (tablename TEXT PRIMARY KEY, version INTEGER);`); err != nil {
-			return err
-		}
-		if _, err := tx.Exec("INSERT INTO schema (tablename, version) VALUES (?, ?)", account.PartTableSchemaName, 3); err != nil {
-			return err
+		var rawStateProof []byte
+		if part.StateProofSecrets != nil {
+			rawStateProof = protocol.Encode(&part.StateProofSecrets.SignerContext)
 		}
 		_, err := tx.Exec("INSERT INTO ParticipationAccount (parent, vrf, voting, firstValid, lastValid, keyDilution, stateProof) VALUES (?, ?, ?, ?, ?, ?, ?)",
 			part.Parent[:], protocol.Encode(part.VRF), rawVoting, part.FirstValid, part.LastValid, part.KeyDilution,
-			protocol.Encode(&part.StateProofSecrets.SignerContext))
+			rawStateProof)
 		return err
 	})
 	a.NoError(err)
 	return part
+}
+
+func makeV3PartkeyFile(t *testing.T, keyfile string, mangleVoting bool) account.Participation {
+	t.Helper()
+	return makeLegacyPartkeyFile(t, keyfile, legacyPartkeyOptions{version: 3, mangleVoting: mangleVoting})
 }
 
 func TestPartMigrate(t *testing.T) {
@@ -128,6 +154,38 @@ func TestPartMigrate(t *testing.T) {
 
 	a.Contains(out.String(), "Pure migration time")
 	a.Contains(out.String(), "Validation PASSED")
+}
+
+// TestPartMigrateNilStateProof covers the file populations with no state
+// proof secrets: v1 files, and v3 files whose stateProof column is NULL
+// (upgraded from v1/v2 by old releases). Validation must not crash on them.
+func TestPartMigrateNilStateProof(t *testing.T) {
+	partitiontest.PartitionTest(t)
+	t.Parallel()
+	a := require.New(t)
+
+	for name, opts := range map[string]legacyPartkeyOptions{
+		"v1":               {version: 1},
+		"v3NullStateProof": {version: 3, nullStateProof: true},
+	} {
+		keyfile := filepath.Join(t.TempDir(), name+".partkey")
+		makeLegacyPartkeyFile(t, keyfile, opts)
+
+		var out bytes.Buffer
+		partkey, migrated, err := runPartMigrate(keyfile, false, &out)
+		a.NoError(err, name)
+		a.True(migrated, name)
+		a.Nil(partkey.StateProofSecrets, name)
+		a.Contains(out.String(), "Validation PASSED", name)
+
+		// validation reads the original without migrating it
+		origdb, err := db.MakeErasableAccessor(keyfile)
+		a.NoError(err)
+		version, err := account.PartkeySchemaVersion(origdb)
+		origdb.Close()
+		a.NoError(err)
+		a.Equal(opts.version, version, name)
+	}
 }
 
 func TestPartMigrateNoValidation(t *testing.T) {

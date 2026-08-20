@@ -39,6 +39,12 @@ type votingDelta struct {
 	// insertBatches+insertOffsets.
 	fullRewrite bool
 
+	// clearAllRows means the in-memory secrets carry no subkeys at all while
+	// the scalars are unchanged (the end-of-key-life transition): delete
+	// every row, keep the stored scalars.  Idempotent, and once the tables
+	// are empty it writes nothing.
+	clearAllRows bool
+
 	// deleteBatchesBelow deletes batch rows with index < this value
 	// (rollover path; 0 means no batch deletion).
 	deleteBatchesBelow uint64
@@ -55,7 +61,8 @@ type votingDelta struct {
 	insertBatches []crypto.KeyedSubkey
 	insertOffsets []crypto.KeyedSubkey
 
-	// newScalars is the encoded scalar state to store; nil only when noop.
+	// newScalars is the encoded scalar state to store; nil when the stored
+	// scalars need no update (noop and clearAllRows).
 	newScalars []byte
 }
 
@@ -79,9 +86,18 @@ func computeVotingDelta(old *crypto.OneTimeSignatureSecretsPersistent, secrets *
 		return fullRewrite()
 	}
 
-	scalars := secrets.PersistentScalars()
+	scalars, numBatches, numOffsets := secrets.PersistentState()
 	switch {
 	case scalars.FirstBatch == old.FirstBatch && scalars.FirstOffset == old.FirstOffset:
+		if numBatches == 0 && numOffsets == 0 {
+			// End-of-key-life: when a key on its last batch moves past its
+			// end, DeleteBeforeFineGrained clears the remaining offset
+			// subkeys without advancing either scalar, so scalar equality
+			// does not imply the stored rows are current.  A key with no
+			// subkeys in memory must have no rows on disk (forward
+			// security).
+			return votingDelta{clearAllRows: true}
+		}
 		return votingDelta{noop: true}
 
 	case scalars.FirstBatch == old.FirstBatch && scalars.FirstOffset > old.FirstOffset:
@@ -95,7 +111,7 @@ func computeVotingDelta(old *crypto.OneTimeSignatureSecretsPersistent, secrets *
 		// Batch rollover: batch rows consumed, offset rows regenerated.
 		// Re-capture scalars and offset rows in one consistent snapshot;
 		// batch rows are already present in storage and never re-inserted.
-		partScalars, _, offsets := secrets.PersistentParts()
+		partScalars, offsets := secrets.PersistentScalarsAndOffsets()
 		return votingDelta{
 			deleteBatchesBelow: partScalars.FirstBatch,
 			replaceAllOffsets:  true,
@@ -107,6 +123,95 @@ func computeVotingDelta(old *crypto.OneTimeSignatureSecretsPersistent, secrets *
 		// Persisted state is ahead of memory; self-heal.
 		return fullRewrite()
 	}
+}
+
+// votingDeltaTarget names the SQL statements for one of the two row-oriented
+// voting key stores: the .partkey file tables, or the registry tables scoped
+// by pk.  Statements taking a threshold or row values receive prefixArgs
+// first.
+type votingDeltaTarget struct {
+	deleteAllBatches   string
+	deleteBatchesBelow string // args: (prefixArgs..., threshold)
+	deleteAllOffsets   string
+	deleteOffsetsBelow string // args: (prefixArgs..., threshold)
+	insertBatch        string // args: (prefixArgs..., index, data)
+	insertOffset       string // args: (prefixArgs..., index, data)
+	updateScalars      string // args: (scalars, prefixArgs...)
+	prefixArgs         []any
+}
+
+var partkeyFileVotingTarget = votingDeltaTarget{
+	deleteAllBatches:   "DELETE FROM OtsBatches",
+	deleteBatchesBelow: "DELETE FROM OtsBatches WHERE batch<?",
+	deleteAllOffsets:   "DELETE FROM OtsOffsets",
+	deleteOffsetsBelow: "DELETE FROM OtsOffsets WHERE off<?",
+	insertBatch:        "INSERT INTO OtsBatches (batch, data) VALUES (?, ?)",
+	insertOffset:       "INSERT INTO OtsOffsets (off, data) VALUES (?, ?)",
+	updateScalars:      "UPDATE ParticipationAccount SET voting=?",
+}
+
+func registryVotingTarget(pk int64) votingDeltaTarget {
+	return votingDeltaTarget{
+		deleteAllBatches:   deleteVotingBatchesPK,
+		deleteBatchesBelow: "DELETE FROM VotingBatches WHERE pk=? AND batch<?",
+		deleteAllOffsets:   deleteVotingOffsetsPK,
+		deleteOffsetsBelow: "DELETE FROM VotingOffsets WHERE pk=? AND off<?",
+		insertBatch:        "INSERT INTO VotingBatches (pk, batch, data) VALUES (?, ?, ?)",
+		insertOffset:       "INSERT INTO VotingOffsets (pk, off, data) VALUES (?, ?, ?)",
+		updateScalars:      "UPDATE Rolling SET voting=? WHERE pk=?",
+		prefixArgs:         []any{pk},
+	}
+}
+
+// applyVotingDeltaToPartkeyFile applies a delta to a .partkey database.
+func applyVotingDeltaToPartkeyFile(tx *sql.Tx, d votingDelta) error {
+	return applyVotingDelta(tx, partkeyFileVotingTarget, d)
+}
+
+// applyVotingDeltaToRegistry applies a delta to the participation registry
+// tables for one key.
+func applyVotingDeltaToRegistry(tx *sql.Tx, pk int64, d votingDelta) error {
+	return applyVotingDelta(tx, registryVotingTarget(pk), d)
+}
+
+func applyVotingDelta(tx *sql.Tx, target votingDeltaTarget, d votingDelta) error {
+	if d.noop {
+		return nil
+	}
+
+	if d.fullRewrite || d.clearAllRows {
+		if _, err := tx.Exec(target.deleteAllBatches, target.prefixArgs...); err != nil {
+			return fmt.Errorf("applyVotingDelta: failed to clear batches: %w", err)
+		}
+	} else if d.deleteBatchesBelow > 0 {
+		if _, err := tx.Exec(target.deleteBatchesBelow, append(append([]any{}, target.prefixArgs...), d.deleteBatchesBelow)...); err != nil {
+			return fmt.Errorf("applyVotingDelta: failed to trim batches: %w", err)
+		}
+	}
+
+	if d.fullRewrite || d.clearAllRows || d.replaceAllOffsets {
+		if _, err := tx.Exec(target.deleteAllOffsets, target.prefixArgs...); err != nil {
+			return fmt.Errorf("applyVotingDelta: failed to clear offsets: %w", err)
+		}
+	} else if d.deleteOffsetsBelow > 0 {
+		if _, err := tx.Exec(target.deleteOffsetsBelow, append(append([]any{}, target.prefixArgs...), d.deleteOffsetsBelow)...); err != nil {
+			return fmt.Errorf("applyVotingDelta: failed to trim offsets: %w", err)
+		}
+	}
+
+	if err := insertKeyedSubkeys(tx, target.insertBatch, target.prefixArgs, d.insertBatches); err != nil {
+		return fmt.Errorf("applyVotingDelta: failed to insert batches: %w", err)
+	}
+	if err := insertKeyedSubkeys(tx, target.insertOffset, target.prefixArgs, d.insertOffsets); err != nil {
+		return fmt.Errorf("applyVotingDelta: failed to insert offsets: %w", err)
+	}
+
+	if d.newScalars != nil {
+		if _, err := tx.Exec(target.updateScalars, append([]any{d.newScalars}, target.prefixArgs...)...); err != nil {
+			return fmt.Errorf("applyVotingDelta: failed to update scalars: %w", err)
+		}
+	}
+	return nil
 }
 
 // insertKeyedSubkeys bulk-inserts rows with a single prepared statement.
@@ -128,86 +233,6 @@ func insertKeyedSubkeys(tx *sql.Tx, insertSQL string, prefixArgs []any, rows []c
 		if _, err := stmt.Exec(args...); err != nil {
 			return err
 		}
-	}
-	return nil
-}
-
-// applyVotingDeltaToPartkeyFile applies a delta to a .partkey database
-// (tables OtsBatches/OtsOffsets, scalars in ParticipationAccount.voting).
-func applyVotingDeltaToPartkeyFile(tx *sql.Tx, d votingDelta) error {
-	if d.noop {
-		return nil
-	}
-
-	if d.fullRewrite {
-		if _, err := tx.Exec("DELETE FROM OtsBatches"); err != nil {
-			return fmt.Errorf("applyVotingDeltaToPartkeyFile: failed to clear batches: %w", err)
-		}
-	} else if d.deleteBatchesBelow > 0 {
-		if _, err := tx.Exec("DELETE FROM OtsBatches WHERE batch<?", d.deleteBatchesBelow); err != nil {
-			return fmt.Errorf("applyVotingDeltaToPartkeyFile: failed to trim batches: %w", err)
-		}
-	}
-
-	if d.fullRewrite || d.replaceAllOffsets {
-		if _, err := tx.Exec("DELETE FROM OtsOffsets"); err != nil {
-			return fmt.Errorf("applyVotingDeltaToPartkeyFile: failed to clear offsets: %w", err)
-		}
-	} else if d.deleteOffsetsBelow > 0 {
-		if _, err := tx.Exec("DELETE FROM OtsOffsets WHERE off<?", d.deleteOffsetsBelow); err != nil {
-			return fmt.Errorf("applyVotingDeltaToPartkeyFile: failed to trim offsets: %w", err)
-		}
-	}
-
-	if err := insertKeyedSubkeys(tx, "INSERT INTO OtsBatches (batch, data) VALUES (?, ?)", nil, d.insertBatches); err != nil {
-		return fmt.Errorf("applyVotingDeltaToPartkeyFile: failed to insert batches: %w", err)
-	}
-	if err := insertKeyedSubkeys(tx, "INSERT INTO OtsOffsets (off, data) VALUES (?, ?)", nil, d.insertOffsets); err != nil {
-		return fmt.Errorf("applyVotingDeltaToPartkeyFile: failed to insert offsets: %w", err)
-	}
-
-	if _, err := tx.Exec("UPDATE ParticipationAccount SET voting=?", d.newScalars); err != nil {
-		return fmt.Errorf("applyVotingDeltaToPartkeyFile: failed to update scalars: %w", err)
-	}
-	return nil
-}
-
-// applyVotingDeltaToRegistry applies a delta to the participation registry
-// (tables VotingBatches/VotingOffsets keyed by pk, scalars in Rolling.voting).
-func applyVotingDeltaToRegistry(tx *sql.Tx, pk int64, d votingDelta) error {
-	if d.noop {
-		return nil
-	}
-
-	if d.fullRewrite {
-		if _, err := tx.Exec("DELETE FROM VotingBatches WHERE pk=?", pk); err != nil {
-			return fmt.Errorf("applyVotingDeltaToRegistry: failed to clear batches: %w", err)
-		}
-	} else if d.deleteBatchesBelow > 0 {
-		if _, err := tx.Exec("DELETE FROM VotingBatches WHERE pk=? AND batch<?", pk, d.deleteBatchesBelow); err != nil {
-			return fmt.Errorf("applyVotingDeltaToRegistry: failed to trim batches: %w", err)
-		}
-	}
-
-	if d.fullRewrite || d.replaceAllOffsets {
-		if _, err := tx.Exec("DELETE FROM VotingOffsets WHERE pk=?", pk); err != nil {
-			return fmt.Errorf("applyVotingDeltaToRegistry: failed to clear offsets: %w", err)
-		}
-	} else if d.deleteOffsetsBelow > 0 {
-		if _, err := tx.Exec("DELETE FROM VotingOffsets WHERE pk=? AND off<?", pk, d.deleteOffsetsBelow); err != nil {
-			return fmt.Errorf("applyVotingDeltaToRegistry: failed to trim offsets: %w", err)
-		}
-	}
-
-	if err := insertKeyedSubkeys(tx, "INSERT INTO VotingBatches (pk, batch, data) VALUES (?, ?, ?)", []any{pk}, d.insertBatches); err != nil {
-		return fmt.Errorf("applyVotingDeltaToRegistry: failed to insert batches: %w", err)
-	}
-	if err := insertKeyedSubkeys(tx, "INSERT INTO VotingOffsets (pk, off, data) VALUES (?, ?, ?)", []any{pk}, d.insertOffsets); err != nil {
-		return fmt.Errorf("applyVotingDeltaToRegistry: failed to insert offsets: %w", err)
-	}
-
-	if _, err := tx.Exec("UPDATE Rolling SET voting=? WHERE pk=?", d.newScalars, pk); err != nil {
-		return fmt.Errorf("applyVotingDeltaToRegistry: failed to update scalars: %w", err)
 	}
 	return nil
 }

@@ -192,6 +192,46 @@ func TestRegistryDeleteExpiredPersistsReassembly(t *testing.T) {
 	}
 }
 
+// TestRegistryEndOfLifeClearsRows verifies the registry erases every voting
+// subkey row when a key on its final batch moves past its end while still
+// within its validity window (the transition where the scalars don't move).
+func TestRegistryEndOfLifeClearsRows(t *testing.T) {
+	partitiontest.PartitionTest(t)
+	a := require.New(t)
+
+	registry, dbfile := getRegistry(t)
+	defer registryCloseTest(t, registry, dbfile)
+
+	// LastValid 309 with dilution 10 puts the end of validity at the very end
+	// of the final batch (30), so the end-of-life transition happens while the
+	// record is still in the registry.
+	p := makeTestParticipation(a, 1, 1, 309, 10)
+	id, err := registry.Insert(p)
+	a.NoError(err)
+	a.NoError(registry.Register(id, 1))
+	a.NoError(registry.Flush(defaultTimeout))
+
+	proto := config.Consensus[protocol.ConsensusCurrentVersion]
+
+	// expand the final batch
+	a.NoError(registry.DeleteExpired(300, proto))
+	a.NoError(registry.Flush(defaultTimeout))
+	a.NotZero(registryCountRows(a, registry, "VotingOffsets"))
+
+	// move past the end of the key: offsets are cleared without scalar movement
+	a.NoError(registry.DeleteExpired(309, proto))
+	a.NoError(registry.Flush(defaultTimeout))
+	a.Zero(registryCountRows(a, registry, "VotingOffsets"), "retired offset subkeys survived in the registry")
+	a.Zero(registryCountRows(a, registry, "VotingBatches"))
+
+	// a cache rebuild must not resurrect any subkeys
+	a.NoError(registry.initializeCache())
+	record := registry.Get(id)
+	a.False(record.IsZero())
+	a.Empty(record.Voting.Offsets)
+	a.Empty(record.Voting.Batches)
+}
+
 // TestFlushWritesDeltaOnly verifies a flush with no voting-key progress
 // leaves the voting blob and subkey rows untouched.
 func TestFlushWritesDeltaOnly(t *testing.T) {

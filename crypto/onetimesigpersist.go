@@ -33,16 +33,16 @@ type KeyedSubkey struct {
 	Key   []byte
 }
 
-// PersistentScalars returns a copy of the persistent fields with the Batches
-// and Offsets slices nil'ed out, consistent with respect to concurrent
-// mutating calls (specifically, DeleteBefore*).  This is the cheap per-round
-// snapshot for row-oriented storage: the scalars plus the individually stored
-// subkey rows (see PersistentParts) together reconstruct the full secrets.
-func (s *OneTimeSignatureSecrets) PersistentScalars() OneTimeSignatureSecretsPersistent {
+// PersistentState returns a copy of the persistent scalar fields (with the
+// Batches and Offsets slices nil'ed out) plus the number of live batch and
+// offset subkeys, captured atomically with respect to concurrent mutating
+// calls (specifically, DeleteBefore*).  This is the cheap per-round probe for
+// row-oriented storage: no subkey is encoded.
+func (s *OneTimeSignatureSecrets) PersistentState() (scalars OneTimeSignatureSecretsPersistent, numBatches int, numOffsets int) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	return s.persistentScalarsLocked()
+	return s.persistentScalarsLocked(), len(s.Batches), len(s.Offsets)
 }
 
 func (s *OneTimeSignatureSecrets) persistentScalarsLocked() OneTimeSignatureSecretsPersistent {
@@ -50,6 +50,34 @@ func (s *OneTimeSignatureSecrets) persistentScalarsLocked() OneTimeSignatureSecr
 	scalars.Batches = nil
 	scalars.Offsets = nil
 	return scalars
+}
+
+func (s *OneTimeSignatureSecrets) encodedBatchesLocked() []KeyedSubkey {
+	if len(s.Batches) == 0 {
+		return nil
+	}
+	batches := make([]KeyedSubkey, len(s.Batches))
+	for i := range s.Batches {
+		batches[i] = KeyedSubkey{
+			Index: s.FirstBatch + uint64(i),
+			Key:   protocol.Encode(&s.Batches[i]),
+		}
+	}
+	return batches
+}
+
+func (s *OneTimeSignatureSecrets) encodedOffsetsLocked() []KeyedSubkey {
+	if len(s.Offsets) == 0 {
+		return nil
+	}
+	offsets := make([]KeyedSubkey, len(s.Offsets))
+	for j := range s.Offsets {
+		offsets[j] = KeyedSubkey{
+			Index: s.FirstOffset + uint64(j),
+			Key:   protocol.Encode(&s.Offsets[j]),
+		}
+	}
+	return offsets
 }
 
 // PersistentParts returns the scalar fields plus every subkey encoded as its
@@ -62,26 +90,18 @@ func (s *OneTimeSignatureSecrets) PersistentParts() (scalars OneTimeSignatureSec
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	scalars = s.persistentScalarsLocked()
-	if len(s.Batches) > 0 {
-		batches = make([]KeyedSubkey, len(s.Batches))
-		for i := range s.Batches {
-			batches[i] = KeyedSubkey{
-				Index: s.FirstBatch + uint64(i),
-				Key:   protocol.Encode(&s.Batches[i]),
-			}
-		}
-	}
-	if len(s.Offsets) > 0 {
-		offsets = make([]KeyedSubkey, len(s.Offsets))
-		for j := range s.Offsets {
-			offsets[j] = KeyedSubkey{
-				Index: s.FirstOffset + uint64(j),
-				Key:   protocol.Encode(&s.Offsets[j]),
-			}
-		}
-	}
-	return scalars, batches, offsets
+	return s.persistentScalarsLocked(), s.encodedBatchesLocked(), s.encodedOffsetsLocked()
+}
+
+// PersistentScalarsAndOffsets is PersistentParts without encoding the batch
+// subkeys.  Batch rows are immutable in storage after the initial insert
+// (they are only ever deleted), so steady-state persistence such as a batch
+// rollover never needs them re-encoded.
+func (s *OneTimeSignatureSecrets) PersistentScalarsAndOffsets() (scalars OneTimeSignatureSecretsPersistent, offsets []KeyedSubkey) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	return s.persistentScalarsLocked(), s.encodedOffsetsLocked()
 }
 
 // OneTimeSignatureSecretsFromParts reassembles OneTimeSignatureSecrets from
