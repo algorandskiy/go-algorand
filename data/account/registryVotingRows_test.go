@@ -212,29 +212,74 @@ func TestRegistryEndOfLifeClearsRows(t *testing.T) {
 	a.Empty(record.Voting.Batches)
 }
 
-// TestRegistryDetectsMissingRows verifies a registry whose subkey rows were
-// lost fails the cache load as corruption instead of silently producing a
-// key that cannot vote.
-func TestRegistryDetectsMissingRows(t *testing.T) {
+// TestRegistryExcludesCorruptRecord verifies a record whose subkey rows were
+// lost is excluded from the cache with a warning instead of blocking the
+// whole registry (and the node) from loading, while healthy records survive.
+func TestRegistryExcludesCorruptRecord(t *testing.T) {
 	partitiontest.PartitionTest(t)
 	a := require.New(t)
 
 	registry, dbfile := getRegistry(t)
 	defer registryCloseTest(t, registry, dbfile)
 
-	p := makeTestParticipation(a, 1, 1, 200, 10)
-	_, err := registry.Insert(p)
+	pHealthy := makeTestParticipation(a, 1, 1, 200, 10)
+	healthyID, err := registry.Insert(pHealthy)
+	a.NoError(err)
+	pCorrupt := makeTestParticipation(a, 2, 1, 200, 10)
+	corruptID, err := registry.Insert(pCorrupt)
 	a.NoError(err)
 	a.NoError(registry.Flush(defaultTimeout))
 	a.NoError(registry.initializeCache())
 
+	// damage the second key's rows
 	err = registry.store.Wdb.Atomic(func(ctx context.Context, tx *sql.Tx) error {
-		_, err := tx.Exec("DELETE FROM VotingBatches WHERE batch=(SELECT MAX(batch) FROM VotingBatches)")
+		_, err := tx.Exec("DELETE FROM VotingBatches WHERE batch=(SELECT MAX(batch) FROM VotingBatches) AND pk=(SELECT pk FROM Keysets WHERE participationID=?)", corruptID[:])
 		return err
 	})
 	a.NoError(err)
 
-	a.ErrorContains(registry.initializeCache(), "missing or extra rows")
+	a.NoError(registry.initializeCache())
+	a.True(registry.Get(corruptID).IsZero(), "corrupt record not excluded")
+	a.False(registry.Get(healthyID).IsZero(), "healthy record lost")
+}
+
+// TestFlushSelfHealsInconsistentRows verifies one key with rows inconsistent
+// with its scalars does not block the flush for every key: the applier
+// rebuilds the damaged key's rows from memory and the flush succeeds.
+func TestFlushSelfHealsInconsistentRows(t *testing.T) {
+	partitiontest.PartitionTest(t)
+	a := require.New(t)
+
+	registry, dbfile := getRegistry(t)
+	defer registryCloseTest(t, registry, dbfile)
+
+	pA := makeTestParticipation(a, 1, 1, 200, 10)
+	idA, err := registry.Insert(pA)
+	a.NoError(err)
+	pB := makeTestParticipation(a, 2, 1, 200, 10)
+	idB, err := registry.Insert(pB)
+	a.NoError(err)
+
+	proto := config.Consensus[protocol.ConsensusCurrentVersion]
+	a.NoError(registry.DeleteExpired(20, proto))
+	a.NoError(registry.Flush(defaultTimeout))
+
+	// lose one of B's offset rows behind the registry's back
+	err = registry.store.Wdb.Atomic(func(ctx context.Context, tx *sql.Tx) error {
+		_, err := tx.Exec("DELETE FROM VotingOffsets WHERE off=(SELECT MIN(off) FROM VotingOffsets) AND pk=(SELECT pk FROM Keysets WHERE participationID=?)", idB[:])
+		return err
+	})
+	a.NoError(err)
+
+	// the next flush trims offsets, detects the inconsistency, and rebuilds
+	a.NoError(registry.DeleteExpired(23, proto))
+	a.NoError(registry.Flush(defaultTimeout))
+
+	// both keys reload consistent with the cache
+	cachedA, cachedB := registry.Get(idA), registry.Get(idB)
+	a.NoError(registry.initializeCache())
+	a.Equal(encodedVotingSnapshot(cachedA.Voting), encodedVotingSnapshot(registry.Get(idA).Voting))
+	a.Equal(encodedVotingSnapshot(cachedB.Voting), encodedVotingSnapshot(registry.Get(idB).Voting))
 }
 
 // TestFlushWritesDeltaOnly verifies a flush with no voting-key progress

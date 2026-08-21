@@ -212,7 +212,7 @@ func (part PersistedParticipation) DeleteOldKeys(current basics.Round, proto con
 			if err != nil {
 				return fmt.Errorf("Participation.DeleteOldKeys: %v", err)
 			}
-			err = applyVotingDeltaToPartkeyFile(tx, delta)
+			err = applyVotingDeltaToPartkeyFile(tx, delta, part.Voting)
 			if err != nil {
 				return fmt.Errorf("Participation.DeleteOldKeys: failed to update account: %v", err)
 			}

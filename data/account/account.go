@@ -20,6 +20,7 @@ package account
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/algorand/go-algorand/crypto"
@@ -144,10 +145,20 @@ func RestoreParticipation(store db.Accessor) (acc PersistedParticipation, err er
 	return restoreParticipationAtVersion(store, PartTableSchemaVersion)
 }
 
+// ErrCorruptedVotingRows is returned when a participation file's voting
+// subkey rows are inconsistent with its scalars (missing, extra, or
+// misattributed rows).  Callers may quarantine such a file the same way an
+// unsupported-schema file is quarantined.
+var ErrCorruptedVotingRows = errors.New("participation file voting subkey rows are corrupt")
+
 // RestoreParticipationUnmigrated restores a Participation without migrating
 // the file, reading whichever supported schema version (3 or 4) it is at.
 // This keeps the file byte-identical, e.g. for validating a migration
 // against the original.
+//
+// The returned value must be treated as read-only: the mutating helpers
+// (DeleteOldKeys, Persist, PersistNewParent) assume the latest schema and
+// fail on an older store.
 func RestoreParticipationUnmigrated(store db.Accessor) (PersistedParticipation, error) {
 	version, err := PartkeySchemaVersion(store)
 	if err != nil {
@@ -212,7 +223,7 @@ func restoreParticipationAtVersion(store db.Accessor, version int) (acc Persiste
 	if rowBased {
 		err = validateVotingRowCounts(&acc.Voting.OneTimeSignatureSecretsPersistent, acc.LastValid, acc.KeyDilution, len(batches), len(offsets))
 		if err != nil {
-			return PersistedParticipation{}, fmt.Errorf("RestoreParticipation: %v", err)
+			return PersistedParticipation{}, fmt.Errorf("RestoreParticipation: %w: %v", ErrCorruptedVotingRows, err)
 		}
 	}
 
@@ -242,13 +253,16 @@ func decodeRowOrientedVoting(rawVoting []byte, batches, offsets []crypto.KeyedSu
 		return voting, false, nil
 	}
 	if err = validateOffsetRowBatches(&voting.OneTimeSignatureSecretsPersistent, offsetBatches); err != nil {
-		return nil, false, err
+		return nil, false, fmt.Errorf("%w: %v", ErrCorruptedVotingRows, err)
 	}
 	if len(batches) == 0 && len(offsets) == 0 {
 		return voting, true, nil
 	}
 	voting, err = crypto.OneTimeSignatureSecretsFromParts(voting.OneTimeSignatureSecretsPersistent, batches, offsets)
-	return voting, true, err
+	if err != nil {
+		return nil, true, fmt.Errorf("%w: %v", ErrCorruptedVotingRows, err)
+	}
+	return voting, true, nil
 }
 
 // RestoreParticipationWithSecrets restores a Participation from a database

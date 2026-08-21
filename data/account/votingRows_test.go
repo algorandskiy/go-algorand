@@ -388,8 +388,38 @@ func TestRestoreDetectsCorruptRows(t *testing.T) {
 			a.NoError(err)
 			_, err = RestoreParticipationUnmigrated(partDB)
 			a.ErrorContains(err, tc.wantErr)
+			// the sentinel lets the node quarantine the file as *.old
+			a.ErrorIs(err, ErrCorruptedVotingRows)
 		})
 	}
+}
+
+// TestDeleteOldKeysSelfHealsInconsistentRows verifies a file whose rows drift
+// from its scalars is rebuilt from memory by the next deletion instead of
+// failing every round.
+func TestDeleteOldKeysSelfHealsInconsistentRows(t *testing.T) {
+	partitiontest.PartitionTest(t)
+
+	a := require.New(t)
+	const dilution = 10
+	part, partDB := makeSmallTestKey(t, a, 0, 300, dilution)
+	defer closeDBS(partDB)
+
+	proto := config.Consensus[protocol.ConsensusCurrentVersion]
+	a.NoError(<-part.DeleteOldKeys(basics.Round(25), proto))
+
+	// lose one offset row behind the node's back
+	err := partDB.Atomic(func(ctx context.Context, tx *sql.Tx) error {
+		_, err := tx.Exec("DELETE FROM OtsOffsets WHERE off=(SELECT MIN(off) FROM OtsOffsets)")
+		return err
+	})
+	a.NoError(err)
+
+	a.NoError(<-part.DeleteOldKeys(basics.Round(26), proto))
+
+	restored, err := RestoreParticipationUnmigrated(partDB)
+	a.NoError(err)
+	a.Equal(encodedVotingSnapshot(part.Voting), encodedVotingSnapshot(restored.Voting))
 }
 
 // TestMigrationRollsBackOnFailure verifies a failing v3-to-v4 migration

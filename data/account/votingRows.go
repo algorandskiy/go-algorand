@@ -18,12 +18,18 @@ package account
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/algorand/go-algorand/crypto"
 	"github.com/algorand/go-algorand/data/basics"
 	"github.com/algorand/go-algorand/protocol"
 )
+
+// errInconsistentVotingRows signals that the stored subkey rows disagree with
+// the stored scalars (a trim removed an unexpected number of rows).  The
+// appliers recover from it by rebuilding the rows from memory.
+var errInconsistentVotingRows = errors.New("stored voting rows are inconsistent with the stored scalars")
 
 // votingDelta describes the row operations needed to bring row-oriented
 // persisted voting secrets (whose last-persisted scalars are known) up to the
@@ -212,15 +218,37 @@ func registryVotingTarget(pk int64) votingDeltaTarget {
 	}
 }
 
-// applyVotingDeltaToPartkeyFile applies a delta to a .partkey database.
-func applyVotingDeltaToPartkeyFile(tx *sql.Tx, d votingDelta) error {
-	return applyVotingDelta(tx, partkeyFileVotingTarget, d)
+// applyVotingDeltaToPartkeyFile applies a delta to a .partkey database,
+// rebuilding the rows from secrets if they turn out inconsistent.
+func applyVotingDeltaToPartkeyFile(tx *sql.Tx, d votingDelta, secrets *crypto.OneTimeSignatureSecrets) error {
+	return applyVotingDeltaSelfHealing(tx, partkeyFileVotingTarget, d, secrets)
 }
 
 // applyVotingDeltaToRegistry applies a delta to the participation registry
-// tables for one key.
-func applyVotingDeltaToRegistry(tx *sql.Tx, pk int64, d votingDelta) error {
-	return applyVotingDelta(tx, registryVotingTarget(pk), d)
+// tables for one key, rebuilding the rows from secrets if they turn out
+// inconsistent.
+func applyVotingDeltaToRegistry(tx *sql.Tx, pk int64, d votingDelta, secrets *crypto.OneTimeSignatureSecrets) error {
+	return applyVotingDeltaSelfHealing(tx, registryVotingTarget(pk), d, secrets)
+}
+
+// applyVotingDeltaSelfHealing applies a delta and, when the trim row counts
+// reveal that the stored rows disagree with the stored scalars, falls back to
+// rebuilding the rows from memory.  The fallback is safe: computeVotingDelta's
+// monotonicity guard already established that storage is not ahead of memory,
+// so a full rewrite can only remove or faithfully restore keys memory
+// legitimately holds — never resurrect deleted ones.  Without it, one
+// inconsistent key would fail every flush forever (blocking on-disk key
+// deletion for all keys, since the registry flush is one transaction).
+func applyVotingDeltaSelfHealing(tx *sql.Tx, target votingDeltaTarget, d votingDelta, secrets *crypto.OneTimeSignatureSecrets) error {
+	err := applyVotingDelta(tx, target, d)
+	if !errors.Is(err, errInconsistentVotingRows) || secrets == nil {
+		return err
+	}
+	full, ferr := computeVotingDelta(nil, secrets)
+	if ferr != nil {
+		return ferr
+	}
+	return applyVotingDelta(tx, target, full)
 }
 
 func applyVotingDelta(tx *sql.Tx, target votingDeltaTarget, d votingDelta) error {
@@ -289,7 +317,7 @@ func verifyRowsAffected(result sql.Result, expected int64, what string) error {
 		return err
 	}
 	if n != expected {
-		return fmt.Errorf("%s affected %d rows, expected %d: stored voting rows are inconsistent", what, n, expected)
+		return fmt.Errorf("%s affected %d rows, expected %d: %w", what, n, expected, errInconsistentVotingRows)
 	}
 	return nil
 }

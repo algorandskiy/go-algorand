@@ -226,19 +226,33 @@ func runPartMigrate(keyfile string, noValidation bool, out io.Writer) (partkey a
 			return partkey, false, fmt.Errorf("cannot remove stale %s: %v", newFile+ext, err)
 		}
 	}
+	// pre-create the snapshot target as an empty file with the original's
+	// restrictive permissions (VACUUM INTO accepts an empty file, and SQLite
+	// creates the -wal/-shm sidecars with the database file's mode), so the
+	// secret material is never readable more broadly than the original —
+	// not even between the snapshot and a later chmod
+	srcInfo, err := os.Stat(keyfile)
+	if err != nil {
+		return partkey, false, fmt.Errorf("cannot stat %s: %v", keyfile, err)
+	}
+	f, err := os.OpenFile(newFile, os.O_CREATE|os.O_EXCL|os.O_WRONLY, srcInfo.Mode().Perm())
+	if err != nil {
+		return partkey, false, fmt.Errorf("cannot create %s: %v", newFile, err)
+	}
+	f.Close()
+	// the umask may have stripped bits during creation; force the exact mode
+	if err = os.Chmod(newFile, srcInfo.Mode().Perm()); err != nil {
+		return partkey, false, fmt.Errorf("cannot set permissions on %s: %v", newFile, err)
+	}
 	// VACUUM INTO takes one transactionally consistent snapshot through
 	// SQLite itself, so a concurrently writing algod (which updates the file
 	// every round) cannot produce a torn copy the way independent file
 	// copies of the database and its WAL could.
 	if _, err = origdb.Handle.Exec("VACUUM INTO ?", newFile); err != nil {
+		// remove the empty target so a retry is not refused by the
+		// already-exists guard
+		os.Remove(newFile)
 		return partkey, false, fmt.Errorf("cannot snapshot %s to %s: %v", keyfile, newFile, err)
-	}
-	srcInfo, err := os.Stat(keyfile)
-	if err != nil {
-		return partkey, false, fmt.Errorf("cannot stat %s: %v", keyfile, err)
-	}
-	if err = os.Chmod(newFile, srcInfo.Mode().Perm()); err != nil {
-		return partkey, false, fmt.Errorf("cannot set permissions on %s: %v", newFile, err)
 	}
 
 	newdb, err := db.MakeErasableAccessor(newFile)

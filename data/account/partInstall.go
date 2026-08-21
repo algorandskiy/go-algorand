@@ -32,6 +32,9 @@ const PartTableSchemaName = "parttable"
 
 // PartTableSchemaVersion is the latest version of the PartTable schema
 const PartTableSchemaVersion = 4
+
+// PartTableSchemaVersionVotingSplit is the schema version that split the
+// voting secrets into per-subkey rows.
 const PartTableSchemaVersionVotingSplit = 4
 
 // ErrUnsupportedSchema is the error returned when the PartTable schema version is wrong.
@@ -191,7 +194,7 @@ func migrateVotingBlobToRows(tx *sql.Tx) error {
 	if err != nil {
 		return fmt.Errorf("migrateVotingBlobToRows: %w", err)
 	}
-	err = applyVotingDeltaToPartkeyFile(tx, delta)
+	err = applyVotingDeltaToPartkeyFile(tx, delta, voting)
 	if err != nil {
 		return err
 	}

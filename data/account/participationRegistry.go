@@ -479,15 +479,15 @@ func dbSchemaUpgrade1(ctx context.Context, tx *sql.Tx, newDatabase bool) error {
 			// Leave an undecodable blob in place rather than failing the
 			// whole migration (db.Initialize would mask this error as a
 			// generic upgrade failure with no quarantine path).  The record
-			// stays readable through the legacy whole-blob tolerance and is
-			// converted lazily by the next flush.
+			// is excluded from the cache with a warning at load time, so it
+			// does not block the registry from opening.
 			continue
 		}
 		delta, err := computeVotingDelta(nil, voting)
 		if err != nil {
 			return fmt.Errorf("dbSchemaUpgrade1: failed to compute conversion for pk %d: %w", entry.pk, err)
 		}
-		if err = applyVotingDeltaToRegistry(tx, entry.pk, delta); err != nil {
+		if err = applyVotingDeltaToRegistry(tx, entry.pk, delta, voting); err != nil {
 			return fmt.Errorf("dbSchemaUpgrade1: failed to convert voting blob for pk %d: %w", entry.pk, err)
 		}
 
@@ -623,11 +623,6 @@ func (db *participationDB) Insert(record Participation) (id ParticipationID, err
 		return id, ErrAlreadyInserted
 	}
 
-	db.writeQueue <- makeOpRequest(&insertOp{
-		id:     id,
-		record: record,
-	})
-
 	// Make some copies.
 	var vrf *crypto.VRFSecrets
 	if record.VRF != nil {
@@ -641,6 +636,16 @@ func (db *participationDB) Insert(record Participation) (id ParticipationID, err
 		voting = new(crypto.OneTimeSignatureSecrets)
 		*voting = record.Voting.Snapshot()
 	}
+
+	// hand the write op the same frozen snapshot the cache gets: the caller
+	// may keep advancing the live secrets (e.g. the partkey file's copy),
+	// and persisting a newer state than the cache holds would trip the
+	// monotonicity guard on the next flush
+	record.Voting = voting
+	db.writeQueue <- makeOpRequest(&insertOp{
+		id:     id,
+		record: record,
+	})
 
 	var stateProofVerifierPtr *merklesignature.Verifier
 	if record.StateProofSecrets != nil {
@@ -736,11 +741,13 @@ func (db *participationDB) DeleteExpired(latestRound basics.Round, agreementProt
 }
 
 // scanRecords is a helper to manage scanning participation records.
-// It returns the records along with their Rolling/Keysets primary keys,
-// which callers use to load the per-subkey voting rows.
-func scanRecords(rows *sql.Rows) ([]ParticipationRecord, []int64, error) {
+// It returns the records along with their Rolling/Keysets primary keys and
+// raw voting blobs; the caller decodes the voting secrets so that a corrupt
+// record can be excluded instead of failing the whole scan.
+func scanRecords(rows *sql.Rows) ([]ParticipationRecord, []int64, [][]byte, error) {
 	results := make([]ParticipationRecord, 0)
 	pks := make([]int64, 0)
+	rawVotings := make([][]byte, 0)
 	for rows.Next() {
 		var pk int64
 		var record ParticipationRecord
@@ -773,7 +780,7 @@ func scanRecords(rows *sql.Rows) ([]ParticipationRecord, []int64, error) {
 			&rawVoting,
 		)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 
 		copy(record.ParticipationID[:], rawParticipation)
@@ -783,7 +790,7 @@ func scanRecords(rows *sql.Rows) ([]ParticipationRecord, []int64, error) {
 			record.VRF = &crypto.VRFSecrets{}
 			err = protocol.Decode(rawVRF, record.VRF)
 			if err != nil {
-				return nil, nil, fmt.Errorf("unable to decode VRF: %w", err)
+				return nil, nil, nil, fmt.Errorf("unable to decode VRF: %w", err)
 			}
 		}
 
@@ -791,20 +798,12 @@ func scanRecords(rows *sql.Rows) ([]ParticipationRecord, []int64, error) {
 			stateProof := merklesignature.Signer{}
 			err = protocol.Decode(rawStateProof, &stateProof.SignerContext)
 			if err != nil {
-				return nil, nil, fmt.Errorf("unable to decode stateproof: %w", err)
+				return nil, nil, nil, fmt.Errorf("unable to decode stateproof: %w", err)
 			}
 			var stateProofVerifer merklesignature.Verifier
 			copy(stateProofVerifer.Commitment[:], stateProof.GetVerifier().Commitment[:])
 			stateProofVerifer.KeyLifetime = stateProof.GetVerifier().KeyLifetime
 			record.StateProof = &stateProofVerifer
-		}
-
-		if len(rawVoting) > 0 {
-			record.Voting = &crypto.OneTimeSignatureSecrets{}
-			err = protocol.Decode(rawVoting, record.Voting)
-			if err != nil {
-				return nil, nil, fmt.Errorf("unable to decode Voting: %w", err)
-			}
 		}
 
 		// Check optional values.
@@ -830,15 +829,16 @@ func scanRecords(rows *sql.Rows) ([]ParticipationRecord, []int64, error) {
 
 		results = append(results, record)
 		pks = append(pks, pk)
+		rawVotings = append(rawVotings, rawVoting)
 	}
 
 	// an iteration error ends the loop the same way exhaustion does; without
 	// this check it would silently truncate the result set
 	if err := rows.Err(); err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
-	return results, pks, nil
+	return results, pks, rawVotings, nil
 }
 
 func (db *participationDB) getAllFromDB() (records []ParticipationRecord, err error) {
@@ -849,10 +849,8 @@ func (db *participationDB) getAllFromDB() (records []ParticipationRecord, err er
 		}
 		defer rows.Close()
 
-		var pks []int64
-		records, pks, err = scanRecords(rows)
+		scanned, pks, rawVotings, err := scanRecords(rows)
 		if err != nil {
-			records = nil
 			return fmt.Errorf("problem scanning records: %w", err)
 		}
 		// release the cursor before issuing the subkey queries below
@@ -861,44 +859,33 @@ func (db *participationDB) getAllFromDB() (records []ParticipationRecord, err er
 		// load every subkey row in two queries and group by pk
 		batchesByPK, err := readGroupedSubkeys(tx, selectAllVotingBatches, false)
 		if err != nil {
-			records = nil
 			return fmt.Errorf("unable to read voting batch subkeys: %w", err)
 		}
 		offsetsByPK, err := readGroupedSubkeys(tx, selectAllVotingOffsets, true)
 		if err != nil {
-			records = nil
 			return fmt.Errorf("unable to read voting offset subkeys: %w", err)
 		}
 
-		// reattach the per-subkey voting rows; a blob that itself carries
-		// subkeys is a legacy whole-secrets encoding and is used as-is
-		for i := range records {
-			voting := records[i].Voting
-			if voting == nil || len(voting.Batches) != 0 || len(voting.Offsets) != 0 {
-				continue
+		// decode and reattach the voting secrets; a record whose voting data
+		// is corrupt is excluded with a warning rather than blocking the
+		// whole registry (and with it the node) from loading
+		records = make([]ParticipationRecord, 0, len(scanned))
+		for i := range scanned {
+			if len(rawVotings[i]) > 0 {
+				batches := batchesByPK[pks[i]]
+				offsets := offsetsByPK[pks[i]]
+				voting, rowBased, verr := decodeRowOrientedVoting(rawVotings[i], batches.subkeys, offsets.subkeys, offsets.batches)
+				if verr == nil && rowBased {
+					verr = validateVotingRowCounts(&voting.OneTimeSignatureSecretsPersistent, scanned[i].LastValid, scanned[i].KeyDilution, len(batches.subkeys), len(offsets.subkeys))
+				}
+				if verr != nil {
+					db.log.Warnf("participationDB: excluding key %s (pk %d) from the registry, its voting data is corrupt: %v; delete %s and restart to rebuild the registry",
+						scanned[i].ParticipationID, pks[i], verr, config.ParticipationRegistryFilename)
+					continue
+				}
+				scanned[i].Voting = voting
 			}
-			batches := batchesByPK[pks[i]]
-			offsets := offsetsByPK[pks[i]]
-
-			scalars := &voting.OneTimeSignatureSecretsPersistent
-			if err = validateOffsetRowBatches(scalars, offsets.batches); err != nil {
-				err = fmt.Errorf("voting rows for key %s (pk %d) are corrupt: %w", records[i].ParticipationID, pks[i], err)
-				records = nil
-				return err
-			}
-			if err = validateVotingRowCounts(scalars, records[i].LastValid, records[i].KeyDilution, len(batches.subkeys), len(offsets.subkeys)); err != nil {
-				err = fmt.Errorf("voting rows for key %s (pk %d) are corrupt: %w", records[i].ParticipationID, pks[i], err)
-				records = nil
-				return err
-			}
-			if len(batches.subkeys) == 0 && len(offsets.subkeys) == 0 {
-				continue
-			}
-			records[i].Voting, err = crypto.OneTimeSignatureSecretsFromParts(voting.OneTimeSignatureSecretsPersistent, batches.subkeys, offsets.subkeys)
-			if err != nil {
-				records = nil
-				return fmt.Errorf("unable to reassemble voting secrets for pk %d: %w", pks[i], err)
-			}
+			records = append(records, scanned[i])
 		}
 
 		return nil
@@ -1082,7 +1069,7 @@ func updateRollingFields(ctx context.Context, tx *sql.Tx, record ParticipationRe
 	if err != nil {
 		return err
 	}
-	return applyVotingDeltaToRegistry(tx, pk, delta)
+	return applyVotingDeltaToRegistry(tx, pk, delta, record.Voting)
 }
 
 func recordActive(record ParticipationRecord, on basics.Round) bool {
