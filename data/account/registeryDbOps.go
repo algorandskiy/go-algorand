@@ -26,6 +26,7 @@ import (
 
 	"github.com/algorand/go-algorand/crypto"
 	"github.com/algorand/go-algorand/data/basics"
+	"github.com/algorand/go-algorand/logging"
 	"github.com/algorand/go-algorand/protocol"
 )
 
@@ -133,32 +134,125 @@ func (r *registerOp) apply(db *participationDB) error {
 	return err
 }
 
+// fastForwardToStoredCursor advances secrets to the most advanced deletion
+// cursor already persisted for id, so an insert can never rewind the cursor
+// and resurrect retired keys on disk.  Fast-forwarding is exact because the
+// participation ID commits to the key material: a stored cursor ahead of the
+// inserted copy means those rounds were already voted and retired.
+func fastForwardToStoredCursor(tx *sql.Tx, log logging.Logger, id ParticipationID, secrets *crypto.OneTimeSignatureSecrets, dilution uint64) error {
+	rows, err := tx.Query(selectRollingVotingByID, id[:])
+	if err != nil {
+		return fmt.Errorf("unable to read stored voting scalars for %s: %w", id, err)
+	}
+	defer rows.Close()
+
+	var stored *crypto.OneTimeSignatureSecretsPersistent
+	for rows.Next() {
+		var pk int64
+		var rawVoting []byte
+		if err := rows.Scan(&pk, &rawVoting); err != nil {
+			return err
+		}
+		if len(rawVoting) == 0 {
+			continue
+		}
+		var decoded crypto.OneTimeSignatureSecrets
+		// an undecodable stored state cannot be compared; consistent with
+		// the delta computation, it degrades to replacement
+		if protocol.Decode(rawVoting, &decoded) != nil {
+			continue
+		}
+		if stored == nil || cursorAhead(&decoded.OneTimeSignatureSecretsPersistent, stored) {
+			s := decoded.OneTimeSignatureSecretsPersistent
+			stored = &s
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+
+	current, _, _ := secrets.PersistentState()
+	if stored == nil || !cursorAhead(stored, &current) {
+		return nil
+	}
+	// a cursor can only be ahead after a batch expansion, so FirstBatch >= 1
+	if stored.FirstBatch == 0 {
+		return nil
+	}
+	if dilution == 0 {
+		return fmt.Errorf("stored voting state for %s (batch %d, offset %d) is ahead of the inserted copy (batch %d, offset %d) and its key dilution is unknown; refusing to rewind the deletion cursor",
+			id, stored.FirstBatch, stored.FirstOffset, current.FirstBatch, current.FirstOffset)
+	}
+	log.Warnf("participationDB: inserted copy of key %s lags the stored deletion cursor; fast-forwarding from (batch %d, offset %d) to (batch %d, offset %d)",
+		id, current.FirstBatch, current.FirstOffset, stored.FirstBatch, stored.FirstOffset)
+	secrets.DeleteBeforeFineGrained(crypto.OneTimeSignatureIdentifier{Batch: stored.FirstBatch - 1, Offset: stored.FirstOffset}, dilution)
+	return nil
+}
+
 func (i *insertOp) apply(db *participationDB) (err error) {
 	var rawVRF []byte
-	var rawVoting []byte
-	var votingBatches, votingOffsets []crypto.KeyedSubkey
 	var rawStateProofContext []byte
 
 	if i.record.VRF != nil {
 		rawVRF = protocol.Encode(i.record.VRF)
 	}
-	var votingOffsetsBatch uint64
-	if i.record.Voting != nil {
-		var scalars crypto.OneTimeSignatureSecretsPersistent
-		scalars, votingBatches, votingOffsets = i.record.Voting.PersistentParts()
-		rawVoting = protocol.Encode(&scalars)
-		if len(votingOffsets) > 0 {
-			// offset subkeys belong to the batch preceding FirstBatch
-			votingOffsetsBatch = scalars.FirstBatch - 1
-		}
-	}
-
 	// This contains all the state proof data except for the actual secret keys (stored in a different table)
 	if i.record.StateProofSecrets != nil {
 		rawStateProofContext = protocol.Encode(&i.record.StateProofSecrets.SignerContext)
 	}
 
 	err = db.store.Wdb.Atomic(func(ctx context.Context, tx *sql.Tx) error {
+		// Replacing pre-existing rows must never rewind the persisted
+		// deletion cursor: the .partkey file and the registry are
+		// independent stores, so an inserted copy can lag what the registry
+		// already retired (e.g. a key file restored from a backup).  The
+		// participation ID commits to the key material, so the stored and
+		// inserted secrets are the same key — fast-forward the inserted copy
+		// to the most advanced stored cursor before persisting it.
+		if i.record.Voting != nil {
+			if err2 := fastForwardToStoredCursor(tx, db.log, i.id, i.record.Voting, i.record.KeyDilution); err2 != nil {
+				return err2
+			}
+		}
+
+		// capture the voting parts only after the potential fast-forward
+		var rawVoting []byte
+		var votingBatches, votingOffsets []crypto.KeyedSubkey
+		var votingOffsetsBatch uint64
+		if i.record.Voting != nil {
+			var scalars crypto.OneTimeSignatureSecretsPersistent
+			scalars, votingBatches, votingOffsets = i.record.Voting.PersistentParts()
+			rawVoting = protocol.Encode(&scalars)
+			if len(votingOffsets) > 0 {
+				// offset subkeys belong to the batch preceding FirstBatch
+				var err2 error
+				votingOffsetsBatch, err2 = offsetsOwningBatch(scalars.FirstBatch)
+				if err2 != nil {
+					return err2
+				}
+			}
+		}
+
+		// Clear any pre-existing rows for this participation ID.  A corrupt
+		// record excluded from the cache at load leaves its rows behind, and
+		// the caller (e.g. loadParticipationKeys in the same startup) then
+		// legitimately re-inserts the key: dedup happens against the cache
+		// only, and a duplicate Keysets row would make every subsequent
+		// flush fail with ErrMultipleKeysForID.
+		var cleared int64
+		for _, query := range []string{clearRollingByID, clearStateProofByID, clearVotingBatchesByID, clearVotingOffsetsByID, clearKeysetsByID} {
+			result, err2 := tx.Exec(query, i.id[:])
+			if err2 != nil {
+				return fmt.Errorf("unable to clear pre-existing rows for %s: %w", i.id, err2)
+			}
+			if n, err2 := result.RowsAffected(); err2 == nil {
+				cleared += n
+			}
+		}
+		if cleared > 0 {
+			db.log.Warnf("participationDB: insert of key %s replaced %d pre-existing rows", i.id, cleared)
+		}
+
 		result, err2 := tx.Exec(
 			insertKeysetQuery,
 			i.id[:],

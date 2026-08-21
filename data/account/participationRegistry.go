@@ -399,6 +399,14 @@ const (
 	deleteStateProofByPK   = `DELETE FROM StateProofKeys WHERE pk=?`
 	deleteVotingBatchesPK  = `DELETE FROM VotingBatches WHERE pk=?`
 	deleteVotingOffsetsPK  = `DELETE FROM VotingOffsets WHERE pk=?`
+
+	// insert-time clearing of any pre-existing rows for a participation ID
+	// (child tables first — their subqueries depend on Keysets)
+	clearRollingByID       = `DELETE FROM Rolling WHERE pk IN (SELECT pk FROM Keysets WHERE participationID=?)`
+	clearStateProofByID    = `DELETE FROM StateProofKeys WHERE pk IN (SELECT pk FROM Keysets WHERE participationID=?)`
+	clearVotingBatchesByID = `DELETE FROM VotingBatches WHERE pk IN (SELECT pk FROM Keysets WHERE participationID=?)`
+	clearVotingOffsetsByID = `DELETE FROM VotingOffsets WHERE pk IN (SELECT pk FROM Keysets WHERE participationID=?)`
+	clearKeysetsByID       = `DELETE FROM Keysets WHERE participationID=?`
 	updateRollingFieldsSQL = `UPDATE Rolling
 		 SET lastVoteRound=?,
 		     lastBlockProposalRound=?,
@@ -1061,6 +1069,8 @@ func updateRollingFields(ctx context.Context, tx *sql.Tx, record ParticipationRe
 	var old *crypto.OneTimeSignatureSecretsPersistent
 	if len(rawVoting) > 0 {
 		var decoded crypto.OneTimeSignatureSecrets
+		// a decode failure deliberately leaves old nil, which degrades to a
+		// full rewrite of the rows from memory
 		if protocol.Decode(rawVoting, &decoded) == nil {
 			old = &decoded.OneTimeSignatureSecretsPersistent
 		}

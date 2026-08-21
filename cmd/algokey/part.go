@@ -254,6 +254,16 @@ func runPartMigrate(keyfile string, noValidation bool, out io.Writer) (partkey a
 		os.Remove(newFile)
 		return partkey, false, fmt.Errorf("cannot snapshot %s to %s: %v", keyfile, newFile, err)
 	}
+	// a copy whose migration or validation failed is useless and would block
+	// a retry through the already-exists guard; keep it only on success
+	migrateOK := false
+	defer func() {
+		if !migrateOK {
+			os.Remove(newFile)
+			os.Remove(newFile + "-wal")
+			os.Remove(newFile + "-shm")
+		}
+	}()
 
 	newdb, err := db.MakeErasableAccessor(newFile)
 	if err != nil {
@@ -277,6 +287,7 @@ func runPartMigrate(keyfile string, noValidation bool, out io.Writer) (partkey a
 	partkey = restored.Participation
 
 	if noValidation {
+		migrateOK = true
 		return partkey, true, nil
 	}
 
@@ -293,6 +304,7 @@ func runPartMigrate(keyfile string, noValidation bool, out io.Writer) (partkey a
 		return partkey, false, fmt.Errorf("validation FAILED: migrated keys differ from the original: %v", err)
 	}
 	fmt.Fprintf(out, "Validation PASSED: keys reconstructed from %s match the original\n", newFile)
+	migrateOK = true
 	return partkey, true, nil
 }
 

@@ -21,6 +21,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/algorand/go-algorand/logging"
+
 	"github.com/algorand/go-algorand/crypto"
 	"github.com/algorand/go-algorand/data/basics"
 	"github.com/algorand/go-algorand/protocol"
@@ -87,6 +89,12 @@ type votingDelta struct {
 	newScalars []byte
 }
 
+// cursorAhead reports whether a's deletion cursor is strictly ahead of b's.
+func cursorAhead(a, b *crypto.OneTimeSignatureSecretsPersistent) bool {
+	return a.FirstBatch > b.FirstBatch ||
+		(a.FirstBatch == b.FirstBatch && a.FirstOffset > b.FirstOffset)
+}
+
 // computeVotingDelta compares the last-persisted scalars against the current
 // in-memory secrets and returns the row operations to persist the difference.
 // old == nil requests an unconditional full rewrite (missing persisted
@@ -97,7 +105,7 @@ type votingDelta struct {
 // that were already deleted on disk, so that state is an error rather than a
 // self-heal.
 func computeVotingDelta(old *crypto.OneTimeSignatureSecretsPersistent, secrets *crypto.OneTimeSignatureSecrets) (votingDelta, error) {
-	fullRewrite := func() votingDelta {
+	fullRewrite := func() (votingDelta, error) {
 		scalars, batches, offsets := secrets.PersistentParts()
 		d := votingDelta{
 			fullRewrite:           true,
@@ -108,19 +116,22 @@ func computeVotingDelta(old *crypto.OneTimeSignatureSecretsPersistent, secrets *
 			newScalars:            protocol.Encode(&scalars),
 		}
 		if len(offsets) > 0 {
-			d.offsetsBatch = scalars.FirstBatch - 1
+			var err error
+			d.offsetsBatch, err = offsetsOwningBatch(scalars.FirstBatch)
+			if err != nil {
+				return votingDelta{}, err
+			}
 		}
-		return d
+		return d, nil
 	}
 
 	if old == nil {
-		return fullRewrite(), nil
+		return fullRewrite()
 	}
 
 	scalars, numBatches, numOffsets := secrets.PersistentState()
 
-	if old.FirstBatch > scalars.FirstBatch ||
-		(old.FirstBatch == scalars.FirstBatch && old.FirstOffset > scalars.FirstOffset) {
+	if cursorAhead(old, &scalars) {
 		return votingDelta{}, fmt.Errorf("computeVotingDelta: persisted voting state (batch %d, offset %d) is ahead of memory (batch %d, offset %d): stale or corrupt store; refusing to resurrect deleted keys",
 			old.FirstBatch, old.FirstOffset, scalars.FirstBatch, scalars.FirstOffset)
 	}
@@ -128,7 +139,7 @@ func computeVotingDelta(old *crypto.OneTimeSignatureSecretsPersistent, secrets *
 	// Legacy whole-blob persisted state: convert in place.  The cursor check
 	// above guarantees memory holds no more keys than the blob did.
 	if len(old.Batches) != 0 || len(old.Offsets) != 0 {
-		return fullRewrite(), nil
+		return fullRewrite()
 	}
 
 	switch {
@@ -168,7 +179,11 @@ func computeVotingDelta(old *crypto.OneTimeSignatureSecretsPersistent, secrets *
 			newScalars:            protocol.Encode(&partScalars),
 		}
 		if len(offsets) > 0 {
-			d.offsetsBatch = partScalars.FirstBatch - 1
+			var err error
+			d.offsetsBatch, err = offsetsOwningBatch(partScalars.FirstBatch)
+			if err != nil {
+				return votingDelta{}, err
+			}
 			// memory still holds the tail of the batch sequence, so storage
 			// must have carried exactly the same tail and the trim size is
 			// exact; when memory ran out of batches entirely the tail length
@@ -244,11 +259,25 @@ func applyVotingDeltaSelfHealing(tx *sql.Tx, target votingDeltaTarget, d votingD
 	if !errors.Is(err, errInconsistentVotingRows) || secrets == nil {
 		return err
 	}
+	// reaching this path means a disk problem or a delta bug — repair it,
+	// but never silently
+	logging.Base().Warnf("participation voting rows were inconsistent and have been rebuilt from memory: %v", err)
 	full, ferr := computeVotingDelta(nil, secrets)
 	if ferr != nil {
 		return ferr
 	}
 	return applyVotingDelta(tx, target, full)
+}
+
+// offsetsOwningBatch returns the batch that offset subkeys belong to.  Offset
+// subkeys only exist after a batch expansion, which leaves FirstBatch >= 1;
+// FirstBatch == 0 alongside offsets means corrupt in-memory state, which must
+// fail at write time rather than persist a row every later load would reject.
+func offsetsOwningBatch(firstBatch uint64) (uint64, error) {
+	if firstBatch == 0 {
+		return 0, errors.New("offset subkeys present but FirstBatch is 0: corrupt voting state")
+	}
+	return firstBatch - 1, nil
 }
 
 func applyVotingDelta(tx *sql.Tx, target votingDeltaTarget, d votingDelta) error {
@@ -299,8 +328,14 @@ func applyVotingDelta(tx *sql.Tx, target votingDeltaTarget, d votingDelta) error
 		if err != nil {
 			return fmt.Errorf("applyVotingDelta: failed to update scalars: %w", err)
 		}
-		if err := verifyRowsAffected(result, 1, "scalar update"); err != nil {
-			return fmt.Errorf("applyVotingDelta: %w", err)
+		// deliberately not the self-heal sentinel: a missing scalar row is
+		// not repairable by rewriting the subkey rows
+		n, err := result.RowsAffected()
+		if err != nil {
+			return err
+		}
+		if n != 1 {
+			return fmt.Errorf("applyVotingDelta: scalar update affected %d rows, expected 1", n)
 		}
 	}
 	return nil

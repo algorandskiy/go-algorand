@@ -204,6 +204,8 @@ func (part PersistedParticipation) DeleteOldKeys(current basics.Round, proto con
 			var old *crypto.OneTimeSignatureSecretsPersistent
 			if len(rawVoting) > 0 {
 				var decoded crypto.OneTimeSignatureSecrets
+				// a decode failure deliberately leaves old nil, which
+				// degrades to a full rewrite of the rows from memory
 				if protocol.Decode(rawVoting, &decoded) == nil {
 					old = &decoded.OneTimeSignatureSecretsPersistent
 				}
@@ -318,7 +320,11 @@ func (part PersistedParticipation) Persist() error {
 		}
 		if len(offsets) > 0 {
 			// offset subkeys belong to the batch preceding FirstBatch
-			err = insertKeyedSubkeys(tx, "INSERT INTO OtsOffsets (batch, off, data) VALUES (?, ?, ?)", []any{scalars.FirstBatch - 1}, offsets)
+			owningBatch, err := offsetsOwningBatch(scalars.FirstBatch)
+			if err != nil {
+				return err
+			}
+			err = insertKeyedSubkeys(tx, "INSERT INTO OtsOffsets (batch, off, data) VALUES (?, ?, ?)", []any{owningBatch}, offsets)
 			if err != nil {
 				return fmt.Errorf("failed to insert voting offset subkeys: %w", err)
 			}

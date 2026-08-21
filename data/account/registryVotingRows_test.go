@@ -241,6 +241,89 @@ func TestRegistryExcludesCorruptRecord(t *testing.T) {
 	a.NoError(registry.initializeCache())
 	a.True(registry.Get(corruptID).IsZero(), "corrupt record not excluded")
 	a.False(registry.Get(healthyID).IsZero(), "healthy record lost")
+
+	// re-inserting the excluded key (as loadParticipationKeys does from the
+	// .partkey file in the same startup) must replace the orphaned rows, not
+	// create a duplicate Keysets row that would fail every flush with
+	// ErrMultipleKeysForID
+	reinsertedID, err := registry.Insert(pCorrupt)
+	a.NoError(err)
+	a.Equal(corruptID, reinsertedID)
+	a.NoError(registry.Flush(defaultTimeout))
+
+	var keysetRows int
+	err = registry.store.Rdb.Atomic(func(ctx context.Context, tx *sql.Tx) error {
+		return tx.QueryRow("SELECT count(*) FROM Keysets WHERE participationID=?", corruptID[:]).Scan(&keysetRows)
+	})
+	a.NoError(err)
+	a.Equal(1, keysetRows, "duplicate Keysets row after re-insert")
+
+	// the next round's deletion flush works for every key
+	proto := config.Consensus[protocol.ConsensusCurrentVersion]
+	a.NoError(registry.DeleteExpired(1, proto))
+	a.NoError(registry.Flush(defaultTimeout))
+
+	a.NoError(registry.initializeCache())
+	a.False(registry.Get(corruptID).IsZero(), "re-inserted record not restored")
+	a.False(registry.Get(healthyID).IsZero(), "healthy record lost after re-insert")
+}
+
+// TestInsertNeverRewindsCursor verifies re-inserting a lagging copy of a key
+// (the .partkey file and the registry are independent stores) cannot rewind
+// the persisted deletion cursor and resurrect retired rounds: the inserted
+// copy is fast-forwarded to the stored cursor instead.
+func TestInsertNeverRewindsCursor(t *testing.T) {
+	partitiontest.PartitionTest(t)
+	a := require.New(t)
+
+	registry, dbfile := getRegistry(t)
+	defer registryCloseTest(t, registry, dbfile)
+
+	const dilution = 10
+	p := makeTestParticipation(a, 1, 1, 3000, dilution)
+	// an independent copy of the same key, which will lag behind
+	behind := p
+	behindVoting := p.Voting.Snapshot()
+	behind.Voting = &behindVoting
+
+	id, err := registry.Insert(p)
+	a.NoError(err)
+	proto := config.Consensus[protocol.ConsensusCurrentVersion]
+
+	// vote through round 999: the stored cursor advances to batch 101
+	a.NoError(registry.DeleteExpired(999, proto))
+	a.NoError(registry.Flush(defaultTimeout))
+
+	// evict the key from the cache the way the corrupt-record exclusion does
+	registry.mutex.Lock()
+	delete(registry.cache, id)
+	delete(registry.dirty, id)
+	registry.mutex.Unlock()
+
+	// the lagging copy only reached round 500; re-insert it
+	behind.Voting.DeleteBeforeFineGrained(basics.OneTimeIDForRound(500, dilution), dilution)
+	reinsertedID, err := registry.Insert(behind)
+	a.NoError(err)
+	a.Equal(id, reinsertedID)
+	a.NoError(registry.Flush(defaultTimeout))
+
+	// the persisted cursor did not rewind
+	var storedScalars crypto.OneTimeSignatureSecrets
+	a.NoError(protocol.Decode(registryReadVotingBlob(a, registry, id), &storedScalars))
+	a.GreaterOrEqual(storedScalars.FirstBatch, uint64(101), "persisted deletion cursor rewound")
+
+	// after a reload, retired rounds cannot produce valid signatures while
+	// live rounds still can
+	a.NoError(registry.initializeCache())
+	record := registry.Get(id)
+	a.False(record.IsZero())
+	msg := crypto.OneTimeSignatureSubkeyBatchID{Batch: 1}
+	retired := basics.OneTimeIDForRound(500, dilution)
+	sig := record.Voting.Sign(retired, msg)
+	a.False(p.Voting.OneTimeSignatureVerifier.Verify(retired, msg, sig), "retired round signed after re-inserting a lagging copy")
+	live := basics.OneTimeIDForRound(1500, dilution)
+	sig = record.Voting.Sign(live, msg)
+	a.True(p.Voting.OneTimeSignatureVerifier.Verify(live, msg, sig), "live round unusable after fast-forward")
 }
 
 // TestFlushSelfHealsInconsistentRows verifies one key with rows inconsistent
