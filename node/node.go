@@ -1063,11 +1063,19 @@ func (node *AlgorandFullNode) loadParticipationKeys() error {
 		part, err := account.RestoreParticipationWithSecrets(handle)
 		if err != nil {
 			handle.Close()
-			if err == account.ErrUnsupportedSchema {
-				node.log.Infof("Loaded participation keys from storage: %s %s", part.Address(), info.Name())
-				node.log.Warnf("loadParticipationKeys: not loading unsupported participation key: %s; renaming to *.old", info.Name())
+			if errors.Is(err, account.ErrUnsupportedSchema) || errors.Is(err, account.ErrCorruptedVotingData) {
+				node.log.Warnf("loadParticipationKeys: not loading participation key %s (%v); renaming to *.old", info.Name(), err)
 				fullname := filepath.Join(genesisDir, info.Name())
-				renamedFileName := filepath.Join(fullname, ".old")
+				// pick a name that does not clobber a previous backup; on any
+				// Stat error other than not-exist, stop probing and let the
+				// rename surface the underlying problem
+				renamedFileName := fullname + ".old"
+				for i := 1; ; i++ {
+					if _, statErr := os.Stat(renamedFileName); statErr != nil {
+						break
+					}
+					renamedFileName = fmt.Sprintf("%s.old.%d", fullname, i)
+				}
 				err = os.Rename(fullname, renamedFileName)
 				if err != nil {
 					node.log.Warnf("loadParticipationKeys: failed to rename unsupported participation key file '%s' to '%s': %v", fullname, renamedFileName, err)
