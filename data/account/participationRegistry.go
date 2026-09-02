@@ -414,6 +414,10 @@ const (
 		     effectiveFirstRound=?,
 		     effectiveLastRound=?
 		 WHERE pk=?`
+	updateRegistrationFieldsSQL = `UPDATE Rolling
+		 SET effectiveFirstRound=?,
+		     effectiveLastRound=?
+		 WHERE pk=?`
 )
 
 // dbSchemaUpgrade0 initialize the tables.
@@ -1018,38 +1022,58 @@ func (db *participationDB) GetForRound(id ParticipationID, round basics.Round) (
 	return result, nil
 }
 
+// resolveRollingPK looks up the Rolling primary key and last-persisted voting
+// scalars for a participation ID, keeping the legacy ErrNoKeyForID and
+// ErrMultipleKeysForID semantics that callers special-case.
+func resolveRollingPK(ctx context.Context, tx *sql.Tx, id ParticipationID) (pk int64, rawVoting []byte, err error) {
+	rows, err := tx.QueryContext(ctx, selectRollingVotingByID, id[:])
+	if err != nil {
+		return 0, nil, err
+	}
+	defer rows.Close()
+
+	numRows := 0
+	for rows.Next() {
+		if err = rows.Scan(&pk, &rawVoting); err != nil {
+			return 0, nil, err
+		}
+		numRows++
+	}
+	if err = rows.Err(); err != nil {
+		return 0, nil, err
+	}
+	if numRows > 1 {
+		return 0, nil, ErrMultipleKeysForID
+	}
+	if numRows < 1 {
+		return 0, nil, ErrNoKeyForID
+	}
+	return pk, rawVoting, nil
+}
+
+// updateRegistrationFields persists only the registration window
+// (EffectiveFirst/EffectiveLast) of the record.  Registration deliberately
+// does not touch the voting secrets or the last-used rounds: the record it
+// carries is a snapshot taken when Register was called, and a flush that ran
+// in between may already have persisted a newer deletion cursor.
+func updateRegistrationFields(ctx context.Context, tx *sql.Tx, record ParticipationRecord) error {
+	pk, _, err := resolveRollingPK(ctx, tx, record.ParticipationID)
+	if err != nil {
+		return err
+	}
+	result, err := tx.ExecContext(ctx, updateRegistrationFieldsSQL, record.EffectiveFirst, record.EffectiveLast, pk)
+	return verifyExecWithOneRowEffected(err, result, "update registration fields")
+}
+
 // updateRollingFields sets all of the rolling fields according to the record
 // object, persisting the voting secrets incrementally: the last-persisted
 // scalars are compared against the record's secrets and only the difference
 // (consumed subkey rows, refreshed offsets, new scalars) is written.
 func updateRollingFields(ctx context.Context, tx *sql.Tx, record ParticipationRecord) error {
-	// resolve the primary key and last-persisted voting scalars, keeping the
-	// legacy ErrNoKeyForID/ErrMultipleKeysForID semantics
-	rows, err := tx.QueryContext(ctx, selectRollingVotingByID, record.ParticipationID[:])
+	pk, rawVoting, err := resolveRollingPK(ctx, tx, record.ParticipationID)
 	if err != nil {
 		return err
 	}
-	defer rows.Close()
-
-	var pk int64
-	var rawVoting []byte
-	numRows := 0
-	for rows.Next() {
-		if err = rows.Scan(&pk, &rawVoting); err != nil {
-			return err
-		}
-		numRows++
-	}
-	if err = rows.Err(); err != nil {
-		return err
-	}
-	if numRows > 1 {
-		return ErrMultipleKeysForID
-	}
-	if numRows < 1 {
-		return ErrNoKeyForID
-	}
-	rows.Close()
 
 	result, err := tx.ExecContext(ctx, updateRollingFieldsSQL,
 		record.LastVote,
@@ -1139,10 +1163,22 @@ func (db *participationDB) Register(id ParticipationID, on basics.Round) error {
 	if len(updated) != 0 {
 		db.writeQueue <- makeOpRequest(&registerOp{updated: updated})
 
+		// Merge only the registration window into the live cache entries.
+		// The snapshots in updated predate this lock: a DeleteExpired in
+		// between may have advanced the cached voting secrets, and
+		// overwriting them would rewind the cache.  The dirty flags stay
+		// set — registration persists nothing else, so pending changes
+		// still need the next flush.
 		db.mutex.Lock()
 		for id, record := range updated {
-			delete(db.dirty, id)
-			db.cache[id] = record.ParticipationRecord
+			current, ok := db.cache[id]
+			if !ok {
+				// deleted meanwhile; do not resurrect it in the cache
+				continue
+			}
+			current.EffectiveFirst = record.EffectiveFirst
+			current.EffectiveLast = record.EffectiveLast
+			db.cache[id] = current
 		}
 		db.mutex.Unlock()
 	}

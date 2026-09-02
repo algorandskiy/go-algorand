@@ -399,3 +399,65 @@ func TestFlushWritesDeltaOnly(t *testing.T) {
 	record := registry.Get(id)
 	a.Equal(basics.Round(10), record.LastVote)
 }
+
+// TestRegisterStaleSnapshotDoesNotTouchVoting reproduces a registration
+// whose record snapshot predates a flush that already advanced the persisted
+// deletion cursor (a flush lagging a full round).  Registration must persist
+// only the registration window and leave the newer cursor alone, instead of
+// failing with the monotonicity error.
+func TestRegisterStaleSnapshotDoesNotTouchVoting(t *testing.T) {
+	partitiontest.PartitionTest(t)
+	a := require.New(t)
+
+	registry, dbfile := getRegistry(t)
+	defer registryCloseTest(t, registry, dbfile)
+
+	const dilution = 10
+	p := makeTestParticipation(a, 1, 1, 200, dilution)
+	id, err := registry.Insert(p)
+	a.NoError(err)
+	a.NoError(registry.Flush(defaultTimeout))
+
+	// snapshot the record as Register would, before the cursor advances
+	stale := registry.Get(id)
+	stale.EffectiveFirst = 1
+	stale.EffectiveLast = stale.LastValid
+	staleOp := &registerOp{updated: map[ParticipationID]updatingParticipationRecord{
+		id: {ParticipationRecord: stale, required: true},
+	}}
+
+	// a full round of deletion is flushed first
+	proto := config.Consensus[protocol.ConsensusCurrentVersion]
+	a.NoError(registry.DeleteExpired(50, proto))
+	a.NoError(registry.Flush(defaultTimeout))
+	advanced := registry.Get(id)
+	a.NotZero(advanced.Voting.FirstBatch)
+
+	// the lagging registration lands afterwards and must succeed
+	registry.writeQueue <- makeOpRequest(staleOp)
+	a.NoError(registry.Flush(defaultTimeout))
+
+	// the persisted cursor is the advanced one and the registration is stored
+	var storedScalars crypto.OneTimeSignatureSecrets
+	a.NoError(protocol.Decode(registryReadVotingBlob(a, registry, id), &storedScalars))
+	a.Equal(advanced.Voting.FirstBatch, storedScalars.FirstBatch)
+	a.Equal(advanced.Voting.FirstOffset, storedScalars.FirstOffset)
+	a.NoError(registry.initializeCache())
+	reloaded := registry.Get(id)
+	a.Equal(basics.Round(1), reloaded.EffectiveFirst)
+	a.Equal(p.LastValid, reloaded.EffectiveLast)
+	a.Equal(encodedVotingSnapshot(advanced.Voting), encodedVotingSnapshot(reloaded.Voting))
+
+	// the public Register path leaves pending changes dirty for the flush
+	a.NoError(registry.DeleteExpired(60, proto))
+	registry.mutex.RLock()
+	_, dirtyBefore := registry.dirty[id]
+	registry.mutex.RUnlock()
+	a.True(dirtyBefore)
+	a.NoError(registry.Register(id, 61))
+	registry.mutex.RLock()
+	_, dirtyAfter := registry.dirty[id]
+	registry.mutex.RUnlock()
+	a.True(dirtyAfter, "Register must not clear a pending flush")
+	a.NoError(registry.Flush(defaultTimeout))
+}

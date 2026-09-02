@@ -106,7 +106,7 @@ func (r *registerOp) apply(db *participationDB) error {
 	err := db.store.Wdb.Atomic(func(ctx context.Context, tx *sql.Tx) error {
 		// Disable active key if there is one
 		for id, record := range r.updated {
-			err := updateRollingFields(ctx, tx, record.ParticipationRecord)
+			err := updateRegistrationFields(ctx, tx, record.ParticipationRecord)
 			// Repair the case when no keys were updated
 			if err == ErrNoKeyForID {
 				db.log.Warn("participationDB unable to update key in cache. Removing from cache.")

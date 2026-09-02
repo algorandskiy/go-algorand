@@ -78,12 +78,20 @@ used keys is a small row delete instead of a rewrite of the whole keyset.
 State proof keys follow the same row-per-key pattern in their own table.
 
 Files created by older releases (schema version 3) stored the whole voting
-keyset as one BLOB; they are migrated in place automatically whenever they
-are opened (by **algod**, **goal**, or **algokey**). Schema versions 1 and 2
-predate state proofs — any key stored in such a file expired years ago — and
-are no longer readable; the node renames them to `*.old` and skips them. To rehearse that
-migration without touching the original file — and to see how long algod will
-spend doing it at startup — use:
+keyset as one BLOB. **algod** migrates such a file in place when it loads it
+at startup (and migrates the copy it receives through the REST install
+endpoint), as does `algokey part reparent`; the read-only commands
+(`algokey part info`, `algokey part keyreg --keyfile`,
+`goal account changeonlinestatus --partkeyfile`) read the file as-is without
+migrating it. Once a file is migrated, older releases cannot read it (the node
+renames such files to `*.old` and skips them); rolling back to an older
+release requires a pre-upgrade backup of the file, or generating and
+registering fresh keys. Schema versions 1 and 2 predate state proofs — any
+key stored in such a file expired years ago — and are no longer readable; the
+node renames them to `*.old` and skips them as well.
+
+To rehearse the migration of a version 3 file without touching the original —
+and to see how long algod will spend doing it at startup — use:
 ```
 algokey part migrate --keyfile keys.db
 ```
@@ -92,10 +100,7 @@ snapshot, so it is consistent even if algod has the file open), prints the
 pure migration time, and validates the migrated keys — including the state
 proof secret keys — against the original (skippable with `--no-validation`).
 If algod advances the keys while the validation is running, the comparison
-can report a spurious mismatch; prefer running it against a stopped node. Note that once a file is migrated, older releases cannot
-read it (the node renames such files to `*.old` and skips them); rolling back
-to an older release requires a pre-upgrade backup of the file, or generating
-and registering fresh keys.
+can report a spurious mismatch; prefer running it against a stopped node.
 
 Similar functionality is built into **goal** along with convenience methods to:
 * Generate and install.
