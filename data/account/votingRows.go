@@ -97,8 +97,10 @@ func cursorAhead(a, b *crypto.OneTimeSignatureSecretsPersistent) bool {
 
 // computeVotingDelta compares the last-persisted scalars against the current
 // in-memory secrets and returns the row operations to persist the difference.
-// old == nil requests an unconditional full rewrite (missing persisted
-// state, e.g. during format migration).
+// old == nil requests an unconditional full rewrite and is only legitimate for
+// known-new state (nothing persisted yet) and explicit format migration; an
+// undecodable persisted state must fail closed at the caller instead, since
+// it cannot rule out that memory lags storage.
 //
 // Forward security requires the persisted deletion cursor to be monotonic:
 // if storage is ahead of memory, rewriting from memory would resurrect keys
@@ -145,12 +147,11 @@ func computeVotingDelta(old *crypto.OneTimeSignatureSecretsPersistent, secrets *
 	switch {
 	case scalars.FirstBatch == old.FirstBatch && scalars.FirstOffset == old.FirstOffset:
 		if numBatches == 0 && numOffsets == 0 {
-			// End-of-key-life: when a key on its last batch moves past its
-			// end, DeleteBeforeFineGrained clears the remaining offset
-			// subkeys without advancing either scalar, so scalar equality
-			// does not imply the stored rows are current.  A key with no
-			// subkeys in memory must have no rows on disk (forward
-			// security).
+			// Exhausted key whose stored cursor did not move when its rows
+			// were erased (state written before exhaustion advanced
+			// FirstOffset to the batch end): scalar equality does not imply
+			// the stored rows are current, and a key with no subkeys in
+			// memory must have no rows on disk (forward security).
 			return votingDelta{clearAllRows: true, expectedBatchDeletes: -1, expectedOffsetDeletes: -1}, nil
 		}
 		return votingDelta{noop: true}, nil

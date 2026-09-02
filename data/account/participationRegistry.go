@@ -1092,12 +1092,15 @@ func updateRollingFields(ctx context.Context, tx *sql.Tx, record ParticipationRe
 
 	var old *crypto.OneTimeSignatureSecretsPersistent
 	if len(rawVoting) > 0 {
+		// Fail closed: without the persisted cursor there is no way to tell
+		// whether memory lags storage, and rewriting from memory could
+		// resurrect keys the registry already retired.
 		var decoded crypto.OneTimeSignatureSecrets
-		// a decode failure deliberately leaves old nil, which degrades to a
-		// full rewrite of the rows from memory
-		if protocol.Decode(rawVoting, &decoded) == nil {
-			old = &decoded.OneTimeSignatureSecretsPersistent
+		if err := protocol.Decode(rawVoting, &decoded); err != nil {
+			return fmt.Errorf("stored voting scalars for key %s are undecodable; refusing to rewrite voting rows from memory (delete %s and restart to rebuild the registry): %v",
+				record.ParticipationID, config.ParticipationRegistryFilename, err)
 		}
+		old = &decoded.OneTimeSignatureSecretsPersistent
 	}
 	delta, err := computeVotingDelta(old, record.Voting)
 	if err != nil {

@@ -461,3 +461,132 @@ func TestRegisterStaleSnapshotDoesNotTouchVoting(t *testing.T) {
 	a.True(dirtyAfter, "Register must not clear a pending flush")
 	a.NoError(registry.Flush(defaultTimeout))
 }
+
+// TestFlushIsolatesCorruptScalars verifies a key whose stored cursor is
+// undecodable fails closed (nothing rewritten from memory) without taking the
+// other keys' flush down with it.
+func TestFlushIsolatesCorruptScalars(t *testing.T) {
+	partitiontest.PartitionTest(t)
+	a := require.New(t)
+
+	registry, dbfile := getRegistry(t)
+	defer registryCloseTest(t, registry, dbfile)
+
+	pA := makeTestParticipation(a, 1, 1, 200, 10)
+	idA, err := registry.Insert(pA)
+	a.NoError(err)
+	pB := makeTestParticipation(a, 2, 1, 200, 10)
+	idB, err := registry.Insert(pB)
+	a.NoError(err)
+
+	proto := config.Consensus[protocol.ConsensusCurrentVersion]
+	a.NoError(registry.DeleteExpired(20, proto))
+	a.NoError(registry.Flush(defaultTimeout))
+
+	// corrupt B's stored cursor
+	err = registry.store.Wdb.Atomic(func(ctx context.Context, tx *sql.Tx) error {
+		_, err := tx.Exec("UPDATE Rolling SET voting=? WHERE pk=(SELECT pk FROM Keysets WHERE participationID=?)", []byte{0xff, 0x00}, idB[:])
+		return err
+	})
+	a.NoError(err)
+	bOffsetRows := func() (n int) {
+		err := registry.store.Rdb.Atomic(func(ctx context.Context, tx *sql.Tx) error {
+			return tx.QueryRow("SELECT count(*) FROM VotingOffsets WHERE pk=(SELECT pk FROM Keysets WHERE participationID=?)", idB[:]).Scan(&n)
+		})
+		a.NoError(err)
+		return n
+	}
+	bRowsBefore := bOffsetRows()
+
+	// the next round's flush reports B's failure but still persists A
+	a.NoError(registry.DeleteExpired(25, proto))
+	err = registry.Flush(defaultTimeout)
+	a.ErrorContains(err, "undecodable")
+	a.Equal(bRowsBefore, bOffsetRows(), "B's rows were rewritten despite an undecodable cursor")
+
+	var storedA crypto.OneTimeSignatureSecrets
+	a.NoError(protocol.Decode(registryReadVotingBlob(a, registry, idA), &storedA))
+	cachedA := registry.Get(idA)
+	a.Equal(cachedA.Voting.FirstOffset, storedA.FirstOffset, "A's deletion was not persisted")
+
+	// only B stays dirty for retry
+	registry.mutex.RLock()
+	_, aDirty := registry.dirty[idA]
+	_, bDirty := registry.dirty[idB]
+	registry.mutex.RUnlock()
+	a.False(aDirty)
+	a.True(bDirty)
+}
+
+// TestInsertPreservesExhaustedState verifies re-inserting a lagging copy of
+// an exhausted key cannot regenerate offset subkeys the store already
+// retired — for exhaustion recorded with the cursor at the batch end, and
+// for the older encoding where erasing the rows left the cursor in place.
+func TestInsertPreservesExhaustedState(t *testing.T) {
+	partitiontest.PartitionTest(t)
+	a := require.New(t)
+
+	registry, dbfile := getRegistry(t)
+	defer registryCloseTest(t, registry, dbfile)
+
+	const dilution = 10
+	// LastValid 209 keeps the record registered through the end of its final
+	// batch (20), so exhaustion happens while it is still in the registry
+	p := makeTestParticipation(a, 1, 1, 209, dilution)
+	laggingCopy := func() Participation {
+		behind := p
+		snap := p.Voting.Snapshot()
+		behind.Voting = &snap
+		behind.Voting.DeleteBeforeFineGrained(basics.OneTimeIDForRound(100, dilution), dilution)
+		return behind
+	}
+	msg := crypto.OneTimeSignatureSubkeyBatchID{Batch: 1}
+	retired := basics.OneTimeIDForRound(205, dilution) // offset 5 of the final batch
+	assertExhausted := func(id ParticipationID, what string) {
+		a.Zero(registryCountRows(a, registry, "VotingOffsets"), "%s: retired offsets regenerated", what)
+		a.Zero(registryCountRows(a, registry, "VotingBatches"), what)
+		a.NoError(registry.initializeCache())
+		record := registry.Get(id)
+		a.False(record.IsZero(), what)
+		sig := record.Voting.Sign(retired, msg)
+		a.False(p.Voting.OneTimeSignatureVerifier.Verify(retired, msg, sig), "%s: retired identifier signed", what)
+	}
+	evict := func(id ParticipationID) {
+		registry.mutex.Lock()
+		delete(registry.cache, id)
+		delete(registry.dirty, id)
+		registry.mutex.Unlock()
+	}
+
+	id, err := registry.Insert(p)
+	a.NoError(err)
+	proto := config.Consensus[protocol.ConsensusCurrentVersion]
+	a.NoError(registry.DeleteExpired(200, proto)) // final batch expanded
+	a.NoError(registry.DeleteExpired(209, proto)) // and exhausted
+	a.NoError(registry.Flush(defaultTimeout))
+	var stored crypto.OneTimeSignatureSecrets
+	a.NoError(protocol.Decode(registryReadVotingBlob(a, registry, id), &stored))
+	a.Equal(uint64(dilution), stored.FirstOffset, "exhaustion did not advance the cursor to the batch end")
+	a.Zero(registryCountRows(a, registry, "VotingOffsets"))
+
+	// (1) exhaustion recorded with the cursor at the batch end
+	evict(id)
+	_, err = registry.Insert(laggingCopy())
+	a.NoError(err)
+	a.NoError(registry.Flush(defaultTimeout))
+	assertExhausted(id, "cursor at batch end")
+
+	// (2) older encoding: rows erased but the cursor left mid-batch
+	legacyScalars := stored.OneTimeSignatureSecretsPersistent
+	legacyScalars.FirstOffset = 2
+	err = registry.store.Wdb.Atomic(func(ctx context.Context, tx *sql.Tx) error {
+		_, err := tx.Exec("UPDATE Rolling SET voting=? WHERE pk=(SELECT pk FROM Keysets WHERE participationID=?)", protocol.Encode(&legacyScalars), id[:])
+		return err
+	})
+	a.NoError(err)
+	evict(id)
+	_, err = registry.Insert(laggingCopy())
+	a.NoError(err)
+	a.NoError(registry.Flush(defaultTimeout))
+	assertExhausted(id, "legacy cursor")
+}

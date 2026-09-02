@@ -145,11 +145,11 @@ func RestoreParticipation(store db.Accessor) (acc PersistedParticipation, err er
 	return restoreParticipationAtVersion(store, PartTableSchemaVersion)
 }
 
-// ErrCorruptedVotingRows is returned when a participation file's voting
-// subkey rows are inconsistent with its scalars (missing, extra, or
-// misattributed rows).  Callers may quarantine such a file the same way an
-// unsupported-schema file is quarantined.
-var ErrCorruptedVotingRows = errors.New("participation file voting subkey rows are corrupt")
+// ErrCorruptedVotingData is returned when a participation file's voting data
+// is corrupt: an undecodable voting blob, or subkey rows inconsistent with the
+// scalars (missing, extra, or misattributed rows).  Callers may quarantine
+// such a file the same way an unsupported-schema file is quarantined.
+var ErrCorruptedVotingData = errors.New("participation file voting data is corrupt")
 
 // RestoreParticipationUnmigrated restores a Participation without migrating
 // the file, reading whichever supported schema version (3 or 4) it is at.
@@ -223,7 +223,7 @@ func restoreParticipationAtVersion(store db.Accessor, version int) (acc Persiste
 	if rowBased {
 		err = validateVotingRowCounts(&acc.Voting.OneTimeSignatureSecretsPersistent, acc.LastValid, acc.KeyDilution, len(batches), len(offsets))
 		if err != nil {
-			return PersistedParticipation{}, fmt.Errorf("RestoreParticipation: %w: %v", ErrCorruptedVotingRows, err)
+			return PersistedParticipation{}, fmt.Errorf("RestoreParticipation: %w: %v", ErrCorruptedVotingData, err)
 		}
 	}
 
@@ -247,20 +247,20 @@ func decodeRowOrientedVoting(rawVoting []byte, batches, offsets []crypto.KeyedSu
 	voting = &crypto.OneTimeSignatureSecrets{}
 	err = protocol.Decode(rawVoting, voting)
 	if err != nil {
-		return nil, false, err
+		return nil, false, fmt.Errorf("%w: undecodable voting blob: %v", ErrCorruptedVotingData, err)
 	}
 	if len(voting.Batches) != 0 || len(voting.Offsets) != 0 {
 		return voting, false, nil
 	}
 	if err = validateOffsetRowBatches(&voting.OneTimeSignatureSecretsPersistent, offsetBatches); err != nil {
-		return nil, false, fmt.Errorf("%w: %v", ErrCorruptedVotingRows, err)
+		return nil, false, fmt.Errorf("%w: %v", ErrCorruptedVotingData, err)
 	}
 	if len(batches) == 0 && len(offsets) == 0 {
 		return voting, true, nil
 	}
 	voting, err = crypto.OneTimeSignatureSecretsFromParts(voting.OneTimeSignatureSecretsPersistent, batches, offsets)
 	if err != nil {
-		return nil, true, fmt.Errorf("%w: %v", ErrCorruptedVotingRows, err)
+		return nil, true, fmt.Errorf("%w: %v", ErrCorruptedVotingData, err)
 	}
 	return voting, true, nil
 }

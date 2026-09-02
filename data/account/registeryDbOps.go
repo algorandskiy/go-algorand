@@ -24,6 +24,7 @@ import (
 	"maps"
 	"strings"
 
+	"github.com/algorand/go-algorand/config"
 	"github.com/algorand/go-algorand/crypto"
 	"github.com/algorand/go-algorand/data/basics"
 	"github.com/algorand/go-algorand/logging"
@@ -157,10 +158,11 @@ func fastForwardToStoredCursor(tx *sql.Tx, log logging.Logger, id ParticipationI
 			continue
 		}
 		var decoded crypto.OneTimeSignatureSecrets
-		// an undecodable stored state cannot be compared; consistent with
-		// the delta computation, it degrades to replacement
-		if protocol.Decode(rawVoting, &decoded) != nil {
-			continue
+		// Fail closed: an undecodable stored cursor cannot be compared, and
+		// replacing it from the inserted copy could resurrect retired keys.
+		if err := protocol.Decode(rawVoting, &decoded); err != nil {
+			return fmt.Errorf("stored voting scalars for key %s are undecodable; refusing to replace them from the inserted copy (delete %s and restart to rebuild the registry): %v",
+				id, config.ParticipationRegistryFilename, err)
 		}
 		if stored == nil || cursorAhead(&decoded.OneTimeSignatureSecretsPersistent, stored) {
 			s := decoded.OneTimeSignatureSecretsPersistent
@@ -170,9 +172,30 @@ func fastForwardToStoredCursor(tx *sql.Tx, log logging.Logger, id ParticipationI
 	if err := rows.Err(); err != nil {
 		return err
 	}
+	rows.Close()
+
+	if stored == nil {
+		return nil // known-new: nothing stored for this key
+	}
+	// Exhaustion written by older code left FirstOffset behind while every
+	// row was erased, so (FirstBatch, FirstOffset) alone cannot tell an
+	// exhausted key from a live, partially used final batch.  With no rows
+	// at all the stored key holds nothing, so treat its cursor as the end of
+	// the batch — erring towards fewer keys.
+	if stored.OffsetsExpanded() && dilution > 0 && stored.FirstOffset < dilution {
+		var storedRows int
+		err := tx.QueryRow(`SELECT (SELECT count(*) FROM VotingBatches WHERE pk IN (SELECT pk FROM Keysets WHERE participationID=?))
+			+ (SELECT count(*) FROM VotingOffsets WHERE pk IN (SELECT pk FROM Keysets WHERE participationID=?))`, id[:], id[:]).Scan(&storedRows)
+		if err != nil {
+			return fmt.Errorf("unable to count stored voting rows for %s: %w", id, err)
+		}
+		if storedRows == 0 {
+			stored.FirstOffset = dilution
+		}
+	}
 
 	current, _, _ := secrets.PersistentState()
-	if stored == nil || !cursorAhead(stored, &current) {
+	if !cursorAhead(stored, &current) {
 		return nil
 	}
 	// a cursor can only be ahead after a batch expansion, so FirstBatch >= 1
@@ -362,32 +385,55 @@ func (f *flushOp) apply(db *participationDB) error {
 		return nil
 	}
 
+	// Each record is written under its own savepoint so one record that
+	// cannot be persisted (e.g. undecodable stored scalars, which fail
+	// closed) does not roll back the others and stall on-disk key deletion
+	// for every key; only the failed records are retried at the next flush.
+	var failed []ParticipationID
+	var errorStr strings.Builder
 	err := db.store.Wdb.Atomic(func(ctx context.Context, tx *sql.Tx) error {
-		var errorStr strings.Builder
+		failed = failed[:0]
+		errorStr.Reset()
 		for _, record := range needsUpdate {
+			if _, serr := tx.ExecContext(ctx, "SAVEPOINT flush_record"); serr != nil {
+				return serr
+			}
 			err := updateRollingFields(ctx, tx, record)
 			// This should only be updating key usage so ignoring missing keys is not a problem.
 			if err != nil && err != ErrNoKeyForID {
+				if _, rerr := tx.ExecContext(ctx, "ROLLBACK TO SAVEPOINT flush_record"); rerr != nil {
+					return rerr
+				}
+				failed = append(failed, record.ParticipationID)
 				if errorStr.Len() > 0 {
 					errorStr.WriteString(", ")
 				}
 				errorStr.WriteString(err.Error())
 			}
-		}
-		if errorStr.Len() > 0 {
-			return errors.New(errorStr.String())
+			if _, serr := tx.ExecContext(ctx, "RELEASE SAVEPOINT flush_record"); serr != nil {
+				return serr
+			}
 		}
 		return nil
 	})
 
 	if err != nil {
-		// put back what we didn't finish with
+		// the whole transaction failed: put back everything
 		db.mutex.Lock()
 		maps.Copy(db.dirty, dirty)
 		db.mutex.Unlock()
+		return err
 	}
-
-	return err
+	if len(failed) != 0 {
+		// the others committed; retry only the failed records
+		db.mutex.Lock()
+		for _, id := range failed {
+			db.dirty[id] = struct{}{}
+		}
+		db.mutex.Unlock()
+		return errors.New(errorStr.String())
+	}
+	return nil
 }
 
 func (a *appendKeysOp) apply(db *participationDB) error {

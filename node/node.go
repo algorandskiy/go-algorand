@@ -1063,7 +1063,7 @@ func (node *AlgorandFullNode) loadParticipationKeys() error {
 		part, err := account.RestoreParticipationWithSecrets(handle)
 		if err != nil {
 			handle.Close()
-			if errors.Is(err, account.ErrUnsupportedSchema) || errors.Is(err, account.ErrCorruptedVotingRows) {
+			if errors.Is(err, account.ErrUnsupportedSchema) || errors.Is(err, account.ErrCorruptedVotingData) {
 				node.log.Warnf("loadParticipationKeys: not loading participation key %s (%v); renaming to *.old", info.Name(), err)
 				fullname := filepath.Join(genesisDir, info.Name())
 				// pick a name that does not clobber a previous backup; on any

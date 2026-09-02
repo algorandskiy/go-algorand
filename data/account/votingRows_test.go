@@ -218,24 +218,62 @@ func TestComputeVotingDelta(t *testing.T) {
 	_, err = computeVotingDelta(&legacyAhead, secrets)
 	a.ErrorContains(err, "refusing to resurrect")
 
-	// end-of-key-life: DeleteBeforeFineGrained clears the remaining subkeys
-	// of a key on its last batch without advancing either scalar; the delta
-	// must clear the rows rather than report a noop
+	// end-of-key-life: moving past the final batch consumes its remaining
+	// offsets and advances FirstOffset to the batch end, so exhaustion is
+	// distinguishable from a live final batch and persists as an exact trim
 	spent := crypto.GenerateOneTimeSignatureSecrets(0, 4)
 	spent.DeleteBeforeFineGrained(crypto.OneTimeSignatureIdentifier{Batch: 3, Offset: 2}, dilution)
 	a.NotEmpty(spent.Offsets) // final batch expanded
 	a.Empty(spent.Batches)
-	persisted, _, _ := spent.PersistentState()
+	persisted, _, numOffsets := spent.PersistentState()
 	spent.DeleteBeforeFineGrained(crypto.OneTimeSignatureIdentifier{Batch: 4, Offset: 0}, dilution)
 	a.Empty(spent.Offsets)
 	afterState, _, _ := spent.PersistentState()
-	a.Equal(persisted.FirstBatch, afterState.FirstBatch) // scalars did not move
-	a.Equal(persisted.FirstOffset, afterState.FirstOffset)
+	a.Equal(persisted.FirstBatch, afterState.FirstBatch)
+	a.Equal(uint64(dilution), afterState.FirstOffset)
 	d, err = computeVotingDelta(&persisted, spent)
+	a.NoError(err)
+	a.Equal(uint64(dilution), d.deleteOffsetsBelow)
+	a.Equal(int64(numOffsets), d.expectedOffsetDeletes)
+
+	// an exhausted key whose stored cursor did not move (legacy encoding of
+	// exhaustion) still gets its rows cleared rather than a noop
+	d, err = computeVotingDelta(&afterState, spent)
 	a.NoError(err)
 	a.False(d.noop)
 	a.True(d.clearAllRows)
 	a.Nil(d.newScalars)
+}
+
+// TestDeleteOldKeysFailsClosedOnCorruptScalars verifies an undecodable
+// persisted cursor refuses to write (a rewrite from possibly-stale memory
+// could resurrect retired keys) and marks the file as corrupt for quarantine.
+func TestDeleteOldKeysFailsClosedOnCorruptScalars(t *testing.T) {
+	partitiontest.PartitionTest(t)
+
+	a := require.New(t)
+	const dilution = 10
+	part, partDB := makeSmallTestKey(t, a, 0, 300, dilution)
+	defer closeDBS(partDB)
+
+	proto := config.Consensus[protocol.ConsensusCurrentVersion]
+	a.NoError(<-part.DeleteOldKeys(basics.Round(25), proto))
+	batchRows := countTableRows(a, partDB, "OtsBatches")
+	offsetRows := countTableRows(a, partDB, "OtsOffsets")
+
+	err := partDB.Atomic(func(ctx context.Context, tx *sql.Tx) error {
+		_, err := tx.Exec("UPDATE ParticipationAccount SET voting=?", []byte{0xff, 0x00})
+		return err
+	})
+	a.NoError(err)
+
+	err = <-part.DeleteOldKeys(basics.Round(26), proto)
+	a.ErrorContains(err, "undecodable")
+	a.Equal(batchRows, countTableRows(a, partDB, "OtsBatches"), "rows rewritten despite undecodable cursor")
+	a.Equal(offsetRows, countTableRows(a, partDB, "OtsOffsets"))
+
+	_, err = RestoreParticipationUnmigrated(partDB)
+	a.ErrorIs(err, ErrCorruptedVotingData)
 }
 
 func TestDeleteOldKeysIncremental(t *testing.T) {
@@ -389,7 +427,7 @@ func TestRestoreDetectsCorruptRows(t *testing.T) {
 			_, err = RestoreParticipationUnmigrated(partDB)
 			a.ErrorContains(err, tc.wantErr)
 			// the sentinel lets the node quarantine the file as *.old
-			a.ErrorIs(err, ErrCorruptedVotingRows)
+			a.ErrorIs(err, ErrCorruptedVotingData)
 		})
 	}
 }

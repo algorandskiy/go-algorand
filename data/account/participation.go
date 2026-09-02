@@ -203,12 +203,14 @@ func (part PersistedParticipation) DeleteOldKeys(current basics.Round, proto con
 			}
 			var old *crypto.OneTimeSignatureSecretsPersistent
 			if len(rawVoting) > 0 {
+				// Fail closed: without the persisted cursor there is no way to
+				// tell whether memory lags storage, and rewriting from memory
+				// could resurrect keys the file already retired.
 				var decoded crypto.OneTimeSignatureSecrets
-				// a decode failure deliberately leaves old nil, which
-				// degrades to a full rewrite of the rows from memory
-				if protocol.Decode(rawVoting, &decoded) == nil {
-					old = &decoded.OneTimeSignatureSecretsPersistent
+				if err := protocol.Decode(rawVoting, &decoded); err != nil {
+					return fmt.Errorf("Participation.DeleteOldKeys: persisted voting scalars are undecodable; refusing to rewrite voting rows from memory: %v", err)
 				}
+				old = &decoded.OneTimeSignatureSecretsPersistent
 			}
 			delta, err := computeVotingDelta(old, part.Voting)
 			if err != nil {
