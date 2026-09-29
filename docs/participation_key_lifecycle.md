@@ -78,6 +78,9 @@ ephemeral voting subkey is stored as its own row (tables
 per-round forward-security deletion of used keys is a small row delete plus a
 header update instead of a rewrite of the whole keyset; the header alone
 determines which rows must exist, so missing rows are detected as corruption.
+After each deletion (and after a migration) **algod** checkpoints the file's
+SQLite write-ahead log, so the old page versions that held the deleted
+subkeys do not linger in the `-wal` file or in the database file.
 State proof keys follow the same row-per-key pattern in their own table.
 
 Files created by older releases (schema version 3) stored the whole voting
@@ -148,7 +151,8 @@ service that wraps a SQLite file for storage. Like the key files, the registry
 stores each ephemeral voting subkey as its own row (tables
 **VotingBatches**/**VotingOffsets**) described by a **votingHeader** column, so
 the per-round deletion of used keys writes only the consumed rows and the
-header. A stored key whose voting data fails validation at startup is logged
+header, and the registry's write-ahead log is checkpointed after each such
+flush. A stored key whose voting data fails validation at startup is logged
 as an error and excluded: it cannot vote, its voting subkeys and state proof
 keys are erased at once, and it is removed when it expires or when deleted. If
 its stored voting header is intact and its `.partkey` file is still present,

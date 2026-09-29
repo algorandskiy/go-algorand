@@ -348,6 +348,14 @@ func (d *deleteOp) apply(db *participationDB) error {
 
 // flush does nothing, but is called specifically to flush errors from the db
 func (f *flushOp) apply(db *participationDB) error {
+	// fold into the database file whatever this flush and the ops queued
+	// before it committed (retired subkeys, deleted keys); see checkpointWAL
+	defer func() {
+		if err := checkpointWAL(db.store.Wdb); err != nil {
+			db.log.Warnf("participationDB: %v", err)
+		}
+	}()
+
 	var dirty map[ParticipationID]struct{}
 	db.mutex.Lock()
 	if len(db.dirty) != 0 {

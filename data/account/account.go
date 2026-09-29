@@ -141,6 +141,10 @@ func RestoreParticipation(store db.Accessor) (acc PersistedParticipation, err er
 	if err != nil {
 		return
 	}
+	// a migration erased the legacy blob; do not leave its pages in the WAL
+	if cerr := checkpointWAL(store); cerr != nil {
+		logging.Base().Warnf("RestoreParticipation: %v", cerr)
+	}
 
 	return restoreParticipationAtVersion(store, PartTableSchemaVersion)
 }

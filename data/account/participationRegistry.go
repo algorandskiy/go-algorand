@@ -323,6 +323,10 @@ func makeParticipationRegistry(accessor db.Pair, log logging.Logger) (*participa
 		registry.Close()
 		return nil, fmt.Errorf("unable to initialize participation registry cache: %w", err)
 	}
+	// the upgrade and the load may have erased secrets; see checkpointWAL
+	if err = checkpointWAL(accessor.Wdb); err != nil {
+		log.Warnf("participationDB: %v", err)
+	}
 
 	return registry, nil
 }
@@ -467,7 +471,8 @@ var unusableVotingHeader = []byte{0xc1}
 // dbSchemaUpgrade1 moves the voting subkeys out of the whole-secrets
 // Rolling.voting blob into per-subkey rows described by a Rolling.votingHeader
 // column, then drops the legacy column so the blob (which held every subkey)
-// is erased from the registry.
+// is erased from the registry (makeParticipationRegistry checkpoints the WAL
+// afterwards, so no copy stays in it).
 //
 // A record whose blob cannot be decoded or converted does not fail the
 // upgrade: db.Initialize would report only the schema versions, leaving algod

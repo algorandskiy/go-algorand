@@ -185,7 +185,8 @@ func createVotingSubkeyTables(tx *sql.Tx) error {
 // 3 file into a votingHeader column plus per-subkey rows.  The converted state
 // is read back and compared against the original key material before the
 // transaction may commit, and the legacy column is then dropped so the blob
-// (which held every subkey) is erased from the file.
+// (which held every subkey) is erased from the file (RestoreParticipation
+// checkpoints the WAL afterwards, so no copy stays in it).
 func migrateVotingBlobToRows(tx *sql.Tx) error {
 	// The legacy blob holds every subkey; dropping its column below must not
 	// leave it recoverable from freed pages, whatever accessor the caller

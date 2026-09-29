@@ -271,6 +271,10 @@ func TestMigrationErasesLegacyBlob(t *testing.T) {
 	restored.Store = partDB
 	proto := config.Consensus[protocol.ConsensusCurrentVersion]
 	a.NoError(<-restored.DeleteOldKeys(basics.Round(45), proto)) // consumes batches 0..3
+	// the deletion is checkpointed right away: while the file is still open,
+	// neither its WAL nor a stale page of the database may hold the subkey
+	a.False(fileContains(path+"-wal", secret[:]), "retired subkey recoverable from the WAL of the open file")
+	a.False(fileContains(path, secret[:]), "retired subkey recoverable from the open file")
 	partDB.Close()
 	a.NoFileExists(path + "-wal")
 	a.False(fileContains(path, secret[:]), "retired subkey recoverable from the migrated file")

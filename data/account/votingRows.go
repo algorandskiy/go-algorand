@@ -26,6 +26,7 @@ import (
 	"github.com/algorand/go-algorand/crypto"
 	"github.com/algorand/go-algorand/logging"
 	"github.com/algorand/go-algorand/protocol"
+	"github.com/algorand/go-algorand/util/db"
 )
 
 // Row-oriented storage of voting secrets, shared by the .partkey file and the
@@ -327,6 +328,25 @@ func verifyVotingRowsMatch(tx *sql.Tx, target votingRowTarget, original *crypto.
 	newSnap := reconstructed.Snapshot()
 	if !bytes.Equal(protocol.Encode(&origSnap), protocol.Encode(&newSnap)) {
 		return fmt.Errorf("%w: converted voting state does not match the original key material", ErrCorruptedVotingData)
+	}
+	return nil
+}
+
+// checkpointWAL folds the write-ahead log into the database file and
+// truncates it.  In WAL mode secure_delete zeroes a deleted row only in the
+// page version written to the WAL: the database file keeps the old page, and
+// earlier WAL frames keep older versions, until a checkpoint.  Each round now
+// writes only a few pages, so SQLite's own checkpoint would come only every
+// few hundred rounds; checkpointing after each deletion (and after a
+// migration) keeps retired subkeys from lingering in either file.
+func checkpointWAL(store db.Accessor) error {
+	var busy, logFrames, checkpointed int
+	err := store.Handle.QueryRow("PRAGMA wal_checkpoint(TRUNCATE)").Scan(&busy, &logFrames, &checkpointed)
+	if err != nil {
+		return fmt.Errorf("WAL checkpoint failed: %w", err)
+	}
+	if busy != 0 {
+		return errors.New("WAL checkpoint did not complete: database busy")
 	}
 	return nil
 }

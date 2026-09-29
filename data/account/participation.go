@@ -193,7 +193,7 @@ func (part PersistedParticipation) DeleteOldKeys(current basics.Round, proto con
 
 	errorCh := make(chan error, 1)
 	deleteOldKeys := func() {
-		errorCh <- part.Store.Atomic(func(ctx context.Context, tx *sql.Tx) error {
+		err := part.Store.Atomic(func(ctx context.Context, tx *sql.Tx) error {
 			// compare the stored header against memory and write only the
 			// transition instead of rewriting the whole keyset
 			err := syncVotingRowsAndHeader(tx, partkeyFileVotingTarget, votingSnapshot(part.Voting))
@@ -202,6 +202,10 @@ func (part PersistedParticipation) DeleteOldKeys(current basics.Round, proto con
 			}
 			return nil
 		})
+		if err == nil {
+			err = checkpointWAL(part.Store)
+		}
+		errorCh <- err
 		close(errorCh)
 	}
 	go deleteOldKeys()
