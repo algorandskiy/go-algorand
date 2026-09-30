@@ -30,6 +30,7 @@ const (
 	pseudonodeCoserviceType
 	clockCoserviceType
 	networkCoserviceType
+	demuxQueueCoserviceType
 )
 
 //msgp:ignore coserviceType

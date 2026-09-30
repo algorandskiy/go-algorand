@@ -236,6 +236,7 @@ func (d *demux) next(s *Service, deadline Deadline, fastDeadline Deadline, curre
 				return
 			}
 			d.queue = d.queue[1:]
+			d.monitor.dec(demuxQueueCoserviceType) // taken in prioritize
 			d.UpdateEventsQueue(eventQueuePseudonode, 0)
 		case <-s.quit:
 			return emptyEvent{}, false
@@ -286,6 +287,7 @@ func (d *demux) next(s *Service, deadline Deadline, fastDeadline Deadline, curre
 		}
 		// the pseudonode channel got closed. remove it from the queue and try again.
 		d.queue = d.queue[1:]
+		d.monitor.dec(demuxQueueCoserviceType) // taken in prioritize
 		d.UpdateEventsQueue(eventQueuePseudonode, 0)
 		return d.next(s, deadline, fastDeadline, currentRound)
 
@@ -417,6 +419,13 @@ func setupCompoundMessage(l LedgerReader, m message) (res externalEvent) {
 // it will finish processing the first channel before starting the second.
 // In other words, the queue of channels is FIFO.
 func (d *demux) prioritize(c <-chan externalEvent) {
+	// Count c as pending work until next() sees it closed.
+	// Its producer closes c, and the persistence loop sends its checkpoint event,
+	// without touching the monitor. Without this count, the monitor could
+	// report the node idle while the demux still waits on c, and that close or checkpoint
+	// would later wake the demux and look like new activity.
+	// The monitor is only set in tests.
+	d.monitor.inc(demuxQueueCoserviceType)
 	d.queue = append(d.queue, c)
 	d.UpdateEventsQueue(eventQueuePseudonode, 1)
 }
