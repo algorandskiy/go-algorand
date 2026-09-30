@@ -227,6 +227,16 @@ func (part PersistedParticipation) eraseWAL(all bool) error {
 	return nil
 }
 
+// warnEraseWAL logs an erase failure after a write that retired nothing (a
+// key just generated or migrated).  The key is complete and usable, and the
+// images left in the log are of live subkeys, which the file holds anyway,
+// so the failure is not the write's.
+func warnEraseWAL(what string, err error) {
+	if err != nil {
+		logging.Base().Warnf("%s: %v", what, err)
+	}
+}
+
 // PersistNewParent writes a new parent address to the partkey database.
 func (part PersistedParticipation) PersistNewParent() error {
 	return part.Store.Atomic(func(ctx context.Context, tx *sql.Tx) error {
@@ -297,7 +307,8 @@ func (part PersistedParticipation) PersistWithSecrets() error {
 	if err != nil {
 		return err
 	}
-	return part.eraseWAL(true)
+	warnEraseWAL("PersistedParticipation.PersistWithSecrets", part.eraseWAL(true))
+	return nil
 }
 
 // Persist writes a Participation out to a database on the disk
@@ -327,7 +338,8 @@ func (part PersistedParticipation) Persist() error {
 	}
 	// every subkey was just stored: erase the images from the log now rather
 	// than leaving them until the first per-round deletion
-	return part.eraseWAL(true)
+	warnEraseWAL("PersistedParticipation.Persist", part.eraseWAL(true))
+	return nil
 }
 
 // Migrate is called when loading participation keys.
@@ -346,7 +358,10 @@ func Migrate(partDB db.Accessor) error {
 	}
 	// a migration rewrote every subkey: erase the images from the log (this
 	// is free for an up-to-date file, whose log is empty)
-	return partDB.EraseWAL(context.Background(), true)
+	if err = partDB.EraseWAL(context.Background(), true); err != nil {
+		warnEraseWAL("Migrate", fmt.Errorf("erasing the write-ahead log of the participation key file: %w", err))
+	}
+	return nil
 }
 
 // Close closes the underlying database handle.
