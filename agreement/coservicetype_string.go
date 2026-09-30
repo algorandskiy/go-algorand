@@ -14,11 +14,12 @@ func _() {
 	_ = x[pseudonodeCoserviceType-3]
 	_ = x[clockCoserviceType-4]
 	_ = x[networkCoserviceType-5]
+	_ = x[demuxQueueCoserviceType-6]
 }
 
-const _coserviceType_name = "demuxCoserviceTypetokenizerCoserviceTypecryptoVerifierCoserviceTypepseudonodeCoserviceTypeclockCoserviceTypenetworkCoserviceType"
+const _coserviceType_name = "demuxCoserviceTypetokenizerCoserviceTypecryptoVerifierCoserviceTypepseudonodeCoserviceTypeclockCoserviceTypenetworkCoserviceTypedemuxQueueCoserviceType"
 
-var _coserviceType_index = [...]uint8{0, 18, 40, 67, 90, 108, 128}
+var _coserviceType_index = [...]uint8{0, 18, 40, 67, 90, 108, 128, 151}
 
 func (i coserviceType) String() string {
 	idx := int(i) - 0
