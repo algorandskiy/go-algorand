@@ -73,6 +73,10 @@ type Accessor struct {
 	inMemory bool
 	log      logging.Logger
 
+	// stats is the write accounting of the file, shared by every accessor
+	// of it (see iostats.go); nil for an in-memory database.
+	stats *ioStats
+
 	// eraseWALAfterOverwrite, when set (tests only), runs inside EraseWAL
 	// once the log has been overwritten and before it is truncated.
 	eraseWALAfterOverwrite func()
@@ -171,6 +175,9 @@ func makeAccessorImpl(driverName string, dbfilename string, readOnly bool, inMem
 			db.Close()
 		}
 	}
+	if err == nil && !inMemory {
+		db.stats = acquireIOStats(dbfilename)
+	}
 
 	return db, err
 }
@@ -191,6 +198,8 @@ func (db *Accessor) logger() logging.Logger {
 func (db *Accessor) Close() {
 	db.Handle.Close()
 	db.Handle = nil
+	db.stats.release()
+	db.stats = nil
 }
 
 // LoggedRetry executes a function repeatedly as long as it returns an error
@@ -317,6 +326,7 @@ func (db *Accessor) AtomicContext(ctx context.Context, fn idemFn, retryClearFn f
 			}
 		}
 
+		started := time.Now()
 		tx, err = conn.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelSerializable, ReadOnly: db.readOnly})
 		if dbretry(err) {
 			continue
@@ -332,6 +342,9 @@ func (db *Accessor) AtomicContext(ctx context.Context, fn idemFn, retryClearFn f
 		err = guardedFn(context.WithValue(ctx, tx, txContextData), tx)
 		if err != nil {
 			tx.Rollback()
+			if !db.readOnly {
+				db.stats.rolledBack()
+			}
 			if dbretry(err) {
 				if retryClearFn != nil {
 					retryClearFn(ctx)
@@ -344,6 +357,9 @@ func (db *Accessor) AtomicContext(ctx context.Context, fn idemFn, retryClearFn f
 
 		err = tx.Commit()
 		if err == nil {
+			if !db.readOnly {
+				db.stats.observeCommit(started)
+			}
 			// update the deadline, as it might have been updated.
 			atomicDeadline = txContextData.deadline
 			break

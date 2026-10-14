@@ -205,5 +205,6 @@ func (cyclic *CyclicFileWriter) Write(p []byte) (n int, err error) {
 	// write the data
 	n, err = cyclic.writer.Write(p)
 	cyclic.nextWrite += uint64(n)
+	logBytesWritten.AddUint64(uint64(n), nil)
 	return
 }
