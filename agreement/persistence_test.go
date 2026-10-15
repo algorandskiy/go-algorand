@@ -129,6 +129,58 @@ func TestAgreementPersistence(t *testing.T) {
 	require.Equalf(t, raw[:], raw2[:], "raw data was persisted incorrectly.")
 }
 
+// A node that crashes after persisting its state and before sending the vote
+// restores that state and executes the pending attest again, which persists
+// the state again.  What it persists must be the restored state: a zero
+// state would be discarded at the next restore as older than the ledger, and
+// the node would re-enter a step it had already voted in.
+func TestRestoredAttestPersistsRestoredState(t *testing.T) {
+	partitiontest.PartitionTest(t)
+
+	accessor, err := db.MakeAccessor(t.Name()+"_crash.db", false, true)
+	require.NoError(t, err)
+	defer accessor.Close()
+	require.NoError(t, accessor.Atomic(func(ctx context.Context, tx *sql.Tx) error {
+		return agreeInstallDatabase(tx)
+	}))
+
+	ledger := makeTestLedger(nil)
+	log := serviceLogger{Logger: logging.TestingLog(t)}
+	clock := timers.MakeMonotonicClock[TimeoutType](time.Date(2015, 1, 2, 5, 6, 7, 8, time.UTC))
+
+	// the state of a node between persisting its soft vote and sending it
+	status := player{Round: ledger.NextRound(), Period: 0, Step: cert}
+	router := makeRootRouter(status)
+	pending := []action{pseudonodeAction{T: attest, Round: status.Round, Period: 0, Step: soft}}
+	require.NoError(t, persist(log, accessor, status.Round, 0, soft, encode(clock, router, status, pending, false)))
+
+	s := &Service{log: log}
+	s.Ledger = ledger
+	s.Clock = clock
+	s.Accessor = accessor
+	input := make(chan externalEvent)
+	output := make(chan []action)
+	ready := make(chan externalDemuxSignals)
+	s.wg.Add(1)
+	go s.mainLoop(input, output, ready)
+
+	// the first batch mainLoop hands out is the restored one; its attest
+	// persists whatever the persist fields hold at that point
+	a := <-output
+	require.True(t, persistent(a), "the restored batch does not carry the pending attest")
+	require.Equal(t, a, s.persistActions)
+	require.Equal(t, status.Round, s.persistStatus.Round)
+	require.Equal(t, status.Step, s.persistStatus.Step)
+	raw := encode(s.Clock, s.persistRouter, s.persistStatus, s.persistActions, false)
+	_, _, persisted, _, err := decode(raw, clock, log, false)
+	require.NoError(t, err)
+	require.Equal(t, status.Round, persisted.Round)
+
+	<-ready
+	close(input)
+	s.wg.Wait()
+}
+
 func BenchmarkAgreementPersistence(b *testing.B) {
 
 	// temporary skip now until we implement more meaningfull test.
