@@ -24,6 +24,9 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/algorand/go-deadlock"
 
 	"github.com/algorand/go-algorand/config"
 	"github.com/algorand/go-algorand/crypto"
@@ -690,4 +693,115 @@ func (t *demuxTester) TestUsecase(testcase demuxTestUsecase) bool {
 	}
 
 	return true
+}
+
+// sumRecorder is a coserviceListener that records the monitor's total after
+// every change, and counts decrements of the demux token.
+type sumRecorder struct {
+	mu        deadlock.Mutex
+	sums      []uint
+	lastDemux uint
+	demuxDecs int
+}
+
+func (r *sumRecorder) inc(sum uint, v map[coserviceType]uint) { r.record(sum, v) }
+func (r *sumRecorder) dec(sum uint, v map[coserviceType]uint) { r.record(sum, v) }
+
+func (r *sumRecorder) record(sum uint, v map[coserviceType]uint) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.sums = append(r.sums, sum)
+	if v[demuxCoserviceType] < r.lastDemux {
+		r.demuxDecs++
+	}
+	r.lastDemux = v[demuxCoserviceType]
+}
+
+func (r *sumRecorder) snapshot() ([]uint, int) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return append([]uint(nil), r.sums...), r.demuxDecs
+}
+
+// TestDemuxQueuedChannelCountsAsActivity checks that a channel queued with
+// prioritize keeps the coservice monitor busy until next observes it closed.
+// Producers close their channel after their last counted event, and the
+// persistence loop sends an uncounted checkpointReached event first. If the
+// queued channel were not counted, the monitor could report quiet while the
+// demux waits on it, and the demux waking up for the close or the checkpoint
+// would then register as new activity. Tests that wait for one
+// activity/quiet pair per step would fall out of step.
+func TestDemuxQueuedChannelCountsAsActivity(t *testing.T) {
+	partitiontest.PartitionTest(t)
+
+	for _, tc := range []struct {
+		name       string
+		checkpoint bool
+	}{
+		{"close", false},
+		{"checkpointThenClose", true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			dt := &demuxTester{T: t, currentUsecase: &demuxTestUsecase{}}
+			rec := &sumRecorder{}
+			dmx := &demux{crypto: dt, ledger: dt, monitor: &coserviceMonitor{coserviceListener: rec}}
+			s := &Service{}
+			s.quit = make(chan struct{})
+			s.Clock = dt
+			s.Ledger = dt
+			s.RandomSource = dt
+			s.log = serviceLogger{logging.Base()}
+
+			type result struct {
+				e  externalEvent
+				ok bool
+			}
+			results := make(chan result, 1)
+			runNext := func() {
+				go func() {
+					e, ok := dmx.next(s, Deadline{Duration: time.Second, Type: TimeoutDeadline}, Deadline{Duration: fastTimeoutChTime, Type: TimeoutFastRecovery}, 300)
+					results <- result{e, ok}
+				}()
+			}
+			demuxDecsAtLeast := func(n int) func() bool {
+				return func() bool {
+					_, decs := rec.snapshot()
+					return decs >= n
+				}
+			}
+
+			// As in the service: the demux holds its token while the state
+			// machine's actions run, and those actions queue the channel.
+			dmx.monitor.inc(demuxCoserviceType)
+			ch := make(chan externalEvent, 1)
+			dmx.prioritize(ch)
+
+			// next finds the queued channel open and empty, and blocks on it.
+			runNext()
+			require.Eventually(t, demuxDecsAtLeast(1), 5*time.Second, time.Millisecond)
+
+			if tc.checkpoint {
+				ch <- checkpointEvent{}
+				r := <-results
+				require.True(t, r.ok)
+				require.Equal(t, checkpointReached, r.e.t())
+				close(ch)
+				runNext()
+			} else {
+				close(ch)
+			}
+			// next drops the closed channel and blocks again with nothing queued.
+			require.Eventually(t, demuxDecsAtLeast(2), 5*time.Second, time.Millisecond)
+
+			sums, _ := rec.snapshot()
+			for i, sum := range sums[:len(sums)-1] {
+				require.NotZero(t, sum, "monitor reported quiet while a queued channel was still pending (change %d of %v)", i, sums)
+			}
+			require.Zero(t, sums[len(sums)-1], "monitor not quiet after the queued channel was drained: %v", sums)
+
+			close(s.quit)
+			r := <-results
+			require.False(t, r.ok)
+		})
+	}
 }
