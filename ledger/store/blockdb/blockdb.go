@@ -28,6 +28,16 @@ import (
 	"github.com/algorand/go-algorand/data/bookkeeping"
 	"github.com/algorand/go-algorand/ledger/ledgercore"
 	"github.com/algorand/go-algorand/protocol"
+	"github.com/algorand/go-algorand/util/metrics"
+)
+
+// blockPutBytes counts the encoded bytes BlockPut stores, by column.
+var blockPutBytes = metrics.MakeCounter(metrics.MetricName{Name: "algod_ledger_blockput_bytes_total", Description: "Encoded bytes written to the block database by BlockPut: part=hdr, blk or cert"})
+
+var (
+	blockPutHdrLabels  = map[string]string{"part": "hdr"}
+	blockPutBlkLabels  = map[string]string{"part": "blk"}
+	blockPutCertLabels = map[string]string{"part": "cert"}
 )
 
 // 2019-12-15: removed column 'auxdata blob' from 'CREATE TABLE' statement. It was not explicitly removed from databases and may continue to exist with empty entries in some old databases.
@@ -171,12 +181,18 @@ func BlockPut(tx *sql.Tx, blk bookkeeping.Block, cert agreement.Certificate) err
 		}
 	}
 
+	hdrData := protocol.Encode(&blk.BlockHeader)
+	blkData := protocol.Encode(&blk)
+	certData := protocol.Encode(&cert)
+	blockPutBytes.AddUint64(uint64(len(hdrData)), blockPutHdrLabels)
+	blockPutBytes.AddUint64(uint64(len(blkData)), blockPutBlkLabels)
+	blockPutBytes.AddUint64(uint64(len(certData)), blockPutCertLabels)
 	_, err = tx.Exec("INSERT INTO blocks (rnd, proto, hdrdata, blkdata, certdata) VALUES (?, ?, ?, ?, ?)",
 		blk.Round(),
 		blk.CurrentProtocol,
-		protocol.Encode(&blk.BlockHeader),
-		protocol.Encode(&blk),
-		protocol.Encode(&cert),
+		hdrData,
+		blkData,
+		certData,
 	)
 	return err
 }

@@ -101,6 +101,7 @@ func (db *Accessor) EraseWAL(ctx context.Context, all bool) error {
 	if logFrames < 0 {
 		return nil // not in WAL mode
 	}
+	db.stats.observeCheckpoint()
 	if busy != 0 || checkpointed != logFrames {
 		db.logger().Warnf("EraseWAL: readers hold the write-ahead log of %s (%d of %d frames checkpointed); deferred to the next write", db.filename, checkpointed, logFrames)
 		return nil
@@ -121,6 +122,7 @@ func (db *Accessor) EraseWAL(ctx context.Context, all bool) error {
 	if err != nil {
 		return fmt.Errorf("EraseWAL: writing zero pages: %w", err)
 	}
+	db.stats.observeErase()
 	if db.eraseWALAfterOverwrite != nil {
 		db.eraseWALAfterOverwrite() // tests: inspect the log before it is truncated
 	}
@@ -149,6 +151,7 @@ func (db *Accessor) EraseWAL(ctx context.Context, all bool) error {
 	if err != nil {
 		return err
 	}
+	db.stats.observeErase()
 	if busy != 0 {
 		db.logger().Warnf("EraseWAL: readers hold the write-ahead log of %s; it is overwritten but not truncated", db.filename)
 	}
