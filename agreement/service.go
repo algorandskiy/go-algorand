@@ -250,6 +250,15 @@ func (s *Service) mainLoop(input <-chan externalEvent, output chan<- []action, r
 		a = append(a, a1, a2)
 	} else {
 		s.Clock = clock
+		// The restored actions are executed below like any other batch, and
+		// the attest among them persists the state kept in the persist*
+		// fields, so those must describe the restored state and not their
+		// zero values: a zero snapshot would be discarded at the next restore
+		// as older than the ledger, and the node would then re-enter a step
+		// it had already voted in.
+		s.persistRouter = router
+		s.persistStatus = status
+		s.persistActions = a
 	}
 
 	for {
