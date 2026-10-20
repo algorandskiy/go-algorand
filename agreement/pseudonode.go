@@ -81,6 +81,7 @@ type asyncPseudonode struct {
 	quit                   chan struct{}   // a quit signal for the verifier goroutines
 	closeWg                *sync.WaitGroup // frontend waitgroup to get notified when all the verifier goroutines are done.
 	monitor                *coserviceMonitor
+	ownProposals           *ownProposalTracker                   // records proposals made, to report whether they were certified
 	participationKeysRound basics.Round                          // the round to which the participationKeys matches
 	participationKeys      []account.ParticipationRecordForRound // the list of the participation keys for round participationKeysRound
 
@@ -133,6 +134,7 @@ type pseudonodeParams struct {
 	voteVerifier *AsyncVoteVerifier
 	log          serviceLogger
 	monitor      *coserviceMonitor
+	ownProposals *ownProposalTracker
 }
 
 func makePseudonode(params pseudonodeParams) pseudonode {
@@ -145,6 +147,8 @@ func makePseudonode(params pseudonodeParams) pseudonode {
 		quit:      make(chan struct{}),
 		closeWg:   &sync.WaitGroup{},
 		monitor:   params.monitor,
+
+		ownProposals: params.ownProposals,
 	}
 
 	pn.proposalsVerifier = pn.makePseudonodeVerifier(params.voteVerifier)
@@ -553,6 +557,7 @@ func (t pseudonodeProposalsTask) execute(verifier *AsyncVoteVerifier, quit chan 
 		verifiedPayloads = append(verifiedPayloads, payloads[i])
 
 		vote := cryptoOutputs[i].v
+		t.node.ownProposals.record(vote)
 		logEvent := logspec.AgreementEvent{
 			Type:         logspec.ProposalBroadcast,
 			Hash:         vote.R.Proposal.BlockDigest.String(),

@@ -56,6 +56,9 @@ type Service struct {
 
 	monitor *coserviceMonitor
 
+	// proposals made by this node, to report whether they were certified
+	ownProposals *ownProposalTracker
+
 	persistRouter  rootRouter
 	persistStatus  player
 	persistActions []action
@@ -125,6 +128,8 @@ func MakeService(p Parameters) (*Service, error) {
 
 	s.historicalClocks = make(map[round]roundStartTimer)
 
+	s.ownProposals = makeOwnProposalTracker()
+
 	return s, nil
 }
 
@@ -159,6 +164,7 @@ func (s *Service) Start() {
 		voteVerifier: s.voteVerifier,
 		log:          s.log,
 		monitor:      s.monitor,
+		ownProposals: s.ownProposals,
 	})
 
 	s.persistenceLoop.Start()

@@ -289,16 +289,17 @@ func (p *player) handleCheckpointEvent(r routerHandle, e checkpointEvent) []acti
 // credential arrival times to dynamically set the filter timeout.
 // It returns the time of the lowest credential's arrival from
 // credentialRoundLag rounds ago, if one was collected and added to
-// lowestCredentialArrivals, or zero otherwise.
-func (p *player) updateCredentialArrivalHistory(r routerHandle, ver protocol.ConsensusVersion) time.Duration {
+// lowestCredentialArrivals, or zero otherwise. It also returns the
+// readLowestEvent for that round, if one was read.
+func (p *player) updateCredentialArrivalHistory(r routerHandle, ver protocol.ConsensusVersion) (time.Duration, readLowestEvent) {
 	if p.Period != 0 {
 		// only append to lowestCredentialArrivals if this was a successful round completing in period 0.
-		return 0
+		return 0, readLowestEvent{}
 	}
 
 	if p.Round <= credentialRoundLag {
 		// not sufficiently many rounds had passed to collect any measurement
-		return 0
+		return 0, readLowestEvent{}
 	}
 
 	// look up the validatedAt time of the winning proposal-vote from credentialRoundLag ago,
@@ -307,11 +308,18 @@ func (p *player) updateCredentialArrivalHistory(r routerHandle, ver protocol.Con
 	re := readLowestEvent{T: readLowestVote, Round: credHistoryRound, Period: 0}
 	re = r.dispatch(*p, re, proposalMachineRound, credHistoryRound, 0, 0).(readLowestEvent)
 	if !re.HasLowestIncludingLate {
-		return 0
+		return 0, re
 	}
 
 	p.lowestCredentialArrivals.store(re.LowestIncludingLate.validatedAt)
-	return re.LowestIncludingLate.validatedAt
+	return re.LowestIncludingLate.validatedAt, re
+}
+
+// readLowestForCert reads the lowest proposal-votes observed for the period in
+// which the certified value was originally proposed.
+func readLowestForCert(p player, r routerHandle, cert Certificate) readLowestEvent {
+	re := readLowestEvent{T: readLowestVote, Round: cert.Round, Period: cert.Proposal.OriginalPeriod}
+	return r.dispatch(p, re, proposalMachineRound, cert.Round, 0, 0).(readLowestEvent)
 }
 
 // calculateFilterTimeout chooses the appropriate filter timeout.
@@ -360,15 +368,17 @@ func (p *player) handleThresholdEvent(r routerHandle, e thresholdEvent) []action
 		if res.Committable {
 			cert := Certificate(e.Bundle)
 			a0 := ensureAction{Payload: res.Payload, Certificate: cert}
-			a0.voteValidatedAt = p.updateCredentialArrivalHistory(r, e.Proto)
+			a0.voteValidatedAt, a0.laggedLowest = p.updateCredentialArrivalHistory(r, e.Proto)
 			a0.dynamicFilterTimeout = p.dynamicFilterTimeout
+			a0.lowest = readLowestForCert(*p, r, cert)
 			actions = append(actions, a0)
 			as := p.enterRound(r, e, p.Round+1)
 			return append(actions, as...)
 		}
 		// we don't have the block! We need to ensure we will be able to receive the block.
 		// In addition, hint to the ledger to fetch by digest.
-		actions = append(actions, stageDigestAction{Certificate: Certificate(e.Bundle)})
+		cert := Certificate(e.Bundle)
+		actions = append(actions, stageDigestAction{Certificate: cert, lowest: readLowestForCert(*p, r, cert)})
 		if p.Period < e.Period {
 			actions = append(actions, p.enterPeriod(r, e, e.Period)...)
 		}
@@ -710,8 +720,9 @@ func (p *player) handleMessageEvent(r routerHandle, e messageEvent) (actions []a
 			if freshestRes.Ok && freshestRes.Event.t() == certThreshold && freshestRes.Event.Proposal == e.Input.Proposal.value() {
 				cert := Certificate(freshestRes.Event.Bundle)
 				a0 := ensureAction{Payload: e.Input.Proposal, Certificate: cert}
-				a0.voteValidatedAt = p.updateCredentialArrivalHistory(r, e.Proto.Version)
+				a0.voteValidatedAt, a0.laggedLowest = p.updateCredentialArrivalHistory(r, e.Proto.Version)
 				a0.dynamicFilterTimeout = p.dynamicFilterTimeout
+				a0.lowest = readLowestForCert(*p, r, cert)
 				actions = append(actions, a0)
 				as := p.enterRound(r, delegatedE, cert.Round+1)
 				return append(actions, as...)

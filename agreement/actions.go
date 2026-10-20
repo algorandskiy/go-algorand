@@ -236,6 +236,11 @@ type ensureAction struct {
 	voteValidatedAt time.Duration
 	// The dynamic filter timeout calculated for this round, even if not enabled, for reporting to telemetry.
 	dynamicFilterTimeout time.Duration
+	// The lowest proposal-votes observed for the certified value's original period, and
+	// for period 0 of the round `credentialRoundLag` rounds ago (including late ones),
+	// for reporting the outcome of our own proposals.
+	lowest       readLowestEvent
+	laggedLowest readLowestEvent
 }
 
 func (a ensureAction) t() actionType {
@@ -290,6 +295,7 @@ func (a ensureAction) do(ctx context.Context, s *Service) {
 		})
 		s.Ledger.EnsureBlock(block, a.Certificate)
 	}
+	s.reportProposalOutcome(a.Certificate, a.lowest, a.laggedLowest, a.dynamicFilterTimeout)
 	logEventStart := logEvent
 	logEventStart.Type = logspec.RoundStart
 	s.log.with(logEventStart).Infof("finished round %d", a.Certificate.Round)
@@ -301,6 +307,9 @@ type stageDigestAction struct {
 	nonpersistent
 	// Certificate identifies a block and is a proof commitment
 	Certificate Certificate // a block digest is probably sufficient; keep certificate for now to match ledger interface
+	// The lowest proposal-votes observed for the certified value's original period,
+	// for reporting the outcome of our own proposals.
+	lowest readLowestEvent
 }
 
 func (a stageDigestAction) t() actionType {
@@ -322,6 +331,7 @@ func (a stageDigestAction) do(ctx context.Context, service *Service) {
 		Type:   logspec.RoundWaiting,
 	}
 	service.log.with(logEvent).Infof("round %v concluded without block for %v; (async) waiting on ledger", a.Certificate.Round, a.Certificate.Proposal)
+	service.reportProposalOutcome(a.Certificate, a.lowest, readLowestEvent{}, 0)
 	service.Ledger.EnsureDigest(a.Certificate, service.voteVerifier)
 }
 
