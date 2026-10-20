@@ -899,6 +899,7 @@ func simulateAgreementWithLedgerFactory(t *testing.T, numNodes int, numRounds in
 	_, baseLedger, cleanupFn, services, clocks, ledgers, activityMonitor := setupAgreement(t, numNodes, traceLevel, ledgerFactory)
 	startRound := baseLedger.NextRound()
 	defer cleanupFn()
+	wonBefore, lostBefore := ownProposalWonCounter.GetUint64Value(), ownProposalLostTotal()
 
 	for i := 0; i < numNodes; i++ {
 		services[i].Start()
@@ -945,6 +946,11 @@ func simulateAgreementWithLedgerFactory(t *testing.T, numNodes int, numRounds in
 
 	sanityCheck(startRound, round(numRounds), ledgers)
 
+	// in a synchronous network the lowest credential always wins, and the
+	// winner's own node reports it
+	require.Equal(t, uint64(numRounds), ownProposalWonCounter.GetUint64Value()-wonBefore)
+	require.Zero(t, ownProposalLostTotal()-lostBefore)
+
 	if len(clocks) == 0 {
 		return nil
 	}
@@ -957,6 +963,15 @@ func simulateAgreementWithLedgerFactory(t *testing.T, numNodes int, numRounds in
 	}
 
 	return filterTimeouts[0]
+}
+
+func ownProposalLostTotal() (total uint64) {
+	values := make(map[string]float64)
+	ownProposalLostByType.AddMetric(values)
+	for _, v := range values {
+		total += uint64(v)
+	}
+	return total
 }
 
 func TestAgreementSynchronous1(t *testing.T) {
