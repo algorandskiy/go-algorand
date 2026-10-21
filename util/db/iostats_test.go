@@ -37,6 +37,16 @@ const (
 	testFrameSize = testPageSize + walFrameHeaderSize
 )
 
+// distinctLogPages returns the number of distinct pages among frames
+// (from, to] of the log of the database at path, read from the log file.
+func distinctLogPages(t *testing.T, path string, from, to uint64) uint64 {
+	hdr, err := readWALIndex(path + "-shm")
+	require.NoError(t, err)
+	pages, err := walFramePages(path+"-wal", hdr.pageSize, hdr.salt, uint32(from), uint32(to), nil)
+	require.NoError(t, err)
+	return distinctPages(pages, 0, uint32(len(pages)))
+}
+
 // logFrames checkpoints the log in PASSIVE mode and returns the frames it
 // holds.  The checkpoint copies every frame into the database file, so the
 // next write restarts the log: each transaction the tests commit after one
@@ -60,6 +70,8 @@ func TestIOStatsAccountsCommits(t *testing.T) {
 	c0 := s.counters()
 	f.insert(40)
 	n1 := logFrames(t, f.acc)
+	p1 := distinctLogPages(t, f.path, 0, n1)
+	require.Equal(t, n1, p1, "a transaction wrote a page twice")
 	c1 := s.counters()
 	require.Equal(t, c0.commits+1, c1.commits)
 	require.Equal(t, n1*testFrameSize, c1.walBytes-c0.walBytes)
@@ -74,13 +86,14 @@ func TestIOStatsAccountsCommits(t *testing.T) {
 
 	// the checkpoint above copied the log into the file, so this transaction
 	// restarts the log: its own frames are charged to the log, the previous
-	// generation's frames to the backfill
+	// generation's pages to the backfill
 	f.exec("DELETE FROM t WHERE id=1")
 	n2 := logFrames(t, f.acc)
+	p2 := distinctLogPages(t, f.path, 0, n2)
 	c2 := s.counters()
 	require.Equal(t, c1.commits+1, c2.commits)
 	require.Equal(t, n2*testFrameSize, c2.walBytes-c1.walBytes)
-	require.Equal(t, n1*testPageSize, c2.backfillBytes-c1.backfillBytes)
+	require.Equal(t, p1*testPageSize, c2.backfillBytes-c1.backfillBytes)
 	require.Equal(t, c1.restarts+1, c2.restarts)
 	require.Equal(t, c1.unobserved, c2.unobserved)
 
@@ -107,7 +120,7 @@ func TestIOStatsAccountsCommits(t *testing.T) {
 	require.Equal(t, c3.commits+1, c4.commits)
 	require.Equal(t, c3.unobserved+1, c4.unobserved)
 	require.Equal(t, n4*testFrameSize, c4.walBytes-c3.walBytes)
-	require.Equal(t, n2*testPageSize, c4.backfillBytes-c3.backfillBytes)
+	require.Equal(t, p2*testPageSize, c4.backfillBytes-c3.backfillBytes)
 
 	// the read-only half of a pair commits read transactions, which are not
 	// observed; an in-memory database has no accounting at all
@@ -143,30 +156,35 @@ func TestIOStatsAccountsErase(t *testing.T) {
 	f := newWALEraseFixture(t)
 	s := f.acc.stats
 
-	// two transactions in one generation of the log
+	// two transactions in one generation of the log; the delete rewrites a
+	// leaf page of the insert, so the log holds more frames than pages
 	f.insert(40)
 	f.exec("DELETE FROM t WHERE id=1")
 	s.mu.Lock()
 	m := uint64(s.last.mxFrame)
 	s.mu.Unlock()
 	require.NotZero(t, m)
+	pm := distinctLogPages(t, f.path, 0, m)
+	require.Less(t, pm, m, "the log holds no page twice; the test proves nothing")
 	c0 := s.counters()
 
-	var zeroFrames uint64
+	var zeroFrames, zeroPages uint64
 	f.acc.SetEraseWALHook(func() {
 		hdr, err := readWALIndex(f.path + "-shm")
 		require.NoError(t, err)
 		zeroFrames = uint64(hdr.mxFrame)
+		zeroPages = distinctLogPages(t, f.path, 0, zeroFrames)
 	})
 	require.NoError(t, f.acc.EraseWAL(ctx, true))
 	f.acc.SetEraseWALHook(nil)
 	require.NotZero(t, zeroFrames)
 	c1 := s.counters()
-	// the RESTART checkpoint copied the transactions' frames into the file
-	require.Equal(t, m*testPageSize, c1.backfillBytes-c0.backfillBytes)
+	// the RESTART checkpoint copied the transactions' pages into the file,
+	// each once
+	require.Equal(t, pm*testPageSize, c1.backfillBytes-c0.backfillBytes)
 	require.Equal(t, c0.walBytes, c1.walBytes)
 	// the zero pages were appended, then copied into the file
-	require.Equal(t, zeroFrames*(testFrameSize+testPageSize), c1.eraseBytes-c0.eraseBytes)
+	require.Equal(t, zeroFrames*testFrameSize+zeroPages*testPageSize, c1.eraseBytes-c0.eraseBytes)
 	// the overwrite restarted the log and the truncation reset it
 	require.Equal(t, c0.restarts+2, c1.restarts)
 	require.Equal(t, c0.commits, c1.commits)
@@ -181,6 +199,96 @@ func TestIOStatsAccountsErase(t *testing.T) {
 	require.Equal(t, c1.backfillBytes, c2.backfillBytes)
 	require.Equal(t, c1.restarts, c2.restarts)
 	require.Equal(t, c1.unobserved, c2.unobserved)
+}
+
+// TestIOStatsCheckpointCountsPages checks that a checkpoint is charged with
+// the distinct pages among the frames it consumed: a row replaced on every
+// transaction fills the log with frames of the same few pages, which the
+// checkpoint copies once each.
+func TestIOStatsCheckpointCountsPages(t *testing.T) {
+	partitiontest.PartitionTest(t)
+	ctx := context.Background()
+	path := filepath.Join(t.TempDir(), "replace.sqlite")
+	acc, err := MakeAccessor(path, false, false)
+	require.NoError(t, err)
+	defer acc.Close()
+	_, err = acc.Handle.ExecContext(ctx, "PRAGMA wal_autocheckpoint=0")
+	require.NoError(t, err)
+	require.NoError(t, acc.Atomic(func(ctx context.Context, tx *sql.Tx) error {
+		_, err := tx.Exec("CREATE TABLE Service (data BLOB)")
+		return err
+	}))
+	_, _, _, err = acc.walCheckpoint(ctx, "TRUNCATE")
+	require.NoError(t, err)
+	s := acc.stats
+	s.observeCheckpoint() // charges the checkpoint of the CREATE TABLE
+	c0 := s.counters()
+
+	// replace one 64 KiB row 20 times: 20 transactions of about 17 frames
+	// over the same two sets of pages
+	const replaces = 20
+	for i := 0; i < replaces; i++ {
+		blob := make([]byte, 64<<10)
+		blob[0] = byte(i)
+		require.NoError(t, acc.Atomic(func(ctx context.Context, tx *sql.Tx) error {
+			_, err := tx.Exec("INSERT OR REPLACE INTO Service (rowid, data) VALUES (1, ?)", blob)
+			return err
+		}))
+	}
+	frames := logFrames(t, acc) // checkpoints the log
+	pages := distinctLogPages(t, path, 0, frames)
+	require.Greater(t, frames, 10*pages, "the log does not rewrite its pages; the test proves nothing")
+	s.mu.Lock()
+	require.Len(t, s.pages, int(frames))
+	s.mu.Unlock()
+
+	// the checkpoint is observed at the next commit, which restarts the log
+	require.NoError(t, acc.Atomic(func(ctx context.Context, tx *sql.Tx) error {
+		_, err := tx.Exec("INSERT OR REPLACE INTO Service (rowid, data) VALUES (1, x'00')")
+		return err
+	}))
+	c1 := s.counters()
+	require.Equal(t, c0.commits+replaces+1, c1.commits)
+	require.GreaterOrEqual(t, c1.walBytes-c0.walBytes, frames*testFrameSize)
+	require.Equal(t, pages*testPageSize, c1.backfillBytes-c0.backfillBytes)
+	require.Equal(t, c0.restarts+1, c1.restarts)
+	require.Equal(t, c0.observeErrors, c1.observeErrors)
+}
+
+// TestWALFramePages checks the reading and counting of the pages of the
+// log's frames.
+func TestWALFramePages(t *testing.T) {
+	partitiontest.PartitionTest(t)
+	f := newWALEraseFixture(t)
+	f.insert(40)
+	f.exec("DELETE FROM t WHERE id=1")
+	hdr, err := readWALIndex(f.path + "-shm")
+	require.NoError(t, err)
+	require.NotZero(t, hdr.mxFrame)
+
+	pages, err := walFramePages(f.path+"-wal", hdr.pageSize, hdr.salt, 0, hdr.mxFrame, nil)
+	require.NoError(t, err)
+	require.Len(t, pages, int(hdr.mxFrame))
+	// the delete's frame is of a page the insert wrote
+	require.Less(t, distinctPages(pages, 0, hdr.mxFrame), uint64(hdr.mxFrame))
+	require.Equal(t, uint64(hdr.mxFrame)-1, distinctPages(pages, 0, hdr.mxFrame-1), "the insert wrote a page twice")
+	// a range beyond the frames read counts each unknown frame as a page
+	require.Equal(t, distinctPages(pages, 0, hdr.mxFrame)+3, distinctPages(pages, 0, hdr.mxFrame+3))
+	require.Equal(t, uint64(2), distinctPages(pages[:1], 2, 4))
+	require.Zero(t, distinctPages(pages, 5, 5))
+	// reading (from, to] appends to what is given
+	more, err := walFramePages(f.path+"-wal", hdr.pageSize, hdr.salt, 2, hdr.mxFrame, pages[:2])
+	require.NoError(t, err)
+	require.Equal(t, pages, more)
+	// a salt of another generation is rejected
+	var other [8]byte
+	copy(other[:], hdr.salt[:])
+	other[0]++
+	_, err = walFramePages(f.path+"-wal", hdr.pageSize, other, 0, hdr.mxFrame, nil)
+	require.ErrorContains(t, err, "another generation")
+	// so is a frame beyond the file
+	_, err = walFramePages(f.path+"-wal", hdr.pageSize, hdr.salt, hdr.mxFrame, hdr.mxFrame+1, nil)
+	require.Error(t, err)
 }
 
 func TestIOStatsConcurrentCommits(t *testing.T) {

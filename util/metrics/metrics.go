@@ -105,14 +105,14 @@ var (
 	DBTxMicrosTotal = MetricName{Name: "algod_db_tx_micros_total", Description: "Microseconds from begin to commit of committed transactions, by database file"}
 	// DBWALBytesTotal Bytes appended to the write-ahead log by committed transactions
 	DBWALBytesTotal = MetricName{Name: "algod_db_wal_bytes_total", Description: "Bytes appended to the write-ahead log by committed transactions (frames times page size plus 24), by database file"}
-	// DBBackfillBytesTotal Bytes of log frames checkpointed into the database file
-	DBBackfillBytesTotal = MetricName{Name: "algod_db_backfill_bytes_total", Description: "Bytes of write-ahead log frames checkpointed into the database file, an upper bound since a checkpoint writes each distinct page once, by database file"}
+	// DBBackfillBytesTotal Bytes of pages checkpoints copied from the write-ahead log into the database file
+	DBBackfillBytesTotal = MetricName{Name: "algod_db_backfill_bytes_total", Description: "Bytes of pages checkpoints copied from the write-ahead log into the database file, each distinct page once per checkpoint, by database file"}
 	// DBWALEraseBytesTotal Bytes of zero pages written and checkpointed by EraseWAL
 	DBWALEraseBytesTotal = MetricName{Name: "algod_db_wal_erase_bytes_total", Description: "Bytes of zero pages written to the write-ahead log and checkpointed by EraseWAL, by database file"}
 	// DBWALRestartsTotal Times the write-ahead log restarted from its beginning
 	DBWALRestartsTotal = MetricName{Name: "algod_db_wal_restarts_total", Description: "Times the write-ahead log restarted from its beginning, by database file"}
-	// DBObserveErrorsTotal Observations whose write-ahead log index could not be read
-	DBObserveErrorsTotal = MetricName{Name: "algod_db_observe_errors_total", Description: "Commits and erase steps whose write-ahead log index could not be read, by database file"}
+	// DBObserveErrorsTotal Observations whose write-ahead log or its index could not be read
+	DBObserveErrorsTotal = MetricName{Name: "algod_db_observe_errors_total", Description: "Commits and erase steps whose write-ahead log index or frame headers could not be read, by database file"}
 	// DBTxBytes Write-ahead log bytes per committed transaction
 	DBTxBytes = MetricName{Name: "algod_db_tx_bytes", Description: "Write-ahead log bytes appended per committed transaction, by database file; approximate when transactions commit concurrently"}
 	// DBFileBytes Size of the database file and of its write-ahead log

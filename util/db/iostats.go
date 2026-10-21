@@ -52,12 +52,18 @@ import (
 //
 // One ioStats per database file reads the header after every transaction
 // AtomicContext commits and after each step of EraseWAL, and turns the
-// differences into counters: frames the transaction appended, frames
-// checkpointed since the previous observation, log restarts, and commits
-// nobody observed (iChange advanced by more than one: a write outside
-// Atomic, such as Vacuum).  Frames a transaction spilled to the log before
-// rolling back are the one thing not counted: they are in the file but never
-// in mxFrame.  IOMetrics reports the counters of every open file.
+// differences into counters: frames the transaction appended, pages a
+// checkpoint copied since the previous observation, log restarts, and
+// commits nobody observed (iChange advanced by more than one: a write
+// outside Atomic, such as Vacuum).  A checkpoint copies each distinct page
+// among the frames it consumes once, its newest image, however many frames
+// hold the page: a store that rewrites the same row on every transaction
+// checkpoints a few pages for thousands of frames.  So the page number of
+// every frame is read from the frame's header in the log file as the frames
+// are appended, and a checkpoint is charged with the distinct pages among
+// the frames it consumed.  Frames a transaction spilled to the log before
+// rolling back are the one thing not counted: they are in the file but
+// never in mxFrame.  IOMetrics reports the counters of every open file.
 const (
 	walIndexHeaderSize = 48  // one copy of the header
 	walIndexReadSize   = 100 // both copies and the nBackfill field after them
@@ -121,6 +127,56 @@ func readWALIndex(path string) (hdr walIndexHeader, err error) {
 	}
 }
 
+// walFramePages reads the page numbers of frames (from, to] of the
+// write-ahead log at path, whose frames hold pages of pageSize bytes and
+// carry salt, and appends them to pages, one per frame.  A frame whose salt
+// differs belongs to another generation of the log: the log restarted since
+// the WAL index was read.
+func walFramePages(path string, pageSize uint32, salt [8]byte, from, to uint32, pages []uint32) ([]uint32, error) {
+	if to <= from {
+		return pages, nil
+	}
+	f, err := os.Open(path)
+	if err != nil {
+		return pages, err
+	}
+	defer f.Close()
+	frameSize := int64(walFrameHeaderSize) + int64(pageSize)
+	var hdr [16]byte // page number, commit size, salts
+	for i := from; i < to; i++ {
+		if _, err := f.ReadAt(hdr[:], walHeaderSize+int64(i)*frameSize); err != nil {
+			return pages, fmt.Errorf("frame %d of %s: %w", i+1, path, err)
+		}
+		if [8]byte(hdr[8:16]) != salt {
+			return pages, fmt.Errorf("frame %d of %s belongs to another generation of the log", i+1, path)
+		}
+		pages = append(pages, binary.BigEndian.Uint32(hdr[0:4]))
+	}
+	return pages, nil
+}
+
+// distinctPages counts the distinct pages among frames (from, to] of a log
+// whose frames' pages are known up to len(pages); a frame beyond that counts
+// as a page of its own.
+func distinctPages(pages []uint32, from, to uint32) uint64 {
+	if to <= from {
+		return 0
+	}
+	known := min(to, uint32(len(pages)))
+	var n uint64
+	if from < known {
+		seen := make(map[uint32]struct{}, known-from)
+		for _, p := range pages[from:known] {
+			seen[p] = struct{}{}
+		}
+		n = uint64(len(seen))
+	}
+	if to > known {
+		n += uint64(to - max(from, known))
+	}
+	return n
+}
+
 // txBytesBuckets are the upper bounds of the histogram of write-ahead log
 // bytes per transaction; one frame of a 4 KiB page is 4120 bytes.
 var txBytesBuckets = [...]uint64{8 << 10, 32 << 10, 128 << 10, 512 << 10, 2 << 20, 8 << 20}
@@ -134,7 +190,7 @@ type ioCounters struct {
 	observeErrors uint64
 	txMicros      uint64
 	walBytes      uint64 // frames appended by committed transactions
-	backfillBytes uint64 // frames checkpointed into the database file
+	backfillBytes uint64 // distinct pages checkpoints copied into the database file
 	eraseBytes    uint64 // zero pages EraseWAL wrote and checkpointed
 	txBuckets     [len(txBytesBuckets) + 1]uint64
 	txBytesSum    uint64
@@ -151,6 +207,9 @@ type ioStats struct {
 	mu     deadlock.Mutex
 	seeded bool // last holds an observation to diff against
 	last   walIndexHeader
+	// pages holds the page number of each frame of the current generation of
+	// the log, frame i at index i-1, as far as the frames have been read
+	pages []uint32
 	ioCounters
 }
 
@@ -172,7 +231,7 @@ func acquireIOStats(path string) *ioStats {
 		// the first commit is not charged with it.  A file without one yet is
 		// seeded by its first commit.
 		if hdr, err := readWALIndex(path + "-shm"); err == nil {
-			s.last, s.seeded = hdr, true
+			s.seed(hdr)
 		}
 		ioRegistry.stats[path] = s
 	}
@@ -242,19 +301,26 @@ func (s *ioStats) observe(kind observation, micros uint64) {
 		return
 	}
 	if !s.seeded {
-		s.last, s.seeded = hdr, true
+		s.seed(hdr)
 		return
 	}
 
 	var frames, backfill uint64
-	if hdr.salt != s.last.salt || hdr.mxFrame < s.last.mxFrame {
+	restarted := hdr.salt != s.last.salt || hdr.mxFrame < s.last.mxFrame
+	if restarted {
 		// the log restarted, after a checkpoint had copied all of it
 		frames = uint64(hdr.mxFrame)
-		backfill = uint64(s.last.mxFrame-s.last.backfill) + uint64(hdr.backfill)
+		backfill = distinctPages(s.pages, s.last.backfill, s.last.mxFrame)
+		s.pages = s.pages[:0]
 		s.restarts++
 	} else {
 		frames = uint64(hdr.mxFrame - s.last.mxFrame)
-		backfill = uint64(hdr.backfill - s.last.backfill)
+	}
+	s.readPages(hdr)
+	if restarted {
+		backfill += distinctPages(s.pages, 0, hdr.backfill)
+	} else {
+		backfill = distinctPages(s.pages, s.last.backfill, hdr.backfill)
 	}
 	changes := hdr.change - s.last.change
 	s.last = hdr
@@ -277,6 +343,29 @@ func (s *ioStats) observe(kind observation, micros uint64) {
 		s.backfillBytes += backfillBytes
 	case observedErase:
 		s.eraseBytes += frameBytes + backfillBytes
+	}
+}
+
+// seed records the first observation of the log, which nothing is charged
+// with.
+func (s *ioStats) seed(hdr walIndexHeader) {
+	s.last, s.seeded = hdr, true
+	s.pages = s.pages[:0]
+	s.readPages(hdr)
+}
+
+// readPages reads the pages of the frames appended to the log since its
+// pages were last read.  A frame it cannot read counts as a page of its own
+// when checkpointed; the next observation reads it again, unless the log
+// has restarted by then.
+func (s *ioStats) readPages(hdr walIndexHeader) {
+	if uint32(len(s.pages)) >= hdr.mxFrame {
+		return
+	}
+	var err error
+	s.pages, err = walFramePages(s.path+"-wal", hdr.pageSize, hdr.salt, uint32(len(s.pages)), hdr.mxFrame, s.pages)
+	if err != nil {
+		s.observeErrors++
 	}
 }
 
