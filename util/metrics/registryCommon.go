@@ -45,6 +45,13 @@ func sanitizeTelemetryName(name string) string {
 	return sanitizeTelemetryCharactersRegexp.ReplaceAllString(name, "_")
 }
 
+// SanitizeTelemetryName is sanitizeTelemetryName for gatherers outside this
+// package: a labeled counter's telemetry key is its name, a colon and the
+// formatted labels, sanitized this way.
+func SanitizeTelemetryName(name string) string {
+	return sanitizeTelemetryName(name)
+}
+
 // sanitizePrometheusName ensures a metric name reported to telemetry doesn't contain any
 // non-alphanumeric characters (apart from _) and doesn't start with a number.
 func sanitizePrometheusName(name string) string {

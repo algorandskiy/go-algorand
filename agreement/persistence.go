@@ -31,8 +31,12 @@ import (
 	"github.com/algorand/go-algorand/logging/logspec"
 	"github.com/algorand/go-algorand/protocol"
 	"github.com/algorand/go-algorand/util/db"
+	"github.com/algorand/go-algorand/util/metrics"
 	"github.com/algorand/go-algorand/util/timers"
 )
+
+var persistTotal = metrics.MakeCounter(metrics.MetricName{Name: "algod_agreement_persist_total", Description: "Snapshots of the agreement state written to the crash database"})
+var persistBytesTotal = metrics.MakeCounter(metrics.MetricName{Name: "algod_agreement_persist_bytes_total", Description: "Bytes of agreement state written to the crash database"})
 
 // diskState represents the state required by the agreement protocol to be persistent.
 type diskState struct {
@@ -136,6 +140,8 @@ func persist(log serviceLogger, crash db.Accessor, Round basics.Round, Period pe
 		log.with(logEvent).Info("persisted state to the database")
 	}()
 
+	persistTotal.Inc(nil)
+	persistBytesTotal.AddUint64(uint64(len(raw)), nil)
 	err = crash.Atomic(func(ctx context.Context, tx *sql.Tx) error {
 		_, err1 := tx.Exec("insert or replace into Service (rowid, data) values (1, ?)", raw)
 		return err1

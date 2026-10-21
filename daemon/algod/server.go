@@ -46,6 +46,7 @@ import (
 	"github.com/algorand/go-algorand/network/limitlistener"
 	"github.com/algorand/go-algorand/node"
 	"github.com/algorand/go-algorand/util"
+	"github.com/algorand/go-algorand/util/db"
 	"github.com/algorand/go-algorand/util/metrics"
 	"github.com/algorand/go-algorand/util/tokens"
 )
@@ -107,6 +108,7 @@ func (s *Server) Initialize(cfg config.Local, phonebookAddresses []string, genes
 	s.log.SetOutput(logWriter)
 	s.log.SetJSONFormatter()
 	s.log.SetLevel(logging.Level(cfg.BaseLoggerDebugLevel))
+	s.log.AddHook(logging.EntryCountHook())
 	setupDeadlockLogger()
 
 	// Check some config parameters.
@@ -342,6 +344,10 @@ func (s *Server) Start() {
 	if cfg.EnableNetDevMetrics {
 		metrics.DefaultRegistry().Register(metrics.NetDevMetrics)
 	}
+
+	// disk write accounting: per database file, and the process's totals
+	metrics.DefaultRegistry().Register(db.IOMetrics)
+	metrics.DefaultRegistry().Register(metrics.ProcessIOMetrics)
 
 	if cfg.EnableMetricReporting {
 		if err1 := s.metricCollector.Start(context.Background()); err1 != nil {

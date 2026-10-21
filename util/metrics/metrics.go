@@ -92,6 +92,39 @@ var (
 	// LedgerDBRound Last round written to ledger
 	LedgerDBRound = MetricName{Name: "algod_ledger_dbround", Description: "Last round written to the ledger DB"}
 
+	// Write accounting of the SQLite stores, reported per database file by
+	// util/db (see the IOMetrics gatherer there).
+
+	// DBCommitsTotal Transactions committed through db.Accessor
+	DBCommitsTotal = MetricName{Name: "algod_db_commits_total", Description: "Transactions committed through db.Accessor, by database file"}
+	// DBRollbacksTotal Transactions rolled back by db.Accessor
+	DBRollbacksTotal = MetricName{Name: "algod_db_rollbacks_total", Description: "Transactions rolled back by db.Accessor, by database file"}
+	// DBUnobservedCommitsTotal Transactions committed outside db.Accessor.Atomic
+	DBUnobservedCommitsTotal = MetricName{Name: "algod_db_unobserved_commits_total", Description: "Transactions committed outside db.Accessor.Atomic, by database file"}
+	// DBTxMicrosTotal Microseconds spent in committed transactions
+	DBTxMicrosTotal = MetricName{Name: "algod_db_tx_micros_total", Description: "Microseconds from begin to commit of committed transactions, by database file"}
+	// DBWALBytesTotal Bytes appended to the write-ahead log by committed transactions
+	DBWALBytesTotal = MetricName{Name: "algod_db_wal_bytes_total", Description: "Bytes appended to the write-ahead log by committed transactions (frames times page size plus 24), by database file"}
+	// DBBackfillBytesTotal Bytes of pages checkpoints copied from the write-ahead log into the database file
+	DBBackfillBytesTotal = MetricName{Name: "algod_db_backfill_bytes_total", Description: "Bytes of pages checkpoints copied from the write-ahead log into the database file, each distinct page once per checkpoint, by database file"}
+	// DBWALEraseBytesTotal Bytes of zero pages written and checkpointed by EraseWAL
+	DBWALEraseBytesTotal = MetricName{Name: "algod_db_wal_erase_bytes_total", Description: "Bytes of zero pages written to the write-ahead log and checkpointed by EraseWAL, by database file"}
+	// DBWALRestartsTotal Times the write-ahead log restarted from its beginning
+	DBWALRestartsTotal = MetricName{Name: "algod_db_wal_restarts_total", Description: "Times the write-ahead log restarted from its beginning, by database file"}
+	// DBObserveErrorsTotal Observations whose write-ahead log or its index could not be read
+	DBObserveErrorsTotal = MetricName{Name: "algod_db_observe_errors_total", Description: "Commits and erase steps whose write-ahead log index or frame headers could not be read, by database file"}
+	// DBTxBytes Write-ahead log bytes per committed transaction
+	DBTxBytes = MetricName{Name: "algod_db_tx_bytes", Description: "Write-ahead log bytes appended per committed transaction, by database file; approximate when transactions commit concurrently"}
+	// DBFileBytes Size of the database file and of its write-ahead log
+	DBFileBytes = MetricName{Name: "algod_db_file_bytes", Description: "Size of the database file (file=main) and of its write-ahead log (file=wal), by database file"}
+
+	// ProcessWcharBytesTotal Bytes the process passed to write system calls
+	ProcessWcharBytesTotal = MetricName{Name: "algod_process_wchar_bytes_total", Description: "Bytes the process passed to write system calls (wchar of /proc/self/io; Linux only)"}
+	// ProcessWriteBytesTotal Bytes the process caused to be written to the block layer
+	ProcessWriteBytesTotal = MetricName{Name: "algod_process_write_bytes_total", Description: "Bytes the process caused to be written to the block layer (write_bytes of /proc/self/io; Linux only)"}
+	// ProcessCancelledWriteBytesTotal Bytes the process truncated before they reached the block layer
+	ProcessCancelledWriteBytesTotal = MetricName{Name: "algod_process_cancelled_write_bytes_total", Description: "Bytes the process wrote and then truncated before they reached the block layer (cancelled_write_bytes of /proc/self/io; Linux only)"}
+
 	// AgreementMessagesHandled "Number of agreement messages handled"
 	AgreementMessagesHandled = MetricName{Name: "algod_agreement_handled", Description: "Number of agreement messages handled"}
 	// AgreementMessagesDropped "Number of agreement messages dropped"
